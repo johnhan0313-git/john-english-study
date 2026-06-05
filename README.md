@@ -29,7 +29,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 cp .env.example .env
-# 编辑 backend/.env 填入 AI_API_KEY
+# 编辑 backend/.env 填入 AI_LLM_API_KEY 等
 
 uvicorn app.main:app --reload --port 8000
 ```
@@ -62,8 +62,7 @@ docker compose up --build
 
 | 变量 | 说明 |
 |------|------|
-| `AI_API_KEY` | OpenAI 兼容 API Key，留空则用 Mock |
-| `AI_BASE_URL` | API 端点，可换 DeepSeek/通义等 |
+| `AI_LLM_*` / `AI_STT_*` / `AI_TTS_*` | 按能力分别配置 API（可混用 Groq、DeepSeek、OpenAI 等） |
 | `USE_EDGE_TTS` | `true` 使用免费 Edge TTS |
 
 前端关键配置：

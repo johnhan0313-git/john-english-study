@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app.config import ENV_FILE, get_settings
 from app.database import get_db
 from app.models.user import User
-from app.schemas.common import AIConfigResponse, HealthResponse
+from app.schemas.common import AIConfigResponse, AIEndpointStatus, HealthResponse
 
 router = APIRouter(tags=["common"])
 
@@ -40,15 +40,25 @@ def health():
     return HealthResponse(status="ok", app=settings.app_name)
 
 
+def _endpoint_status(config) -> AIEndpointStatus:
+    return AIEndpointStatus(
+        base_url=config.base_url,
+        model=config.model,
+        has_api_key=bool(config.api_key),
+        configured=config.is_configured,
+    )
+
+
 @router.get("/config/ai", response_model=AIConfigResponse)
 def get_ai_config():
     settings = get_settings()
+    llm = settings.llm_config()
     return AIConfigResponse(
-        base_url=settings.ai_base_url,
-        model=settings.ai_model,
-        has_api_key=bool(settings.ai_api_key),
+        llm=_endpoint_status(llm),
+        stt=_endpoint_status(settings.stt_config()),
+        tts=_endpoint_status(settings.tts_config()),
         use_edge_tts=settings.use_edge_tts,
-        using_mock=not bool(settings.ai_api_key),
+        using_mock=not llm.is_configured,
         env_files_loaded=[str(ENV_FILE)],
     )
 

@@ -9,6 +9,13 @@ class HealthResponse(BaseModel):
     version: str = "0.1.0"
 
 
+class AIEndpointStatus(BaseModel):
+    base_url: str
+    model: str
+    has_api_key: bool
+    configured: bool
+
+
 class AIConfigUpdate(BaseModel):
     base_url: str | None = None
     api_key: str | None = None
@@ -17,9 +24,9 @@ class AIConfigUpdate(BaseModel):
 
 
 class AIConfigResponse(BaseModel):
-    base_url: str
-    model: str
-    has_api_key: bool
+    llm: AIEndpointStatus
+    stt: AIEndpointStatus
+    tts: AIEndpointStatus
     use_edge_tts: bool
     using_mock: bool = False
     env_files_loaded: list[str] = []

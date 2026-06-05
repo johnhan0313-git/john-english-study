@@ -6,7 +6,7 @@ from pathlib import Path
 import edge_tts
 
 from app.config import Settings
-from app.services.ai.openai_provider import AIProviderError, get_ai_provider
+from app.services.ai.openai_provider import AIProviderError, get_tts_provider
 
 
 async def generate_speech(text: str, output_path: Path, settings: Settings, voice: str = "en-US-AriaNeural") -> Path:
@@ -16,8 +16,10 @@ async def generate_speech(text: str, output_path: Path, settings: Settings, voic
         await communicate.save(str(output_path))
         return output_path
 
-    provider = get_ai_provider(settings)
-    audio = await provider.text_to_speech(text, settings.ai_tts_voice)
+    provider = get_tts_provider(settings)
+    if not provider:
+        raise AIProviderError("TTS API key is not configured")
+    audio = await provider.text_to_speech(text)
     output_path.write_bytes(audio)
     return output_path
 

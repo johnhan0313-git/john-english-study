@@ -4,8 +4,51 @@ import { useQuery } from "@tanstack/react-query";
 import { API_BASE } from "@/lib/env";
 import { Card } from "@/components/ui";
 
+type AIEndpointStatus = {
+  base_url: string;
+  model: string;
+  has_api_key: boolean;
+  configured: boolean;
+};
+
+type AIConfig = {
+  llm: AIEndpointStatus;
+  stt: AIEndpointStatus;
+  tts: AIEndpointStatus;
+  use_edge_tts: boolean;
+  using_mock: boolean;
+};
+
+function EndpointRow({
+  label,
+  endpoint,
+}: {
+  label: string;
+  endpoint: AIEndpointStatus;
+}) {
+  return (
+    <div className="rounded-lg border border-slate-200 p-3">
+      <h3 className="text-sm font-medium text-slate-700">{label}</h3>
+      <dl className="mt-2 space-y-1 text-sm">
+        <div className="flex justify-between gap-4">
+          <dt className="text-slate-500">Base URL</dt>
+          <dd className="font-mono text-right break-all">{endpoint.base_url}</dd>
+        </div>
+        <div className="flex justify-between gap-4">
+          <dt className="text-slate-500">Model</dt>
+          <dd className="font-mono">{endpoint.model}</dd>
+        </div>
+        <div className="flex justify-between gap-4">
+          <dt className="text-slate-500">API Key</dt>
+          <dd>{endpoint.has_api_key ? "已配置" : "未配置"}</dd>
+        </div>
+      </dl>
+    </div>
+  );
+}
+
 export default function SettingsPage() {
-  const { data } = useQuery({
+  const { data } = useQuery<AIConfig>({
     queryKey: ["ai-config"],
     queryFn: async () => {
       const res = await fetch(`${API_BASE}/config/ai`);
@@ -37,33 +80,28 @@ export default function SettingsPage() {
       <Card>
         <h2 className="font-semibold">后端 AI 配置</h2>
         <p className="mt-2 text-sm text-slate-600">
-          后端环境变量写在 backend/.env。复制 backend/.env.example 为 backend/.env 并填入 API Key。
+          LLM、STT、TTS 可分别配置不同的 API 来源。在 backend/.env 中设置 AI_LLM_*、AI_STT_*、AI_TTS_*。
+          LLM 未配置走 Mock；STT 未配置口语评测报错；TTS 默认使用 Edge TTS。
         </p>
         {data && (
           <>
             {data.using_mock && (
               <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-                当前使用 Mock 模式，场景固定为「A Day at the Airport」。请在 backend/.env 中配置 AI_API_KEY 并重启后端。
+                LLM 未配置，场景生成使用 Mock 固定内容。请配置 AI_LLM_API_KEY 并重启后端。
               </div>
             )}
-            <dl className="mt-4 space-y-2 text-sm">
-            <div className="flex justify-between">
-              <dt className="text-slate-500">API Base URL</dt>
-              <dd className="font-mono">{data.base_url}</dd>
+            <div className="mt-4 space-y-3">
+              <EndpointRow label="LLM（场景 / 写作批改）" endpoint={data.llm} />
+              <EndpointRow label="STT（口语识别）" endpoint={data.stt} />
+              {data.use_edge_tts ? (
+                <div className="rounded-lg border border-slate-200 p-3">
+                  <h3 className="text-sm font-medium text-slate-700">TTS（听力朗读）</h3>
+                  <p className="mt-2 text-sm text-slate-600">Edge TTS（免费）</p>
+                </div>
+              ) : (
+                <EndpointRow label="TTS（听力朗读）" endpoint={data.tts} />
+              )}
             </div>
-            <div className="flex justify-between">
-              <dt className="text-slate-500">Model</dt>
-              <dd className="font-mono">{data.model}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-slate-500">API Key</dt>
-              <dd>{data.has_api_key ? "已配置" : "未配置（使用 Mock）"}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-slate-500">TTS</dt>
-              <dd>{data.use_edge_tts ? "Edge TTS（免费）" : "OpenAI TTS"}</dd>
-            </div>
-            </dl>
           </>
         )}
       </Card>

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
@@ -7,6 +8,18 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _BACKEND_DIR = Path(__file__).resolve().parents[1]
 ENV_FILE = _BACKEND_DIR / ".env"
+
+
+@dataclass(frozen=True)
+class AIEndpointConfig:
+    base_url: str
+    api_key: str
+    model: str
+    voice: str = ""
+
+    @property
+    def is_configured(self) -> bool:
+        return bool(self.api_key.strip())
 
 
 class Settings(BaseSettings):
@@ -22,13 +35,18 @@ class Settings(BaseSettings):
     media_dir: Path = Path("./data/media")
     cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
 
-    # OpenAI-compatible API
-    ai_base_url: str = "https://api.openai.com/v1"
-    ai_api_key: str = ""
-    ai_model: str = "gpt-4o-mini"
+    ai_llm_base_url: str = "https://api.openai.com/v1"
+    ai_llm_api_key: str = ""
+    ai_llm_model: str = "gpt-4o-mini"
+
+    ai_stt_base_url: str = "https://api.openai.com/v1"
+    ai_stt_api_key: str = ""
+    ai_stt_model: str = "whisper-1"
+
+    ai_tts_base_url: str = "https://api.openai.com/v1"
+    ai_tts_api_key: str = ""
     ai_tts_model: str = "tts-1"
     ai_tts_voice: str = "alloy"
-    ai_stt_model: str = "whisper-1"
     use_edge_tts: bool = True
 
     # JWT (optional, for future multi-user)
@@ -44,6 +62,28 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    def llm_config(self) -> AIEndpointConfig:
+        return AIEndpointConfig(
+            base_url=self.ai_llm_base_url.rstrip("/"),
+            api_key=self.ai_llm_api_key,
+            model=self.ai_llm_model,
+        )
+
+    def stt_config(self) -> AIEndpointConfig:
+        return AIEndpointConfig(
+            base_url=self.ai_stt_base_url.rstrip("/"),
+            api_key=self.ai_stt_api_key,
+            model=self.ai_stt_model,
+        )
+
+    def tts_config(self) -> AIEndpointConfig:
+        return AIEndpointConfig(
+            base_url=self.ai_tts_base_url.rstrip("/"),
+            api_key=self.ai_tts_api_key,
+            model=self.ai_tts_model,
+            voice=self.ai_tts_voice,
+        )
 
 
 @lru_cache

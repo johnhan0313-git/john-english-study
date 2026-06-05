@@ -6,7 +6,7 @@ from typing import Any
 
 import httpx
 
-from app.config import Settings
+from app.config import AIEndpointConfig, Settings
 from app.services.ai.prompts import EXERCISE_SYSTEM, SCENARIO_SYSTEM
 
 
@@ -26,11 +26,11 @@ def extract_json(text: str) -> dict[str, Any]:
 
 
 class OpenAICompatibleProvider:
-    def __init__(self, settings: Settings):
-        self.settings = settings
-        self.base_url = settings.ai_base_url.rstrip("/")
-        self.api_key = settings.ai_api_key
-        self.model = settings.ai_model
+    def __init__(self, config: AIEndpointConfig):
+        self.config = config
+        self.base_url = config.base_url.rstrip("/")
+        self.api_key = config.api_key
+        self.model = config.model
 
     def _headers(self) -> dict[str, str]:
         if not self.api_key:
@@ -86,8 +86,9 @@ class OpenAICompatibleProvider:
                 raise AIProviderError(f"LLM request failed: {resp.status_code} {resp.text}")
             return resp.json()["choices"][0]["message"]["content"]
 
-    async def text_to_speech(self, text: str, voice: str = "alloy") -> bytes:
-        payload = {"model": self.settings.ai_tts_model, "input": text[:4096], "voice": voice}
+    async def text_to_speech(self, text: str, voice: str | None = None) -> bytes:
+        voice_name = voice or self.config.voice or "alloy"
+        payload = {"model": self.model, "input": text[:4096], "voice": voice_name}
         async with httpx.AsyncClient(timeout=120.0) as client:
             resp = await client.post(
                 f"{self.base_url}/audio/speech",
@@ -103,7 +104,7 @@ class OpenAICompatibleProvider:
             resp = await client.post(
                 f"{self.base_url}/audio/transcriptions",
                 headers={"Authorization": f"Bearer {self.api_key}"},
-                data={"model": self.settings.ai_stt_model},
+                data={"model": self.model},
                 files={"file": (filename, audio, "application/octet-stream")},
             )
             if resp.status_code != 200:
@@ -173,14 +174,32 @@ class MockAIProvider:
     async def chat_text(self, messages: list[dict[str, str]]) -> str:
         return "Good writing overall. Consider using more target vocabulary."
 
-    async def text_to_speech(self, text: str, voice: str = "alloy") -> bytes:
+    async def text_to_speech(self, text: str, voice: str | None = None) -> bytes:
         return b""
 
     async def speech_to_text(self, audio: bytes, filename: str = "audio.webm") -> str:
         return "They decided to plan the trip carefully."
 
 
+def _provider_from_config(config: AIEndpointConfig) -> OpenAICompatibleProvider | None:
+    if config.is_configured:
+        return OpenAICompatibleProvider(config)
+    return None
+
+
+def get_llm_provider(settings: Settings) -> OpenAICompatibleProvider | MockAIProvider:
+    provider = _provider_from_config(settings.llm_config())
+    return provider or MockAIProvider()
+
+
+def get_stt_provider(settings: Settings) -> OpenAICompatibleProvider | None:
+    return _provider_from_config(settings.stt_config())
+
+
+def get_tts_provider(settings: Settings) -> OpenAICompatibleProvider | None:
+    return _provider_from_config(settings.tts_config())
+
+
 def get_ai_provider(settings: Settings) -> OpenAICompatibleProvider | MockAIProvider:
-    if settings.ai_api_key:
-        return OpenAICompatibleProvider(settings)
-    return MockAIProvider()
+    """Backward-compatible alias for LLM provider."""
+    return get_llm_provider(settings)
