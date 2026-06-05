@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply antialiased;
+  }
+}
+
+@layer utilities {
+  .highlight-word {
+    @apply cursor-pointer rounded bg-amber-100 px-1 font-medium text-amber-800 underline decoration-dotted hover:bg-amber-200;
+  }
+}

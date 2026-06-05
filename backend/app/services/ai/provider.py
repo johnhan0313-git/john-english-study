@@ -1,0 +1,13 @@
+from __future__ import annotations
+
+from typing import Any, Protocol
+
+
+class AIProvider(Protocol):
+    async def chat_json(self, messages: list[dict[str, str]], schema_hint: str) -> dict[str, Any]: ...
+
+    async def text_to_speech(self, text: str, voice: str = "alloy") -> bytes: ...
+
+    async def speech_to_text(self, audio: bytes, filename: str = "audio.webm") -> str: ...
+
+    async def chat_text(self, messages: list[dict[str, str]]) -> str: ...

@@ -1,0 +1,23 @@
+from __future__ import annotations
+
+from pydantic import BaseModel
+
+
+class HealthResponse(BaseModel):
+    status: str
+    app: str
+    version: str = "0.1.0"
+
+
+class AIConfigUpdate(BaseModel):
+    base_url: str | None = None
+    api_key: str | None = None
+    model: str | None = None
+    use_edge_tts: bool | None = None
+
+
+class AIConfigResponse(BaseModel):
+    base_url: str
+    model: str
+    has_api_key: bool
+    use_edge_tts: bool
