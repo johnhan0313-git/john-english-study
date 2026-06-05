@@ -12,6 +12,17 @@ SCENARIO_SCHEMA = """
 }
 """
 
+SCENARIO_SYSTEM = """You are an English reading scenario writer for CET-4/CET-6 learners.
+Your job is STEP 1 ONLY: write a reading scenario (story or dialogue context).
+Return ONLY one JSON object with these keys: title, theme, passage, dialogue, word_usage, summary_zh, fun_fact.
+CRITICAL: Include a non-empty "passage" field with the main English text (150+ words).
+Do NOT return exercises, questions, quiz, or an "exercises" key."""
+
+EXERCISE_SYSTEM = """You are an English quiz generator.
+Your job is STEP 2 ONLY: create practice questions based on a given passage.
+Return ONLY one JSON object with key "exercises" (array of question objects).
+Do NOT return passage, title, or scenario fields."""
+
 
 def build_scenario_prompt(
     words: list[dict],
@@ -39,8 +50,11 @@ def build_scenario_prompt(
                 f"Target words (each MUST appear at least once): {word_list}\n"
                 f"Word details:\n{word_details}\n"
                 f"Length: {length}. Keep vocabulary at CET-{level[-1]} level.\n"
-                f"Tone: professional yet engaging for adult learners.\n"
-                f"Return JSON matching the schema."
+                f"Tone: professional yet engaging for adult learners.\n\n"
+                f"IMPORTANT: This is STEP 1 — generate a READING SCENARIO only.\n"
+                f"Do NOT generate exercises or questions. Do NOT use key 'exercises'.\n"
+                f"Required JSON keys: title, theme, passage, dialogue, word_usage, summary_zh, fun_fact.\n"
+                f"The 'passage' field must be a long English text using all target words."
             ),
         }
     ]
@@ -79,7 +93,8 @@ def build_exercise_prompt(scenario_title: str, passage: str, target_words: list[
                 f"Focus on vocabulary: {words} and reading comprehension.\n"
                 f"For fill_blank, blank out target vocabulary words.\n"
                 f"Each single_choice must have exactly 4 options (A-D).\n"
-                f"Return JSON with 'exercises' array."
+                f"IMPORTANT: This is STEP 2 — generate EXERCISES only.\n"
+                f"Return JSON with single key 'exercises' (array). Do NOT return passage or title."
             ),
         }
     ]

@@ -8,7 +8,7 @@ from passlib.context import CryptContext
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.config import get_settings
+from app.config import ENV_FILE, get_settings
 from app.database import get_db
 from app.models.user import User
 from app.schemas.common import AIConfigResponse, HealthResponse
@@ -48,6 +48,8 @@ def get_ai_config():
         model=settings.ai_model,
         has_api_key=bool(settings.ai_api_key),
         use_edge_tts=settings.use_edge_tts,
+        using_mock=not bool(settings.ai_api_key),
+        env_files_loaded=[str(ENV_FILE)],
     )
 
 

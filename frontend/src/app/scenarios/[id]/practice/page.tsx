@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { CheckCircle, XCircle } from "lucide-react";
 import { api, Exercise } from "@/lib/api";
+import { API_BASE } from "@/lib/env";
 import { getDeviceId } from "@/lib/utils";
 import { Badge, Button, Card, ProgressBar, Spinner } from "@/components/ui";
 
@@ -108,7 +109,7 @@ export default function PracticePage() {
       const correct = Object.values(updatedResults).filter((r) => r.correct).length;
       setBatchScore({ score: Math.round((correct / exercises.length) * 100), correct, total: exercises.length });
       setFinished(true);
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"}/scenarios/${id}/complete`, {
+      await fetch(`${API_BASE}/scenarios/${id}/complete`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ device_id: deviceId, total: exercises.length, correct }),

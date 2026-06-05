@@ -31,6 +31,13 @@ async def daily_scenario_job():
 async def lifespan(app: FastAPI):
     settings = get_settings()
     init_db()
+    if not settings.ai_api_key:
+        print(
+            "[WARN] AI_API_KEY 未加载，场景生成将使用 Mock 固定内容（A Day at the Airport）。"
+            " 请在 backend/.env 中配置 AI_API_KEY 后重启后端。"
+        )
+    else:
+        print(f"[INFO] AI 已配置: {settings.ai_base_url} model={settings.ai_model}")
     db = SessionLocal()
     try:
         import_words(db)

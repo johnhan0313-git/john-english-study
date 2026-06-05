@@ -26,10 +26,10 @@
 cd backend
 python -m venv .venv
 source .venv/bin/activate
-pip install -e ".[dev]"
+pip install -r requirements.txt
 
-cp ../.env.example ../.env
-# 编辑 .env 填入 AI_API_KEY
+cp .env.example .env
+# 编辑 backend/.env 填入 AI_API_KEY
 
 uvicorn app.main:app --reload --port 8000
 ```
@@ -39,6 +39,7 @@ uvicorn app.main:app --reload --port 8000
 ```bash
 cd frontend
 npm install
+cp .env.example .env
 npm run dev
 ```
 
@@ -47,19 +48,29 @@ npm run dev
 ### Docker
 
 ```bash
-cp .env.example .env
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
 docker compose up --build
 ```
 
 ## 环境变量
 
-见 [.env.example](.env.example)。关键配置：
+- 后端：[backend/.env.example](backend/.env.example)
+- 前端：[frontend/.env.example](frontend/.env.example)
+
+后端关键配置：
 
 | 变量 | 说明 |
 |------|------|
 | `AI_API_KEY` | OpenAI 兼容 API Key，留空则用 Mock |
 | `AI_BASE_URL` | API 端点，可换 DeepSeek/通义等 |
 | `USE_EDGE_TTS` | `true` 使用免费 Edge TTS |
+
+前端关键配置：
+
+| 变量 | 说明 |
+|------|------|
+| `NEXT_PUBLIC_API_URL` | 后端 API 地址，默认 `http://localhost:8000/api` |
 
 ## API 文档
 

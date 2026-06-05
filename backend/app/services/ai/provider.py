@@ -4,7 +4,13 @@ from typing import Any, Protocol
 
 
 class AIProvider(Protocol):
-    async def chat_json(self, messages: list[dict[str, str]], schema_hint: str) -> dict[str, Any]: ...
+    async def chat_json(
+        self,
+        messages: list[dict[str, str]],
+        schema_hint: str,
+        *,
+        task: str = "generic",
+    ) -> dict[str, Any]: ...
 
     async def text_to_speech(self, text: str, voice: str = "alloy") -> bytes: ...
 

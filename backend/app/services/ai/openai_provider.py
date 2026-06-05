@@ -7,6 +7,7 @@ from typing import Any
 import httpx
 
 from app.config import Settings
+from app.services.ai.prompts import EXERCISE_SYSTEM, SCENARIO_SYSTEM
 
 
 class AIProviderError(Exception):
@@ -36,19 +37,41 @@ class OpenAICompatibleProvider:
             raise AIProviderError("AI API key is not configured")
         return {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
 
-    async def chat_json(self, messages: list[dict[str, str]], schema_hint: str) -> dict[str, Any]:
-        system_msg = {
-            "role": "system",
-            "content": f"You must respond with valid JSON only. Schema: {schema_hint}",
-        }
-        payload = {
+    async def chat_json(
+        self,
+        messages: list[dict[str, str]],
+        schema_hint: str,
+        *,
+        task: str = "generic",
+    ) -> dict[str, Any]:
+        if task == "scenario":
+            system_content = f"{SCENARIO_SYSTEM}\nSchema: {schema_hint}"
+        elif task == "exercise":
+            system_content = f"{EXERCISE_SYSTEM}\nSchema: {schema_hint}"
+        else:
+            system_content = (
+                "You must respond with valid JSON only, no markdown. "
+                f"Use exactly these field names from the schema. Schema: {schema_hint}"
+            )
+        system_msg = {"role": "system", "content": system_content}
+        base_payload = {
             "model": self.model,
             "messages": [system_msg, *messages],
             "temperature": 0.7,
-            "response_format": {"type": "json_object"},
         }
         async with httpx.AsyncClient(timeout=120.0) as client:
-            resp = await client.post(f"{self.base_url}/chat/completions", headers=self._headers(), json=payload)
+            payload_with_json = {**base_payload, "response_format": {"type": "json_object"}}
+            resp = await client.post(
+                f"{self.base_url}/chat/completions",
+                headers=self._headers(),
+                json=payload_with_json,
+            )
+            if resp.status_code != 200:
+                resp = await client.post(
+                    f"{self.base_url}/chat/completions",
+                    headers=self._headers(),
+                    json=base_payload,
+                )
             if resp.status_code != 200:
                 raise AIProviderError(f"LLM request failed: {resp.status_code} {resp.text}")
             data = resp.json()
@@ -91,31 +114,18 @@ class OpenAICompatibleProvider:
 class MockAIProvider:
     """For tests and offline development without API key."""
 
-    async def chat_json(self, messages: list[dict[str, str]], schema_hint: str) -> dict[str, Any]:
-        user_content = messages[-1]["content"] if messages else ""
-        if "exercise" in user_content.lower() or "questions" in user_content.lower():
-            return {
-                "exercises": [
-                    {
-                        "type": "single_choice",
-                        "question": "What is the main theme of the passage?",
-                        "options": [
-                            {"label": "A", "text": "Travel planning"},
-                            {"label": "B", "text": "Job interview"},
-                            {"label": "C", "text": "Campus life"},
-                            {"label": "D", "text": "Shopping"},
-                        ],
-                        "correct_label": "A",
-                        "explanation": "The passage focuses on travel planning.",
-                    },
-                    {
-                        "type": "fill_blank",
-                        "passage_with_blanks": "They decided to ___ the trip carefully.",
-                        "blanks": [{"index": 0, "hint": "v.", "answer": "plan", "accept": ["plan", "planned"]}],
-                        "explanation": "Plan fits the context.",
-                    },
-                ]
-            }
+    async def chat_json(
+        self,
+        messages: list[dict[str, str]],
+        schema_hint: str,
+        *,
+        task: str = "generic",
+    ) -> dict[str, Any]:
+        if task == "exercise":
+            return await self._mock_exercises()
+        return await self._mock_scenario()
+
+    async def _mock_scenario(self) -> dict[str, Any]:
         return {
             "title": "A Day at the Airport",
             "theme": "travel",
@@ -134,6 +144,30 @@ class MockAIProvider:
             ],
             "summary_zh": "莎拉在机场办理登机手续并协商行李额度。",
             "fun_fact": "The word 'airport' combines 'air' and 'port', originally meaning a port for aircraft.",
+        }
+
+    async def _mock_exercises(self) -> dict[str, Any]:
+        return {
+            "exercises": [
+                {
+                    "type": "single_choice",
+                    "question": "What is the main theme of the passage?",
+                    "options": [
+                        {"label": "A", "text": "Travel planning"},
+                        {"label": "B", "text": "Job interview"},
+                        {"label": "C", "text": "Campus life"},
+                        {"label": "D", "text": "Shopping"},
+                    ],
+                    "correct_label": "A",
+                    "explanation": "The passage focuses on travel planning.",
+                },
+                {
+                    "type": "fill_blank",
+                    "passage_with_blanks": "They decided to ___ the trip carefully.",
+                    "blanks": [{"index": 0, "hint": "v.", "answer": "plan", "accept": ["plan", "planned"]}],
+                    "explanation": "Plan fits the context.",
+                },
+            ]
         }
 
     async def chat_text(self, messages: list[dict[str, str]]) -> str:

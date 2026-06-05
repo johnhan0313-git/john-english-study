@@ -21,3 +21,5 @@ class AIConfigResponse(BaseModel):
     model: str
     has_api_key: bool
     use_edge_tts: bool
+    using_mock: bool = False
+    env_files_loaded: list[str] = []

@@ -12,6 +12,11 @@ from app.models.scenario import Scenario, ScenarioWord
 from app.models.word import Word, WordGroup, WordGroupMember
 from app.services.ai.openai_provider import AIProviderError, get_ai_provider
 from app.services.ai.prompts import EXERCISE_SCHEMA, SCENARIO_SCHEMA, build_exercise_prompt, build_scenario_prompt
+from app.services.ai.response_normalizer import (
+    WrongResponseTypeError,
+    normalize_exercise_response,
+    normalize_scenario_response,
+)
 from app.services.exercise.generator import save_exercises_from_ai
 from app.services.vocabulary.import_words import word_to_dict
 from app.services.vocabulary.srs import get_due_word_ids
@@ -66,6 +71,41 @@ class ScenarioService:
             return all_words
         return random.sample(all_words, word_count)
 
+    async def _fetch_scenario_with_retry(self, messages: list[dict[str, str]], retries: int = 2) -> dict:
+        last_error: Exception | None = None
+        for attempt in range(retries + 1):
+            attempt_messages = list(messages)
+            if attempt > 0:
+                attempt_messages.append({
+                    "role": "user",
+                    "content": (
+                        "Your previous response was wrong. Return a SCENARIO only.\n"
+                        "Required keys: title, theme, passage, dialogue, word_usage, summary_zh, fun_fact.\n"
+                        "Do NOT return 'exercises'. The 'passage' field must contain 150+ words of English text."
+                    ),
+                })
+            try:
+                raw = await self.ai.chat_json(attempt_messages, SCENARIO_SCHEMA, task="scenario")
+                return normalize_scenario_response(raw)
+            except WrongResponseTypeError as e:
+                last_error = e
+            except AIProviderError as e:
+                raise
+        raise AIProviderError(str(last_error) if last_error else "Scenario generation failed")
+
+    async def _fetch_exercises_with_retry(self, messages: list[dict[str, str]], retries: int = 2) -> dict:
+        last_error: Exception | None = None
+        for attempt in range(retries + 1):
+            try:
+                raw = await self.ai.chat_json(messages, EXERCISE_SCHEMA, task="exercise")
+                result = normalize_exercise_response(raw)
+                if result.get("exercises"):
+                    return result
+                last_error = AIProviderError("AI returned empty exercises list")
+            except AIProviderError as e:
+                last_error = e
+        raise AIProviderError(str(last_error) if last_error else "Exercise generation failed")
+
     async def generate_scenario(
         self,
         level: str = "cet4",
@@ -95,11 +135,7 @@ class ScenarioService:
 
         word_dicts = [word_to_dict(w) for w in words]
         messages = build_scenario_prompt(word_dicts, level, theme, scenario_type)
-
-        try:
-            result = await self.ai.chat_json(messages, SCENARIO_SCHEMA)
-        except AIProviderError:
-            raise
+        result = await self._fetch_scenario_with_retry(messages)
 
         content = {
             "passage": result["passage"],
@@ -110,7 +146,7 @@ class ScenarioService:
         dialogue = result.get("dialogue", [])
 
         scenario = Scenario(
-            title=result.get("title", f"Scenario: {theme}"),
+            title=result.get("title") or f"Scenario: {theme}",
             theme=theme,
             level=level,
             scenario_type=scenario_type,
@@ -129,7 +165,7 @@ class ScenarioService:
 
         target_lemmas = [w.lemma for w in words]
         exercise_messages = build_exercise_prompt(scenario.title, content["passage"], target_lemmas)
-        exercise_result = await self.ai.chat_json(exercise_messages, EXERCISE_SCHEMA)
+        exercise_result = await self._fetch_exercises_with_retry(exercise_messages)
         save_exercises_from_ai(self.db, scenario.id, exercise_result.get("exercises", []))
 
         self.db.commit()

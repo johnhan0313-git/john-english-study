@@ -1,14 +1,14 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { API_BASE } from "@/lib/env";
 import { Card } from "@/components/ui";
 
 export default function SettingsPage() {
   const { data } = useQuery({
     queryKey: ["ai-config"],
     queryFn: async () => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"}/config/ai`);
+      const res = await fetch(`${API_BASE}/config/ai`);
       return res.json();
     },
   });
@@ -21,13 +21,32 @@ export default function SettingsPage() {
       </div>
 
       <Card>
-        <h2 className="font-semibold">AI 配置</h2>
+        <h2 className="font-semibold">前端配置</h2>
         <p className="mt-2 text-sm text-slate-600">
-          AI 相关配置通过后端环境变量设置。复制 <code className="rounded bg-slate-100 px-1">.env.example</code> 为{" "}
-          <code className="rounded bg-slate-100 px-1">.env</code> 并填入你的 OpenAI 兼容 API Key。
+          前端环境变量写在 frontend/.env。复制 frontend/.env.example 为 frontend/.env，修改后需重启{" "}
+          <code className="rounded bg-slate-100 px-1">npm run dev</code>。
+        </p>
+        <dl className="mt-4 space-y-2 text-sm">
+          <div className="flex justify-between">
+            <dt className="text-slate-500">API 地址</dt>
+            <dd className="font-mono">{API_BASE}</dd>
+          </div>
+        </dl>
+      </Card>
+
+      <Card>
+        <h2 className="font-semibold">后端 AI 配置</h2>
+        <p className="mt-2 text-sm text-slate-600">
+          后端环境变量写在 backend/.env。复制 backend/.env.example 为 backend/.env 并填入 API Key。
         </p>
         {data && (
-          <dl className="mt-4 space-y-2 text-sm">
+          <>
+            {data.using_mock && (
+              <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                当前使用 Mock 模式，场景固定为「A Day at the Airport」。请在 backend/.env 中配置 AI_API_KEY 并重启后端。
+              </div>
+            )}
+            <dl className="mt-4 space-y-2 text-sm">
             <div className="flex justify-between">
               <dt className="text-slate-500">API Base URL</dt>
               <dd className="font-mono">{data.base_url}</dd>
@@ -44,7 +63,8 @@ export default function SettingsPage() {
               <dt className="text-slate-500">TTS</dt>
               <dd>{data.use_edge_tts ? "Edge TTS（免费）" : "OpenAI TTS"}</dd>
             </div>
-          </dl>
+            </dl>
+          </>
         )}
       </Card>
 
