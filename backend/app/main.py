@@ -6,7 +6,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import common, exercises, progress, scenario_complete, scenarios, words
+from app.api import common, exercises, progress, reference, scenario_complete, scenarios, words
 from app.config import get_settings
 from app.database import SessionLocal, init_db
 from app.services.vocabulary.import_words import import_words
@@ -54,6 +54,8 @@ async def lifespan(app: FastAPI):
     db = SessionLocal()
     try:
         import_words(db)
+        from app.services.reference.import_reference import import_reference
+        import_reference(db)
     finally:
         db.close()
 
@@ -85,6 +87,7 @@ def create_app() -> FastAPI:
     app.include_router(scenario_complete.router, prefix="/api")
     app.include_router(exercises.router, prefix="/api")
     app.include_router(progress.router, prefix="/api")
+    app.include_router(reference.router, prefix="/api")
     return app
 
 

@@ -33,7 +33,7 @@ export default function HomePage() {
   });
 
   return (
-    <div className="animate-fade-in space-y-10">
+    <div className="space-y-10">
       <PageHeader
         badge="每日学习"
         title="沉浸式场景学英语"
@@ -75,7 +75,7 @@ export default function HomePage() {
         ) : daily?.items.length ? (
           <div className="grid gap-4 md:grid-cols-3">
             {daily.items.map((s, i) => (
-              <Link key={s.id} href={`/scenarios/${s.id}`} className="block animate-slide-up" style={{ animationDelay: `${i * 80}ms` }}>
+              <Link key={s.id} href={`/scenarios/${s.id}`} className="block">
                 <Card hover className="group h-full">
                   <div className="flex items-start justify-between gap-2">
                     <Badge variant={dailyKindVariant[s.daily_kind || ""] || "outline"}>

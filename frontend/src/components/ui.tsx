@@ -86,7 +86,7 @@ export function ProgressBar({ value, max = 100, className }: { value: number; ma
 
 export function Tabs({ tabs, active, onChange }: { tabs: { id: string; label: string; icon?: LucideIcon }[]; active: string; onChange: (id: string) => void }) {
   return (
-    <div className="flex flex-wrap gap-1 rounded-2xl border border-white/60 bg-white/60 p-1.5 shadow-sm backdrop-blur-sm">
+    <div className="flex flex-wrap gap-1 rounded-2xl border border-surface-border/80 bg-white p-1.5 shadow-sm">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         return (
@@ -133,7 +133,7 @@ export function PageHeader({
   badge?: string;
 }) {
   return (
-    <div className="animate-slide-up flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
         {badge && (
           <span className="mb-2 inline-block rounded-full bg-brand-100 px-3 py-0.5 text-xs font-semibold text-brand-700">

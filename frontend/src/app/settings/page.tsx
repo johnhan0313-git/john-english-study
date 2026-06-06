@@ -57,7 +57,7 @@ export default function SettingsPage() {
   });
 
   return (
-    <div className="animate-fade-in mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6">
       <PageHeader badge="系统" title="设置" description="前后端环境变量与 AI 服务配置" />
 
       <Card>

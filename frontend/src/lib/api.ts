@@ -104,6 +104,76 @@ export interface ProgressOverview {
   exercises_completed: number;
 }
 
+export interface PhoneticExample {
+  word: string;
+  ipa: string;
+  meaning_zh: string;
+}
+
+export interface PhoneticBrief {
+  id: number;
+  symbol: string;
+  category: string;
+  subcategory?: string | null;
+  name_zh: string;
+  name_en: string;
+  preview_word?: string | null;
+}
+
+export interface PhoneticDetail extends PhoneticBrief {
+  description?: string | null;
+  examples: PhoneticExample[];
+  sound_cue?: string | null;
+}
+
+export interface PhoneticCategoryGroup {
+  category: string;
+  category_zh: string;
+  items: PhoneticBrief[];
+  count: number;
+}
+
+export interface PhoneticListResponse {
+  items: PhoneticBrief[];
+  groups: PhoneticCategoryGroup[];
+  total: number;
+}
+
+export interface GrammarExample {
+  en: string;
+  zh: string;
+  note?: string | null;
+}
+
+export interface GrammarBrief {
+  id: number;
+  slug: string;
+  category: string;
+  title: string;
+  level: string;
+  summary: string;
+}
+
+export interface GrammarDetail extends GrammarBrief {
+  structure?: string | null;
+  rules: string[];
+  examples: GrammarExample[];
+  tips?: string | null;
+}
+
+export interface GrammarCategoryGroup {
+  category: string;
+  category_zh: string;
+  items: GrammarBrief[];
+  count: number;
+}
+
+export interface GrammarListResponse {
+  items: GrammarBrief[];
+  groups: GrammarCategoryGroup[];
+  total: number;
+}
+
 export const api = {
   health: () => request<{ status: string; app: string }>("/health"),
 
@@ -193,4 +263,34 @@ export const api = {
       missing_target_words: string[];
       suggestions: string[];
     }>("/progress/writing/evaluate", { method: "POST", body: JSON.stringify(body) }),
+
+  getPhonetics: (params?: { category?: string; search?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.category) qs.set("category", params.category);
+    if (params?.search) qs.set("search", params.search);
+    const q = qs.toString();
+    return request<PhoneticListResponse>(`/reference/phonetics${q ? `?${q}` : ""}`);
+  },
+
+  getPhonetic: (id: number) => request<PhoneticDetail>(`/reference/phonetics/${id}`),
+
+  getPhoneticAudioUrl: (id: number, opts?: { word?: string; preview?: boolean; kind?: "symbol" | "examples" }) => {
+    const qs = new URLSearchParams();
+    if (opts?.kind) qs.set("kind", opts.kind);
+    if (opts?.word) qs.set("word", opts.word);
+    if (opts?.preview) qs.set("preview", "true");
+    const q = qs.toString();
+    return `${API_BASE}/reference/phonetics/${id}/audio${q ? `?${q}` : ""}`;
+  },
+
+  getGrammar: (params?: { category?: string; level?: string; search?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.category) qs.set("category", params.category);
+    if (params?.level) qs.set("level", params.level);
+    if (params?.search) qs.set("search", params.search);
+    const q = qs.toString();
+    return request<GrammarListResponse>(`/reference/grammar${q ? `?${q}` : ""}`);
+  },
+
+  getGrammarPoint: (slug: string) => request<GrammarDetail>(`/reference/grammar/${slug}`),
 };

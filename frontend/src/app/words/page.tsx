@@ -48,7 +48,7 @@ export default function WordsPage() {
   };
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="space-y-6">
       <PageHeader
         badge="词汇库"
         title="CET-4/6 词库"

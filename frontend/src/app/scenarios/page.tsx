@@ -15,7 +15,7 @@ export default function ScenariosPage() {
   });
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="space-y-6">
       <PageHeader
         badge="学习记录"
         title="场景列表"

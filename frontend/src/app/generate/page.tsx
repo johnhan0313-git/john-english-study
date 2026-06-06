@@ -152,7 +152,7 @@ function GenerateForm() {
 
 export default function GeneratePage() {
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="space-y-6">
       <PageHeader
         badge="AI 驱动"
         title="生成场景"
