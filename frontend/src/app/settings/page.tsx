@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { API_BASE } from "@/lib/env";
-import { Card } from "@/components/ui";
+import { Alert, Card, PageHeader } from "@/components/ui";
 
 type AIEndpointStatus = {
   base_url: string;
@@ -57,11 +57,8 @@ export default function SettingsPage() {
   });
 
   return (
-    <div className="space-y-6 max-w-xl">
-      <div>
-        <h1 className="text-2xl font-bold">设置</h1>
-        <p className="text-slate-600">API 与系统配置</p>
-      </div>
+    <div className="animate-fade-in mx-auto max-w-2xl space-y-6">
+      <PageHeader badge="系统" title="设置" description="前后端环境变量与 AI 服务配置" />
 
       <Card>
         <h2 className="font-semibold">前端配置</h2>
@@ -86,9 +83,9 @@ export default function SettingsPage() {
         {data && (
           <>
             {data.using_mock && (
-              <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+              <Alert variant="warning">
                 LLM 未配置，场景生成使用 Mock 固定内容。请配置 AI_LLM_API_KEY 并重启后端。
-              </div>
+              </Alert>
             )}
             <div className="mt-4 space-y-3">
               <EndpointRow label="LLM（场景 / 写作批改）" endpoint={data.llm} />

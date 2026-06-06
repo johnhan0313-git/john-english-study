@@ -7,18 +7,67 @@ import { useRef, useState } from "react";
 import { Headphones, Mic, BookOpen, PenLine, Play, Pause } from "lucide-react";
 import { api } from "@/lib/api";
 import { getDeviceId } from "@/lib/utils";
-import { Badge, Button, Card, Spinner, Tabs } from "@/components/ui";
+import { Badge, Button, Card, Spinner, Tabs, Textarea } from "@/components/ui";
+import type { ScenarioDetail } from "@/lib/api";
 
-function highlightPassage(passage: string, words: string[]) {
+type WordUsage = ScenarioDetail["content"]["word_usage"][number];
+
+function findWordUsage(wordUsage: WordUsage[], word: string): WordUsage | undefined {
+  return wordUsage.find((u) => u.word.toLowerCase() === word.toLowerCase());
+}
+
+function highlightPassage(
+  passage: string,
+  words: string[],
+  options?: {
+    selectedWord?: string | null;
+    onWordClick?: (word: string) => void;
+  },
+) {
   if (!words.length) return passage;
   const pattern = new RegExp(`\\b(${words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})\\b`, "gi");
   const parts = passage.split(pattern);
-  return parts.map((part, i) =>
-    words.some((w) => w.toLowerCase() === part.toLowerCase()) ? (
-      <span key={i} className="highlight-word" title="目标词">{part}</span>
-    ) : (
-      part
-    ),
+  return parts.map((part, i) => {
+    const matched = words.find((w) => w.toLowerCase() === part.toLowerCase());
+    if (!matched) return part;
+    const isSelected = options?.selectedWord?.toLowerCase() === matched.toLowerCase();
+    return (
+      <button
+        key={i}
+        type="button"
+        className={`highlight-word ${isSelected ? "highlight-word-active" : ""}`}
+        onClick={() => options?.onWordClick?.(matched)}
+        aria-pressed={isSelected}
+        aria-label={`查看 ${matched} 的释义`}
+      >
+        {part}
+      </button>
+    );
+  });
+}
+
+function WordDefinitionPanel({
+  word,
+  usage,
+}: {
+  word: string;
+  usage: WordUsage | undefined;
+}) {
+  return (
+    <div className="rounded-xl border border-brand-200 bg-brand-50/80 p-4">
+      <p className="text-lg font-bold text-brand-900">{word}</p>
+      {usage?.meaning_zh ? (
+        <p className="mt-1 text-base text-amber-800">{usage.meaning_zh}</p>
+      ) : (
+        <p className="mt-1 text-sm text-amber-700">暂无中文释义</p>
+      )}
+      {usage?.sentence && (
+        <p className="mt-3 text-sm text-slate-700">
+          <span className="font-medium text-slate-500">例句：</span>
+          {usage.sentence}
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -86,21 +135,28 @@ export default function ScenarioDetailPage() {
     setWritingResult(result);
   };
 
-  if (isLoading) return <Spinner />;
+  if (isLoading) return <Spinner label="加载场景..." />;
   if (!scenario) return <Card>场景不存在</Card>;
 
   const shadowSentence = scenario.content.word_usage[0]?.sentence || scenario.content.passage.split(".")[0];
+  const selectedUsage = selectedWord
+    ? findWordUsage(scenario.content.word_usage, selectedWord)
+    : undefined;
+  const highlightOptions = {
+    selectedWord,
+    onWordClick: (word: string) => setSelectedWord((prev) => (prev === word ? null : word)),
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="animate-fade-in space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <div className="flex gap-2">
-            <Badge>{scenario.level.toUpperCase()}</Badge>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="brand">{scenario.level.toUpperCase()}</Badge>
             <Badge variant="purple">{scenario.theme}</Badge>
           </div>
-          <h1 className="mt-2 text-2xl font-bold">{scenario.title}</h1>
-          <p className="mt-1 text-slate-600">{scenario.content.summary_zh}</p>
+          <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">{scenario.title}</h1>
+          <p className="mt-2 text-slate-600">{scenario.content.summary_zh}</p>
         </div>
         <Link href={`/scenarios/${id}/practice`}>
           <Button size="lg">开始练习</Button>
@@ -125,16 +181,21 @@ export default function ScenarioDetailPage() {
               <div className="flex items-center gap-2 text-sm text-slate-500 mb-4">
                 <BookOpen className="h-4 w-4" /> 阅读模式 · 点击高亮词查看释义
               </div>
-              <p className="leading-relaxed text-slate-800">
-                {highlightPassage(scenario.content.passage, scenario.words)}
-              </p>
+              <div className="leading-relaxed text-slate-800">
+                {highlightPassage(scenario.content.passage, scenario.words, highlightOptions)}
+              </div>
+              {selectedWord && (
+                <div className="mt-4">
+                  <WordDefinitionPanel word={selectedWord} usage={selectedUsage} />
+                </div>
+              )}
               {scenario.dialogue.length > 0 && (
                 <div className="mt-6 space-y-3 border-t pt-4">
                   <h3 className="font-medium">对话</h3>
                   {scenario.dialogue.map((d, i) => (
                     <div key={i} className="rounded-lg bg-slate-50 p-3">
-                      <span className="font-medium text-primary-700">{d.speaker}:</span>{" "}
-                      {highlightPassage(d.text, scenario.words)}
+                      <span className="font-semibold text-brand-700">{d.speaker}:</span>{" "}
+                      {highlightPassage(d.text, scenario.words, highlightOptions)}
                     </div>
                   ))}
                 </div>
@@ -210,11 +271,10 @@ export default function ScenarioDetailPage() {
               <p className="text-sm text-slate-600 mb-4">
                 用以下词汇写一段 80 词左右的短文：{scenario.words.slice(0, 5).join(", ")}
               </p>
-              <textarea
+              <Textarea
                 value={writingContent}
                 onChange={(e) => setWritingContent(e.target.value)}
                 rows={6}
-                className="w-full rounded-lg border border-slate-300 p-3 focus:border-primary-500 focus:outline-none"
                 placeholder="Start writing here..."
               />
               <Button className="mt-4" onClick={submitWriting}>提交批改</Button>
@@ -232,9 +292,9 @@ export default function ScenarioDetailPage() {
           )}
 
           {scenario.content.fun_fact && (
-            <Card className="border-amber-200 bg-amber-50">
-              <p className="text-sm font-medium text-amber-800">趣味知识</p>
-              <p className="mt-1 text-amber-900">{scenario.content.fun_fact}</p>
+            <Card className="border-accent-400/30 bg-gradient-to-r from-teal-50 to-brand-50/50">
+              <p className="text-sm font-bold text-accent-600">趣味知识</p>
+              <p className="mt-1 text-slate-700">{scenario.content.fun_fact}</p>
             </Card>
           )}
         </div>
@@ -247,15 +307,15 @@ export default function ScenarioDetailPage() {
                 <button
                   key={w}
                   onClick={() => setSelectedWord(selectedWord === w ? null : w)}
-                  className="rounded-full bg-primary-50 px-3 py-1 text-sm text-primary-700 hover:bg-primary-100"
+                  className="rounded-full bg-brand-100 px-3 py-1 text-sm font-medium text-brand-800 transition-colors hover:bg-brand-200"
                 >
                   {w}
                 </button>
               ))}
             </div>
             {selectedWord && (
-              <div className="mt-3 rounded-lg bg-slate-50 p-3 text-sm">
-                {scenario.content.word_usage.find((u) => u.word.toLowerCase() === selectedWord.toLowerCase())?.sentence || "暂无例句"}
+              <div className="mt-3">
+                <WordDefinitionPanel word={selectedWord} usage={selectedUsage} />
               </div>
             )}
           </Card>

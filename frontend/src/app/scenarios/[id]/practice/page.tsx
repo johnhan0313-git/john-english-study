@@ -8,7 +8,8 @@ import { CheckCircle, XCircle } from "lucide-react";
 import { api, Exercise } from "@/lib/api";
 import { API_BASE } from "@/lib/env";
 import { getDeviceId } from "@/lib/utils";
-import { Badge, Button, Card, ProgressBar, Spinner } from "@/components/ui";
+import { Badge, Button, Card, Input, ProgressBar, Spinner } from "@/components/ui";
+import { cn } from "@/lib/utils";
 
 function ExerciseItem({
   exercise,
@@ -29,9 +30,12 @@ function ExerciseItem({
           {exercise.payload.options?.map((opt) => (
             <label
               key={opt.label}
-              className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${
-                answer === opt.label ? "border-primary-500 bg-primary-50" : "border-slate-200 hover:bg-slate-50"
-              } ${result ? (result.correct_answer === opt.label ? "border-green-500 bg-green-50" : answer === opt.label && !result.correct ? "border-red-500 bg-red-50" : "") : ""}`}
+              className={cn(
+                "flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 transition-all",
+                answer === opt.label ? "border-brand-400 bg-brand-50 shadow-sm" : "border-surface-border hover:border-brand-200 hover:bg-white",
+                result && result.correct_answer === opt.label && "border-emerald-400 bg-emerald-50",
+                result && answer === opt.label && !result.correct && "border-red-400 bg-red-50",
+              )}
             >
               <input
                 type="radio"
@@ -56,13 +60,11 @@ function ExerciseItem({
       <div className="space-y-3">
         <p className="font-medium">{exercise.payload.question || "填空题"}</p>
         <p className="leading-relaxed text-slate-700">{exercise.payload.passage_with_blanks}</p>
-        <input
-          type="text"
+        <Input
           value={answer}
           onChange={(e) => onChange(e.target.value)}
           disabled={!!result}
           placeholder="填入答案..."
-          className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-primary-500 focus:outline-none"
         />
       </div>
     );
@@ -123,12 +125,12 @@ export default function PracticePage() {
   if (finished && batchScore) {
     return (
       <Card className="mx-auto max-w-lg text-center">
-        <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
-        <h2 className="mt-4 text-2xl font-bold">练习完成!</h2>
-        <p className="mt-2 text-4xl font-bold text-primary-600">{batchScore.score} 分</p>
-        <p className="text-slate-600">
-          正确 {batchScore.correct} / {batchScore.total} 题
-        </p>
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100">
+          <CheckCircle className="h-10 w-10 text-emerald-600" />
+        </div>
+        <h2 className="mt-4 text-2xl font-bold text-slate-900">练习完成!</h2>
+        <p className="mt-2 text-5xl font-bold text-gradient">{batchScore.score}</p>
+        <p className="text-slate-600">正确 {batchScore.correct} / {batchScore.total} 题</p>
         <div className="mt-6 flex justify-center gap-3">
           <Link href={`/scenarios/${id}`}>
             <Button variant="outline">返回场景</Button>

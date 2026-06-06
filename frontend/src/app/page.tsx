@@ -2,15 +2,21 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { ArrowRight, Flame, RefreshCw, Sparkles } from "lucide-react";
+import { ArrowRight, Flame, RefreshCw, Sparkles, Target, Trophy, Zap } from "lucide-react";
 import { api } from "@/lib/api";
 import { getDeviceId } from "@/lib/utils";
-import { Badge, Button, Card, ProgressBar, Spinner } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, PageHeader, ProgressBar, SectionTitle, Spinner, StatCard } from "@/components/ui";
 
 const dailyKindLabel: Record<string, string> = {
   review: "复习场景",
   new: "新词场景",
   challenge: "挑战场景",
+};
+
+const dailyKindVariant: Record<string, "warning" | "brand" | "purple"> = {
+  review: "warning",
+  new: "brand",
+  challenge: "purple",
 };
 
 export default function HomePage() {
@@ -27,90 +33,95 @@ export default function HomePage() {
   });
 
   return (
-    <div className="space-y-8">
-      <section>
-        <h1 className="text-3xl font-bold text-slate-900">今日学习</h1>
-        <p className="mt-2 text-slate-600">
-          场景化学习 CET-4/6 词汇，听说读写一站练习
-        </p>
-      </section>
+    <div className="animate-fade-in space-y-10">
+      <PageHeader
+        badge="每日学习"
+        title="沉浸式场景学英语"
+        description="把 CET-4/6 词汇放进真实语境，听说读写一站练完"
+        action={
+          <Link href="/generate">
+            <Button size="lg">
+              <Sparkles className="mr-2 h-4 w-4" />
+              生成场景
+            </Button>
+          </Link>
+        }
+      />
 
       {progress && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <div className="flex items-center gap-2 text-sm text-slate-500">
-              <Flame className="h-4 w-4 text-orange-500" />
-              连续学习
-            </div>
-            <p className="mt-2 text-2xl font-bold">{progress.current_streak} 天</p>
-          </Card>
-          <Card>
-            <div className="text-sm text-slate-500">待复习</div>
-            <p className="mt-2 text-2xl font-bold text-amber-600">{progress.due_review}</p>
-          </Card>
-          <Card>
-            <div className="text-sm text-slate-500">已掌握</div>
-            <p className="mt-2 text-2xl font-bold text-green-600">{progress.mastered_words}</p>
-          </Card>
-          <Card>
-            <div className="text-sm text-slate-500">掌握率</div>
-            <p className="mt-2 text-2xl font-bold">{progress.mastery_rate}%</p>
-            <div className="mt-2">
-              <ProgressBar value={progress.mastery_rate} />
-            </div>
-          </Card>
+          <StatCard label="连续学习" value={progress.current_streak} suffix="天" icon={Flame} tone="amber" />
+          <StatCard label="待复习" value={progress.due_review} icon={Zap} tone="violet" />
+          <StatCard label="已掌握" value={progress.mastered_words} icon={Trophy} tone="emerald" />
+          <StatCard label="掌握率" value={`${progress.mastery_rate}`} suffix="%" icon={Target} tone="brand">
+            <ProgressBar value={progress.mastery_rate} />
+          </StatCard>
         </div>
       )}
 
       <section>
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold">今日场景</h2>
-          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-            <RefreshCw className={`mr-1 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-            刷新
-          </Button>
-        </div>
+        <SectionTitle
+          title="今日场景"
+          action={
+            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+              <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+              刷新
+            </Button>
+          }
+        />
 
         {isLoading ? (
-          <Spinner />
+          <Spinner label="正在加载今日场景..." />
         ) : daily?.items.length ? (
           <div className="grid gap-4 md:grid-cols-3">
-            {daily.items.map((s) => (
-              <Link key={s.id} href={`/scenarios/${s.id}`}>
-                <Card className="h-full transition-shadow hover:shadow-md">
-                  <div className="flex items-start justify-between">
-                    <Badge variant={s.daily_kind === "challenge" ? "purple" : "default"}>
+            {daily.items.map((s, i) => (
+              <Link key={s.id} href={`/scenarios/${s.id}`} className="block animate-slide-up" style={{ animationDelay: `${i * 80}ms` }}>
+                <Card hover className="group h-full">
+                  <div className="flex items-start justify-between gap-2">
+                    <Badge variant={dailyKindVariant[s.daily_kind || ""] || "outline"}>
                       {dailyKindLabel[s.daily_kind || ""] || s.theme}
                     </Badge>
-                    <Badge>{s.level.toUpperCase()}</Badge>
+                    <Badge variant="outline">{s.level.toUpperCase()}</Badge>
                   </div>
-                  <h3 className="mt-3 font-semibold">{s.title}</h3>
-                  <p className="mt-1 text-sm text-slate-500">{s.word_count} 个目标词</p>
-                  <div className="mt-4 flex items-center text-sm text-primary-600">
-                    开始学习 <ArrowRight className="ml-1 h-4 w-4" />
+                  <h3 className="mt-4 text-lg font-bold text-slate-900 group-hover:text-brand-700 transition-colors">
+                    {s.title}
+                  </h3>
+                  <p className="mt-2 text-sm text-slate-500">{s.word_count} 个目标词 · {s.scenario_type}</p>
+                  <div className="mt-5 flex items-center text-sm font-semibold text-brand-600">
+                    开始学习
+                    <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </div>
                 </Card>
               </Link>
             ))}
           </div>
         ) : (
-          <Card className="text-center">
-            <p className="text-slate-600">暂无今日场景，点击下方按钮生成</p>
-          </Card>
+          <EmptyState
+            title="还没有今日场景"
+            description="点击下方按钮，AI 会根据你的学习进度生成专属场景"
+            action={
+              <Link href="/generate">
+                <Button>立即生成</Button>
+              </Link>
+            }
+          />
         )}
       </section>
 
-      <Card className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h3 className="font-semibold">手动生成场景</h3>
-          <p className="text-sm text-slate-500">选择主题和词汇，AI 为你定制学习场景</p>
+      <Card className="relative overflow-hidden border-brand-100 bg-gradient-to-br from-brand-50/80 via-white to-accent-400/10">
+        <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-brand-200/30 blur-2xl" />
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-slate-900">自定义学习场景</h3>
+            <p className="mt-1 text-sm text-slate-600">自选主题、级别和词汇，AI 为你生成专属阅读材料与练习</p>
+          </div>
+          <Link href="/generate">
+            <Button variant="secondary" size="lg">
+              <Sparkles className="mr-2 h-4 w-4" />
+              手动生成
+            </Button>
+          </Link>
         </div>
-        <Link href="/generate">
-          <Button>
-            <Sparkles className="mr-2 h-4 w-4" />
-            生成场景
-          </Button>
-        </Link>
       </Card>
     </div>
   );
