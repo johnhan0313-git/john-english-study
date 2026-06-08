@@ -6,7 +6,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import common, exercises, progress, reference, scenario_complete, scenarios, words
+from app.api import common, conversations, exercises, progress, reference, scenario_complete, scenarios, words
 from app.config import get_settings
 from app.database import SessionLocal, init_db
 from app.services.vocabulary.import_words import import_words
@@ -88,6 +88,7 @@ def create_app() -> FastAPI:
     app.include_router(exercises.router, prefix="/api")
     app.include_router(progress.router, prefix="/api")
     app.include_router(reference.router, prefix="/api")
+    app.include_router(conversations.router, prefix="/api")
     return app
 
 

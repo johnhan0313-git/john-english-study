@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Protocol
+from typing import Any, AsyncIterator, Protocol
 
 
 class AIProvider(Protocol):
@@ -17,3 +17,5 @@ class AIProvider(Protocol):
     async def speech_to_text(self, audio: bytes, filename: str = "audio.webm") -> str: ...
 
     async def chat_text(self, messages: list[dict[str, str]]) -> str: ...
+
+    async def chat_stream(self, messages: list[dict[str, str]]) -> AsyncIterator[str]: ...

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import re
+from collections.abc import AsyncIterator
 from typing import Any
 
 import httpx
@@ -85,6 +87,43 @@ class OpenAICompatibleProvider:
             if resp.status_code != 200:
                 raise AIProviderError(f"LLM request failed: {resp.status_code} {resp.text}")
             return resp.json()["choices"][0]["message"]["content"]
+
+    async def chat_stream(self, messages: list[dict[str, str]]) -> AsyncIterator[str]:
+        payload = {"model": self.model, "messages": messages, "temperature": 0.5, "stream": True}
+        yielded = False
+        try:
+            async with httpx.AsyncClient(timeout=120.0) as client:
+                async with client.stream(
+                    "POST",
+                    f"{self.base_url}/chat/completions",
+                    headers=self._headers(),
+                    json=payload,
+                ) as resp:
+                    if resp.status_code != 200:
+                        body = await resp.aread()
+                        raise AIProviderError(f"LLM stream failed: {resp.status_code} {body.decode()}")
+                    async for line in resp.aiter_lines():
+                        if not line.startswith("data: "):
+                            continue
+                        data = line[6:].strip()
+                        if data == "[DONE]":
+                            break
+                        try:
+                            chunk = json.loads(data)
+                        except json.JSONDecodeError:
+                            continue
+                        delta = chunk.get("choices", [{}])[0].get("delta", {})
+                        content = delta.get("content")
+                        if content:
+                            yielded = True
+                            yield content
+        except AIProviderError:
+            yielded = False
+
+        if not yielded:
+            text = await self.chat_text(messages)
+            for char in text:
+                yield char
 
     async def text_to_speech(self, text: str, voice: str | None = None) -> bytes:
         voice_name = voice or self.config.voice or "alloy"
@@ -172,7 +211,28 @@ class MockAIProvider:
         }
 
     async def chat_text(self, messages: list[dict[str, str]]) -> str:
-        return "Good writing overall. Consider using more target vocabulary."
+        user_msgs = [m["content"] for m in messages if m["role"] == "user"]
+        last = user_msgs[-1] if user_msgs else ""
+        if "Start the role-play" in last:
+            return (
+                "Good morning! Welcome to the airport check-in desk. "
+                "May I help you with your reservation today? (您好，请问需要办理什么？)"
+            )
+        if any("\u4e00" <= c <= "\u9fff" for c in last):
+            return (
+                "I understand. Try saying: \"I'd like to check my schedule, please.\" "
+                "Could you tell me your flight number?"
+            )
+        return (
+            "That's helpful, thank you. Could you tell me more about your travel plans? "
+            "We should confirm your schedule and luggage details."
+        )
+
+    async def chat_stream(self, messages: list[dict[str, str]]) -> AsyncIterator[str]:
+        text = await self.chat_text(messages)
+        for char in text:
+            yield char
+            await asyncio.sleep(0.015)
 
     async def text_to_speech(self, text: str, voice: str | None = None) -> bytes:
         return b""

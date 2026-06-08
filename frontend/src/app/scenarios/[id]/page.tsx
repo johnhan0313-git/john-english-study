@@ -1,10 +1,10 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import { Headphones, Mic, BookOpen, PenLine, Play, Pause } from "lucide-react";
+import { Headphones, MessageCircle, Mic, BookOpen, PenLine, Play, Pause } from "lucide-react";
 import { api } from "@/lib/api";
 import { getDeviceId } from "@/lib/utils";
 import { Badge, Button, Card, Spinner, Tabs, Textarea } from "@/components/ui";
@@ -73,6 +73,7 @@ function WordDefinitionPanel({
 
 export default function ScenarioDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const deviceId = getDeviceId();
   const [tab, setTab] = useState("read");
   const [playing, setPlaying] = useState(false);
@@ -89,6 +90,16 @@ export default function ScenarioDetailPage() {
   const { data: scenario, isLoading } = useQuery({
     queryKey: ["scenario", id],
     queryFn: () => api.getScenario(Number(id)),
+  });
+
+  const startChat = useMutation({
+    mutationFn: () =>
+      api.createConversation({
+        device_id: deviceId,
+        scenario_id: Number(id),
+        level: scenario?.level ?? "cet4",
+      }),
+    onSuccess: (data) => router.push(`/chat/${data.id}`),
   });
 
   const toggleAudio = () => {
@@ -158,9 +169,20 @@ export default function ScenarioDetailPage() {
           <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">{scenario.title}</h1>
           <p className="mt-2 text-slate-600">{scenario.content.summary_zh}</p>
         </div>
-        <Link href={`/scenarios/${id}/practice`}>
-          <Button size="lg">开始练习</Button>
-        </Link>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button
+            size="lg"
+            variant="outline"
+            disabled={startChat.isPending}
+            onClick={() => startChat.mutate()}
+          >
+            <MessageCircle className="mr-2 h-4 w-4" />
+            1v1 对话
+          </Button>
+          <Link href={`/scenarios/${id}/practice`}>
+            <Button size="lg">开始练习</Button>
+          </Link>
+        </div>
       </div>
 
       <Tabs

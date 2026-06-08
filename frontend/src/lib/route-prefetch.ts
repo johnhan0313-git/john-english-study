@@ -8,6 +8,8 @@ export const NAV_ROUTES = [
   "/",
   "/words",
   "/scenarios",
+  "/chat",
+  "/chat/new",
   "/generate",
   "/reference/phonetics",
   "/reference/grammar",
@@ -45,6 +47,17 @@ export function prefetchRouteData(qc: QueryClient, href: string) {
       void qc.prefetchQuery({
         queryKey: ["scenarios", deviceId],
         queryFn: () => api.listScenarios(deviceId),
+      });
+      break;
+    case "/chat":
+    case "/chat/new":
+      void qc.prefetchQuery({
+        queryKey: ["conversations", deviceId],
+        queryFn: () => api.listConversations(deviceId),
+      });
+      void qc.prefetchQuery({
+        queryKey: ["groups"],
+        queryFn: () => api.getWordGroups(),
       });
       break;
     case "/generate":
