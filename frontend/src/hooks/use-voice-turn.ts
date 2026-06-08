@@ -50,31 +50,35 @@ export function useVoiceTurn({
       const audio = ensureAudio();
       stopAnalysis();
       setPlaying(true);
-      audio.src = url;
+      setError(null);
       audio.onended = () => {
         setPlaying(false);
         stopAnalysis();
       };
+      audio.onerror = () => {
+        setPlaying(false);
+        stopAnalysis();
+        setError("语音加载失败，请检查后端是否已启动");
+      };
       audio.onplay = () => connect(audio);
+      audio.src = url;
       void audio.play().catch(() => {
         setPlaying(false);
         stopAnalysis();
+        setError("无法播放语音，请允许浏览器自动播放");
       });
     },
     [connect, ensureAudio, stopAnalysis],
   );
 
-  const unlockAndStart = useCallback(async () => {
-    const audio = ensureAudio();
-    await audio.play().catch(() => undefined);
-    audio.pause();
-    audio.currentTime = 0;
-    setStarted(true);
-  }, [ensureAudio]);
-
   const playOpeningIfNeeded = useCallback(
-    (messages: { id: number; role: string; content: string }[] | undefined, status: string) => {
-      if (!autoPlayOpening || !started || !messages?.length || openingPlayedRef.current) return;
+    (
+      messages: { id: number; role: string; content: string }[] | undefined,
+      status: string,
+      options?: { force?: boolean },
+    ) => {
+      if (!autoPlayOpening || !messages?.length || openingPlayedRef.current) return;
+      if (!options?.force && !started) return;
       const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
       if (!lastAssistant) return;
       openingPlayedRef.current = true;
@@ -84,6 +88,24 @@ export function useVoiceTurn({
       }
     },
     [autoPlayOpening, deviceId, playAudio, sessionId, started],
+  );
+
+  const unlockAndStart = useCallback(
+    async (
+      messages?: { id: number; role: string; content: string }[],
+      status?: string,
+    ) => {
+      const audio = ensureAudio();
+      await audio.play().catch(() => undefined);
+      audio.pause();
+      audio.currentTime = 0;
+      setStarted(true);
+      setError(null);
+      if (messages?.length) {
+        playOpeningIfNeeded(messages, status ?? "active", { force: true });
+      }
+    },
+    [ensureAudio, playOpeningIfNeeded],
   );
 
   const startRecording = useCallback(async () => {

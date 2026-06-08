@@ -29,6 +29,7 @@ export default function ChatImmersivePage() {
   });
 
   useEffect(() => {
+    if (!voice.started) return;
     voice.playOpeningIfNeeded(data?.messages, data?.status ?? "active");
   }, [data?.messages, data?.status, voice.playOpeningIfNeeded, voice.started]);
 
@@ -56,7 +57,11 @@ export default function ChatImmersivePage() {
             与 <span className="font-semibold text-white">{visuals.roleLabel}</span> 在
             {visuals.ambientLabel} 场景中练习英语。角色会根据语音实时口型动画（非真人录像）。
           </p>
-          <Button size="lg" className="w-full" onClick={() => void voice.unlockAndStart()}>
+          <Button
+            size="lg"
+            className="w-full"
+            onClick={() => void voice.unlockAndStart(data.messages, data.status)}
+          >
             开始沉浸对话
           </Button>
           <Link href={`/chat/${id}`} className="block text-sm text-white/70 hover:text-white">
