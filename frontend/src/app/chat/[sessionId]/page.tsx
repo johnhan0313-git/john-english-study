@@ -2,16 +2,15 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Phone, Send, Square } from "lucide-react";
+import { Loader2, Phone, Send, Sparkles, Square } from "lucide-react";
 import { api, ConversationMessage } from "@/lib/api";
 import { cn, getDeviceId } from "@/lib/utils";
 import { Alert, Badge, Button, Card, Spinner } from "@/components/ui";
 
 export default function ChatSessionPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
-  const router = useRouter();
   const deviceId = getDeviceId();
   const queryClient = useQueryClient();
   const id = Number(sessionId);
@@ -109,6 +108,12 @@ export default function ChatSessionPage() {
                   <Button variant="outline" size="sm" disabled={ending || streaming}>
                     <Phone className="mr-1.5 h-4 w-4" />
                     电话模式
+                  </Button>
+                </Link>
+                <Link href={`/chat/${id}/immersive`}>
+                  <Button variant="outline" size="sm" disabled={ending || streaming}>
+                    <Sparkles className="mr-1.5 h-4 w-4" />
+                    沉浸模式
                   </Button>
                 </Link>
                 <Button

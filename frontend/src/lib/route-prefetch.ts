@@ -120,6 +120,9 @@ export function prefetchAllRoutes(qc: QueryClient, router: AppRouter) {
 export function prefetchNavTarget(qc: QueryClient, router: AppRouter, href: string) {
   router.prefetch(href);
   prefetchRouteData(qc, href);
+  if (href.startsWith("/chat")) {
+    prefetchRouteData(qc, "/chat");
+  }
   if (href.startsWith("/reference")) {
     prefetchRouteData(qc, "/reference/phonetics");
     prefetchRouteData(qc, "/reference/grammar");
