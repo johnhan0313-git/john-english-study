@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Phone, Send, Square } from "lucide-react";
+import { Loader2, Phone, Send, Square } from "lucide-react";
 import { api, ConversationMessage } from "@/lib/api";
 import { cn, getDeviceId } from "@/lib/utils";
 import { Alert, Badge, Button, Card, Spinner } from "@/components/ui";
@@ -21,6 +21,7 @@ export default function ChatSessionPage() {
   const [streamContent, setStreamContent] = useState("");
   const [showChineseHint, setShowChineseHint] = useState(true);
   const [summary, setSummary] = useState<Awaited<ReturnType<typeof api.endConversation>> | null>(null);
+  const [ending, setEnding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -31,7 +32,7 @@ export default function ChatSessionPage() {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [data?.messages, streamContent]);
+  }, [data?.messages, streamContent, ending]);
 
   const handleSend = async () => {
     const text = input.trim();
@@ -72,10 +73,19 @@ export default function ChatSessionPage() {
   };
 
   const handleEnd = async () => {
-    const result = await api.endConversation(id, deviceId);
-    setSummary(result);
-    await refetch();
-    queryClient.invalidateQueries({ queryKey: ["conversations", deviceId] });
+    if (ending) return;
+    setEnding(true);
+    setError(null);
+    try {
+      const result = await api.endConversation(id, deviceId);
+      setSummary(result);
+      await refetch();
+      queryClient.invalidateQueries({ queryKey: ["conversations", deviceId] });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "生成总结失败，请重试");
+    } finally {
+      setEnding(false);
+    }
   };
 
   if (isLoading || !data) return <Spinner label="加载对话..." />;
@@ -96,14 +106,28 @@ export default function ChatSessionPage() {
             {data.status === "active" && (
               <>
                 <Link href={`/chat/${id}/call`}>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" disabled={ending || streaming}>
                     <Phone className="mr-1.5 h-4 w-4" />
                     电话模式
                   </Button>
                 </Link>
-                <Button variant="outline" size="sm" onClick={() => void handleEnd()}>
-                  <Square className="mr-1.5 h-4 w-4" />
-                  结束对话
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={ending || streaming}
+                  onClick={() => void handleEnd()}
+                >
+                  {ending ? (
+                    <>
+                      <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                      生成总结中...
+                    </>
+                  ) : (
+                    <>
+                      <Square className="mr-1.5 h-4 w-4" />
+                      结束对话
+                    </>
+                  )}
                 </Button>
               </>
             )}
@@ -120,7 +144,7 @@ export default function ChatSessionPage() {
 
       {error && <Alert variant="warning">{error}</Alert>}
 
-      <Card className="flex-1 overflow-y-auto space-y-3 p-4">
+      <Card className={cn("relative flex-1 overflow-y-auto space-y-3 p-4", ending && "opacity-60")}>
         {data.messages.map((msg) => (
           <div
             key={msg.id}
@@ -149,6 +173,22 @@ export default function ChatSessionPage() {
         <div ref={bottomRef} />
       </Card>
 
+      {ending && (
+        <Card className="shrink-0 border-brand-200 bg-brand-50/90">
+          <div className="flex items-start gap-4">
+            <div className="relative mt-0.5 h-10 w-10 shrink-0">
+              <div className="absolute inset-0 animate-spin rounded-full border-2 border-brand-100 border-t-brand-600" />
+              <div className="absolute inset-1 animate-pulse rounded-full bg-white/80" />
+            </div>
+            <div className="min-w-0 space-y-1">
+              <p className="font-medium text-brand-900">正在生成学习总结</p>
+              <p className="text-sm text-brand-700">AI 正在回顾本轮对话，分析用词与表达，请稍候…</p>
+              <p className="text-xs text-brand-600/80">通常需要 5–15 秒，请勿关闭页面</p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {summary && (
         <Card className="shrink-0 space-y-2 border-emerald-200 bg-emerald-50/80">
           <h3 className="font-semibold text-emerald-900">学习总结</h3>
@@ -165,7 +205,7 @@ export default function ChatSessionPage() {
         </Card>
       )}
 
-      {data.status === "active" && (
+      {data.status === "active" && !ending && (
         <Card className="shrink-0 space-y-3">
           <label className="flex items-center gap-2 text-xs text-slate-500">
             <input
