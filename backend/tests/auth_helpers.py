@@ -11,15 +11,15 @@ def login_user(
     cap = client.get("/api/auth/captcha")
     assert cap.status_code == 200, cap.text
     cap_data = cap.json()
-    captcha_answer = cap_data.get("dev_answer")
-    assert captcha_answer, "dev_answer required in test mode"
+    captcha_x = cap_data.get("dev_answer")
+    assert captcha_x is not None, "dev_answer required in test mode"
 
     send = client.post(
         "/api/auth/email/send-code",
         json={
             "email": email,
             "captcha_id": cap_data["captcha_id"],
-            "captcha_code": captcha_answer,
+            "captcha_x": int(captcha_x),
         },
     )
     assert send.status_code == 200, send.text
@@ -31,7 +31,6 @@ def login_user(
     return login.json()
 
 
-# Backward-compatible alias for existing tests
 register_user = login_user
 
 

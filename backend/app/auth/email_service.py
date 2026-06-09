@@ -9,6 +9,14 @@ from app.config import Settings
 logger = logging.getLogger(__name__)
 
 
+class EmailDeliveryError(RuntimeError):
+    pass
+
+
+def _use_ssl(settings: Settings) -> bool:
+    return settings.smtp_use_ssl or settings.smtp_port == 465
+
+
 def send_login_code(settings: Settings, email: str, code: str) -> None:
     subject = f"{settings.app_name} 登录验证码"
     body = (
@@ -27,11 +35,23 @@ def send_login_code(settings: Settings, email: str, code: str) -> None:
     message["To"] = email
     message.set_content(body)
 
-    with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=20) as smtp:
-        if settings.smtp_use_tls:
-            smtp.starttls()
-        if settings.smtp_user:
-            smtp.login(settings.smtp_user, settings.smtp_password)
-        smtp.send_message(message)
+    try:
+        if _use_ssl(settings):
+            with smtplib.SMTP_SSL(settings.smtp_host, settings.smtp_port, timeout=30) as smtp:
+                if settings.smtp_user:
+                    smtp.login(settings.smtp_user, settings.smtp_password)
+                smtp.send_message(message)
+        else:
+            with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=30) as smtp:
+                if settings.smtp_use_tls:
+                    smtp.starttls()
+                if settings.smtp_user:
+                    smtp.login(settings.smtp_user, settings.smtp_password)
+                smtp.send_message(message)
+    except (OSError, smtplib.SMTPException) as exc:
+        logger.exception("Failed to send login code email to %s", email)
+        raise EmailDeliveryError(
+            "邮件发送失败，请检查 SMTP 配置（163 邮箱建议使用端口 465 + SSL）"
+        ) from exc
 
     logger.info("Login code email sent to %s", email)

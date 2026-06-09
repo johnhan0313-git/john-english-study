@@ -1,17 +1,35 @@
 from __future__ import annotations
 
+import hashlib
 import random
 import secrets
-import string
 import threading
 import time
 from dataclasses import dataclass
+
+WIDTH = 300
+HEIGHT = 150
+PIECE_W = 46
+PIECE_H = 46
+TOLERANCE = 6
 
 
 @dataclass(frozen=True)
 class CaptchaChallenge:
     answer: str
     expires_at: float
+
+
+@dataclass(frozen=True)
+class SliderCaptchaPayload:
+    captcha_id: str
+    width: int
+    height: int
+    puzzle_y: int
+    piece_width: int
+    background_svg: str
+    piece_svg: str
+    target_x: int
 
 
 _lock = threading.Lock()
@@ -24,47 +42,91 @@ def _purge_expired(now: float) -> None:
         _captchas.pop(key, None)
 
 
-def create_captcha(*, ttl_seconds: int = 300) -> tuple[str, str, str]:
-    answer = "".join(random.choices(string.ascii_uppercase + string.digits, k=4))
+def _seed_from_id(captcha_id: str) -> int:
+    digest = hashlib.sha256(captcha_id.encode()).hexdigest()
+    return int(digest[:8], 16)
+
+
+def _render_scene(rng: random.Random, width: int, height: int) -> str:
+    parts: list[str] = []
+    hue = rng.randint(200, 230)
+    parts.append(
+        f'<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">'
+        f'<stop offset="0%" stop-color="hsl({hue},55%,88%)"/>'
+        f'<stop offset="100%" stop-color="hsl({hue + 20},45%,72%)"/>'
+        f"</linearGradient></defs>"
+    )
+    parts.append(f'<rect width="{width}" height="{height}" fill="url(#bg)"/>')
+
+    for _ in range(22):
+        cx = rng.randint(-10, width + 10)
+        cy = rng.randint(-10, height + 10)
+        r = rng.randint(6, 28)
+        color = f"hsl({rng.randint(180, 260)},{rng.randint(35, 70)}%,{rng.randint(45, 65)}%)"
+        parts.append(f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="{color}" opacity="0.55"/>')
+
+    for _ in range(10):
+        x1, y1 = rng.randint(0, width), rng.randint(0, height)
+        x2, y2 = rng.randint(0, width), rng.randint(0, height)
+        parts.append(
+            f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="#64748b" stroke-width="1.5" opacity="0.35"/>'
+        )
+
+    return "".join(parts)
+
+
+def create_captcha(*, ttl_seconds: int = 300) -> SliderCaptchaPayload:
     captcha_id = secrets.token_urlsafe(16)
+    target_x = random.randint(55, WIDTH - PIECE_W - 55)
+    target_y = random.randint(25, HEIGHT - PIECE_H - 25)
     now = time.time()
+
+    seed = _seed_from_id(captcha_id)
+    rng = random.Random(seed)
+    scene = _render_scene(rng, WIDTH, HEIGHT)
+
+    slot = (
+        f'<rect x="{target_x}" y="{target_y}" width="{PIECE_W}" height="{PIECE_H}" '
+        f'fill="rgba(15,23,42,0.18)" rx="6"/>'
+        f'<rect x="{target_x}" y="{target_y}" width="{PIECE_W}" height="{PIECE_H}" '
+        f'fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="2" stroke-dasharray="5 4" rx="6"/>'
+    )
+    background_svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{WIDTH}" height="{HEIGHT}" '
+        f'viewBox="0 0 {WIDTH} {HEIGHT}">{scene}{slot}</svg>'
+    )
+
+    piece_svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{PIECE_W}" height="{PIECE_H}" '
+        f'viewBox="0 0 {PIECE_W} {PIECE_H}">'
+        f'<defs><clipPath id="clip"><rect width="{PIECE_W}" height="{PIECE_H}" rx="6"/></clipPath></defs>'
+        f'<g clip-path="url(#clip)" transform="translate({-target_x}, {-target_y})">{scene}</g>'
+        f'<rect width="{PIECE_W}" height="{PIECE_H}" fill="none" stroke="#fff" stroke-width="2" rx="6"/>'
+        f"</svg>"
+    )
+
     with _lock:
         _purge_expired(now)
-        _captchas[captcha_id] = CaptchaChallenge(answer=answer.upper(), expires_at=now + ttl_seconds)
+        _captchas[captcha_id] = CaptchaChallenge(answer=str(target_x), expires_at=now + ttl_seconds)
 
-    svg = _render_svg(answer)
-    return captcha_id, svg, answer
+    return SliderCaptchaPayload(
+        captcha_id=captcha_id,
+        width=WIDTH,
+        height=HEIGHT,
+        puzzle_y=target_y,
+        piece_width=PIECE_W,
+        background_svg=background_svg,
+        piece_svg=piece_svg,
+        target_x=target_x,
+    )
 
 
-def verify_captcha(captcha_id: str, user_input: str) -> bool:
+def verify_captcha(captcha_id: str, user_x: int) -> bool:
     now = time.time()
     with _lock:
         _purge_expired(now)
         challenge = _captchas.pop(captcha_id, None)
     if not challenge or challenge.expires_at <= now:
         return False
-    return challenge.answer == user_input.strip().upper()
-
-
-def _render_svg(text: str) -> str:
-    chars = []
-    for index, ch in enumerate(text):
-        x = 18 + index * 22
-        y = 28 + random.randint(-4, 4)
-        rotate = random.randint(-25, 25)
-        color = f"rgb({random.randint(30, 120)},{random.randint(30, 120)},{random.randint(30, 120)})"
-        chars.append(
-            f'<text x="{x}" y="{y}" font-size="22" font-family="monospace" fill="{color}" '
-            f'transform="rotate({rotate} {x} {y})">{ch}</text>'
-        )
-    noise = "".join(
-        f'<line x1="{random.randint(0,120)}" y1="{random.randint(0,40)}" '
-        f'x2="{random.randint(0,120)}" y2="{random.randint(0,40)}" stroke="#cbd5e1" stroke-width="1"/>'
-        for _ in range(6)
-    )
-    return (
-        '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="40" viewBox="0 0 120 40">'
-        f'<rect width="120" height="40" fill="#f8fafc"/>'
-        f"{noise}{''.join(chars)}"
-        "</svg>"
-    )
+    target_x = int(challenge.answer)
+    return abs(user_x - target_x) <= TOLERANCE

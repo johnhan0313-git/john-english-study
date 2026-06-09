@@ -25,14 +25,19 @@ class TokenResponse(BaseModel):
 
 class CaptchaResponse(BaseModel):
     captcha_id: str
-    captcha_svg: str
+    width: int
+    height: int
+    puzzle_y: int
+    piece_width: int
+    background_svg: str
+    piece_svg: str
     dev_answer: str | None = None
 
 
 class SendEmailCodeRequest(BaseModel):
     email: str = Field(min_length=3, max_length=128)
     captcha_id: str
-    captcha_code: str = Field(min_length=1, max_length=16)
+    captcha_x: int = Field(ge=0, le=500)
 
     @field_validator("email")
     @classmethod

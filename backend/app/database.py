@@ -85,8 +85,11 @@ def _needs_auth_migration(engine: Engine) -> bool:
     insp = inspect(engine)
     if not insp.has_table("users"):
         return False
-    user_cols = {c["name"] for c in insp.get_columns("users")}
+    user_cols = {c["name"]: c for c in insp.get_columns("users")}
     if "display_name" not in user_cols:
+        return True
+    password_col = user_cols.get("hashed_password")
+    if password_col and not password_col.get("nullable", True):
         return True
     if insp.has_table("user_word_progress"):
         progress_cols = {c["name"] for c in insp.get_columns("user_word_progress")}

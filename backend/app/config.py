@@ -63,6 +63,7 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     smtp_from: str = ""
     smtp_use_tls: bool = True
+    smtp_use_ssl: bool = False
     email_code_expire_minutes: int = 10
     email_code_cooldown_seconds: int = 60
     auth_expose_codes: bool = False

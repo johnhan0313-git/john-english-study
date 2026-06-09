@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
+import { SliderCaptcha } from "@/components/auth/slider-captcha";
 import { Button, Card, Input, PageHeader } from "@/components/ui";
 import { useAuth } from "@/contexts/auth-context";
-import { authApi, wechatAuthorizeHref } from "@/lib/auth/api";
+import { authApi, wechatAuthorizeHref, type CaptchaData } from "@/lib/auth/api";
 import { ApiError } from "@/lib/api";
 
 function parseApiError(err: unknown, fallback: string): string {
@@ -27,10 +27,10 @@ export default function LoginPage() {
   const next = searchParams.get("next") || "/";
 
   const [email, setEmail] = useState("");
-  const [captchaCode, setCaptchaCode] = useState("");
   const [emailCode, setEmailCode] = useState("");
-  const [captchaId, setCaptchaId] = useState("");
-  const [captchaSvg, setCaptchaSvg] = useState("");
+  const [captcha, setCaptcha] = useState<CaptchaData | null>(null);
+  const [sliderX, setSliderX] = useState(0);
+  const [codeSent, setCodeSent] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -38,9 +38,8 @@ export default function LoginPage() {
 
   const loadCaptcha = useCallback(async () => {
     const data = await authApi.getCaptcha();
-    setCaptchaId(data.captcha_id);
-    setCaptchaSvg(data.captcha_svg);
-    if (data.dev_answer) setCaptchaCode(data.dev_answer);
+    setCaptcha(data);
+    setSliderX(data.dev_answer ? Number(data.dev_answer) : 0);
   }, []);
 
   useEffect(() => {
@@ -59,27 +58,34 @@ export default function LoginPage() {
     return () => window.clearInterval(timer);
   }, [cooldown]);
 
+  useEffect(() => {
+    if (codeSent && cooldown === 0) {
+      loadCaptcha()
+        .then(() => setCodeSent(false))
+        .catch(() => setError("无法刷新验证码"));
+    }
+  }, [codeSent, cooldown, loadCaptcha]);
+
   const onSendCode = async () => {
     setError("");
     if (!email.trim()) {
       setError("请输入邮箱");
       return;
     }
-    if (!captchaCode.trim()) {
-      setError("请输入图形验证码");
+    if (!captcha) {
+      setError("验证码加载中，请稍候");
       return;
     }
     setSendingCode(true);
     try {
       const result = await authApi.sendEmailCode({
         email: email.trim(),
-        captcha_id: captchaId,
-        captcha_code: captchaCode.trim(),
+        captcha_id: captcha.captcha_id,
+        captcha_x: sliderX,
       });
       setCooldown(result.cooldown_seconds || 60);
       if (result.dev_code) setEmailCode(result.dev_code);
-      await loadCaptcha();
-      setCaptchaCode("");
+      setCodeSent(true);
     } catch (err) {
       setError(parseApiError(err, "发送验证码失败"));
       await loadCaptcha();
@@ -123,26 +129,18 @@ export default function LoginPage() {
             />
           </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">图形验证码</label>
-            <div className="flex items-center gap-2">
-              <Input
-                value={captchaCode}
-                onChange={(e) => setCaptchaCode(e.target.value)}
-                required
-                autoComplete="off"
-                placeholder="输入右侧字符"
-                className="flex-1"
-              />
-              <button
-                type="button"
-                onClick={() => loadCaptcha().catch(() => setError("无法刷新验证码"))}
-                className="shrink-0 overflow-hidden rounded border border-slate-200 bg-white"
-                title="点击刷新"
-                dangerouslySetInnerHTML={{ __html: captchaSvg }}
-              />
-            </div>
-          </div>
+          {!codeSent && captcha && (
+            <SliderCaptcha
+              data={captcha}
+              value={sliderX}
+              onChange={setSliderX}
+              onRefresh={() => loadCaptcha().catch(() => setError("无法刷新验证码"))}
+            />
+          )}
+
+          {codeSent && (
+            <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">验证码已发送，请查收邮件</p>
+          )}
 
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700">邮箱验证码</label>
@@ -161,7 +159,7 @@ export default function LoginPage() {
                 disabled={sendingCode || cooldown > 0}
                 onClick={onSendCode}
               >
-                {cooldown > 0 ? `${cooldown}s` : sendingCode ? "发送中..." : "获取验证码"}
+                {cooldown > 0 ? `${cooldown}s` : sendingCode ? "发送中..." : codeSent ? "重新发送" : "获取验证码"}
               </Button>
             </div>
           </div>

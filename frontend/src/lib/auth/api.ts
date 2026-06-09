@@ -4,7 +4,12 @@ import type { AuthResponse, AuthUser, MergeDeviceResult } from "./types";
 
 export interface CaptchaData {
   captcha_id: string;
-  captcha_svg: string;
+  width: number;
+  height: number;
+  puzzle_y: number;
+  piece_width: number;
+  background_svg: string;
+  piece_svg: string;
   dev_answer?: string | null;
 }
 
@@ -17,7 +22,7 @@ export interface SendCodeResult {
 export const authApi = {
   getCaptcha: () => request<CaptchaData>("/auth/captcha"),
 
-  sendEmailCode: (body: { email: string; captcha_id: string; captcha_code: string }) =>
+  sendEmailCode: (body: { email: string; captcha_id: string; captcha_x: number }) =>
     request<SendCodeResult>("/auth/email/send-code", {
       method: "POST",
       body: JSON.stringify(body),
@@ -25,8 +30,6 @@ export const authApi = {
 
   emailLogin: (body: { email: string; code: string }) =>
     request<AuthResponse>("/auth/email/login", { method: "POST", body: JSON.stringify(body) }),
-
-  getWeChatAuthorizeUrl: () => request<{ authorize_url: string }>("/auth/wechat/authorize"),
 
   me: () => request<AuthUser>("/auth/me"),
 

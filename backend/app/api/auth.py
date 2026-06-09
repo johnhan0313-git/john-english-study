@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.auth.captcha import create_captcha, verify_captcha
 from app.auth.dependencies import get_current_user
 from app.auth.email_codes import can_send_code, create_email_code, verify_email_code
-from app.auth.email_service import send_login_code
+from app.auth.email_service import EmailDeliveryError, send_login_code
 from app.auth.jwt import create_access_token
 from app.auth.merge import merge_device_to_user
 from app.auth.users import get_or_create_user_by_email, get_or_create_user_by_wechat, normalize_email
@@ -68,11 +68,16 @@ def _should_expose_dev_secrets(settings: Settings) -> bool:
 
 @router.get("/captcha", response_model=CaptchaResponse)
 def get_captcha(settings: Settings = Depends(get_settings)):
-    captcha_id, svg, answer = create_captcha()
+    payload = create_captcha()
     return CaptchaResponse(
-        captcha_id=captcha_id,
-        captcha_svg=svg,
-        dev_answer=answer if _should_expose_dev_secrets(settings) else None,
+        captcha_id=payload.captcha_id,
+        width=payload.width,
+        height=payload.height,
+        puzzle_y=payload.puzzle_y,
+        piece_width=payload.piece_width,
+        background_svg=payload.background_svg,
+        piece_svg=payload.piece_svg,
+        dev_answer=str(payload.target_x) if _should_expose_dev_secrets(settings) else None,
     )
 
 
@@ -81,8 +86,8 @@ def send_email_code(
     body: SendEmailCodeRequest,
     settings: Settings = Depends(get_settings),
 ):
-    if not verify_captcha(body.captcha_id, body.captcha_code):
-        raise HTTPException(status_code=400, detail="Invalid or expired captcha")
+    if not verify_captcha(body.captcha_id, body.captcha_x):
+        raise HTTPException(status_code=400, detail="拼图验证失败，请重试")
 
     email = normalize_email(body.email)
     if not settings.testing:
@@ -94,7 +99,10 @@ def send_email_code(
             )
 
     code = create_email_code(email, ttl_seconds=settings.email_code_expire_minutes * 60)
-    send_login_code(settings, email, code)
+    try:
+        send_login_code(settings, email, code)
+    except EmailDeliveryError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     return SendEmailCodeResponse(
         dev_code=code if _should_expose_dev_secrets(settings) else None,

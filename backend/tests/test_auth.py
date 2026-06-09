@@ -31,7 +31,7 @@ def test_send_code_invalid_captcha(client: TestClient):
         json={
             "email": "bad@example.com",
             "captcha_id": cap.json()["captcha_id"],
-            "captcha_code": "WRONG",
+            "captcha_x": 0,
         },
     )
     assert resp.status_code == 400
