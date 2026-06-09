@@ -11,7 +11,7 @@ WIDTH = 300
 HEIGHT = 150
 PIECE_W = 46
 PIECE_H = 46
-TOLERANCE = 6
+TOLERANCE = 10
 
 
 @dataclass(frozen=True)
@@ -125,8 +125,11 @@ def verify_captcha(captcha_id: str, user_x: int) -> bool:
     now = time.time()
     with _lock:
         _purge_expired(now)
-        challenge = _captchas.pop(captcha_id, None)
-    if not challenge or challenge.expires_at <= now:
-        return False
-    target_x = int(challenge.answer)
-    return abs(user_x - target_x) <= TOLERANCE
+        challenge = _captchas.get(captcha_id)
+        if not challenge or challenge.expires_at <= now:
+            return False
+        target_x = int(challenge.answer)
+        if abs(user_x - target_x) > TOLERANCE:
+            return False
+        _captchas.pop(captcha_id, None)
+    return True

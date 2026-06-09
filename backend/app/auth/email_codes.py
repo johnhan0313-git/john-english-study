@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import random
+import re
 import secrets
 import threading
 import time
@@ -26,6 +27,10 @@ def _purge_expired(now: float) -> None:
         _codes.pop(email, None)
 
 
+def normalize_code(code: str) -> str:
+    return re.sub(r"\s+", "", code.strip())
+
+
 def can_send_code(email: str, *, cooldown_seconds: int) -> tuple[bool, int]:
     now = time.time()
     with _lock:
@@ -46,13 +51,17 @@ def create_email_code(email: str, *, ttl_seconds: int = 600) -> str:
 
 
 def verify_email_code(email: str, code: str) -> bool:
+    normalized = normalize_code(code)
     now = time.time()
     with _lock:
         _purge_expired(now)
-        entry = _codes.pop(email, None)
-    if not entry or entry.expires_at <= now:
-        return False
-    return entry.code == code.strip()
+        entry = _codes.get(email)
+        if not entry or entry.expires_at <= now:
+            return False
+        if entry.code != normalized:
+            return False
+        _codes.pop(email, None)
+    return True
 
 
 def debug_token() -> str:

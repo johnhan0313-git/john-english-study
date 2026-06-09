@@ -113,7 +113,7 @@ def email_login(body: EmailLoginRequest, db: Session = Depends(get_db)):
 
     email = normalize_email(body.email)
     if not verify_email_code(email, body.code):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired code")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="邮箱验证码错误或已过期")
 
     user = get_or_create_user_by_email(db, email)
     if not user.is_active:

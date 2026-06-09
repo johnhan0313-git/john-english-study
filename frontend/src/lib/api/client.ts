@@ -10,9 +10,8 @@ export class ApiError extends Error {
   }
 }
 
-export function authHeaders(): HeadersInit {
-  const token = getAccessToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+function isAuthAttempt(path: string): boolean {
+  return path.includes("/auth/email/login") || path.includes("/auth/login");
 }
 
 function handleUnauthorized() {
@@ -20,6 +19,11 @@ function handleUnauthorized() {
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("auth:unauthorized"));
   }
+}
+
+export function authHeaders(): HeadersInit {
+  const token = getAccessToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 export async function authFetch(path: string, options?: RequestInit): Promise<Response> {
@@ -30,7 +34,7 @@ export async function authFetch(path: string, options?: RequestInit): Promise<Re
       ...options?.headers,
     },
   });
-  if (res.status === 401) {
+  if (res.status === 401 && getAccessToken() && !isAuthAttempt(path)) {
     handleUnauthorized();
   }
   return res;
@@ -45,12 +49,11 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
       ...options?.headers,
     },
   });
-  if (res.status === 401) {
-    handleUnauthorized();
-    throw new ApiError("Not authenticated", 401);
-  }
   if (!res.ok) {
     const text = await res.text();
+    if (res.status === 401 && getAccessToken() && !isAuthAttempt(path)) {
+      handleUnauthorized();
+    }
     throw new ApiError(text || res.statusText, res.status);
   }
   if (res.headers.get("content-type")?.includes("application/json")) {
