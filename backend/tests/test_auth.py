@@ -2,26 +2,38 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from tests.auth_helpers import auth_headers, register_user
+from tests.auth_helpers import auth_headers, login_user
 
 
-def test_register_and_login(client: TestClient):
-    reg = register_user(client, username="alice", password="password123")
+def test_email_login_and_me(client: TestClient):
+    reg = login_user(client, email="alice@example.com")
     assert reg["token_type"] == "bearer"
-    assert reg["user"]["username"] == "alice"
+    assert reg["user"]["email"] == "alice@example.com"
 
     me = client.get("/api/auth/me", headers=auth_headers(reg["access_token"]))
     assert me.status_code == 200
-    assert me.json()["username"] == "alice"
+    assert me.json()["email"] == "alice@example.com"
 
-    login = client.post("/api/auth/login", json={"username": "alice", "password": "password123"})
-    assert login.status_code == 200
-    assert login.json()["user"]["id"] == reg["user"]["id"]
+    again = login_user(client, email="alice@example.com")
+    assert again["user"]["id"] == reg["user"]["id"]
 
 
-def test_register_duplicate_username(client: TestClient):
-    register_user(client, username="bob")
-    resp = client.post("/api/auth/register", json={"username": "bob", "password": "password123"})
+def test_email_login_auto_register(client: TestClient):
+    first = login_user(client, email="bob@example.com")
+    assert first["user"]["email"] == "bob@example.com"
+
+
+def test_send_code_invalid_captcha(client: TestClient):
+    cap = client.get("/api/auth/captcha")
+    assert cap.status_code == 200
+    resp = client.post(
+        "/api/auth/email/send-code",
+        json={
+            "email": "bad@example.com",
+            "captcha_id": cap.json()["captcha_id"],
+            "captcha_code": "WRONG",
+        },
+    )
     assert resp.status_code == 400
 
 
@@ -38,7 +50,7 @@ def test_words_public_without_familiarity(client: TestClient):
 
 
 def test_words_familiarity_with_auth(client: TestClient):
-    data = register_user(client, username="words_user")
+    data = login_user(client, email="words@example.com")
     resp = client.get("/api/words?page=1&page_size=5", headers=auth_headers(data["access_token"]))
     assert resp.status_code == 200
     assert "items" in resp.json()
@@ -58,7 +70,7 @@ def test_merge_device(client: TestClient):
     finally:
         db.close()
 
-    data = register_user(client, username="merge_user")
+    data = login_user(client, email="merge@example.com")
     resp = client.post(
         "/api/auth/merge-device",
         json={"device_id": "merge-test-device"},

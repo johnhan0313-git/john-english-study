@@ -20,8 +20,8 @@ interface AuthContextValue {
   user: AuthUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (username: string, password: string) => Promise<void>;
-  register: (username: string, password: string, email?: string) => Promise<void>;
+  loginWithEmail: (email: string, code: string) => Promise<void>;
+  finishOAuthLogin: (token: string) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -69,18 +69,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [queryClient, refreshUser],
   );
 
-  const login = useCallback(
-    async (username: string, password: string) => {
-      const res = await authApi.login({ username, password });
+  const loginWithEmail = useCallback(
+    async (email: string, code: string) => {
+      const res = await authApi.emailLogin({ email, code });
       await finishAuth(res.access_token);
     },
     [finishAuth],
   );
 
-  const register = useCallback(
-    async (username: string, password: string, email?: string) => {
-      const res = await authApi.register({ username, password, email });
-      await finishAuth(res.access_token);
+  const finishOAuthLogin = useCallback(
+    async (token: string) => {
+      await finishAuth(token);
     },
     [finishAuth],
   );
@@ -112,12 +111,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       isLoading,
       isAuthenticated: !!user,
-      login,
-      register,
+      loginWithEmail,
+      finishOAuthLogin,
       logout,
       refreshUser,
     }),
-    [user, isLoading, login, register, logout, refreshUser],
+    [user, isLoading, loginWithEmail, finishOAuthLogin, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

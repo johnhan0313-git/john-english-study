@@ -15,7 +15,7 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     username: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     email: Mapped[Optional[str]] = mapped_column(String(128), unique=True, nullable=True)
-    hashed_password: Mapped[str] = mapped_column(String(256))
+    hashed_password: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
     display_name: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     avatar_url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)

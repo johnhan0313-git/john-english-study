@@ -1,0 +1,37 @@
+from __future__ import annotations
+
+import logging
+import smtplib
+from email.message import EmailMessage
+
+from app.config import Settings
+
+logger = logging.getLogger(__name__)
+
+
+def send_login_code(settings: Settings, email: str, code: str) -> None:
+    subject = f"{settings.app_name} 登录验证码"
+    body = (
+        f"您的登录验证码是：{code}\n\n"
+        f"验证码 {settings.email_code_expire_minutes} 分钟内有效，请勿泄露给他人。\n"
+        f"如非本人操作，请忽略此邮件。"
+    )
+
+    if not settings.smtp_configured:
+        logger.warning("[dev-email] to=%s code=%s (SMTP 未配置，验证码仅写入日志)", email, code)
+        return
+
+    message = EmailMessage()
+    message["Subject"] = subject
+    message["From"] = settings.smtp_from or settings.smtp_user
+    message["To"] = email
+    message.set_content(body)
+
+    with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=20) as smtp:
+        if settings.smtp_use_tls:
+            smtp.starttls()
+        if settings.smtp_user:
+            smtp.login(settings.smtp_user, settings.smtp_password)
+        smtp.send_message(message)
+
+    logger.info("Login code email sent to %s", email)

@@ -38,12 +38,7 @@ export function AuthNavActions() {
   return (
     <div className="flex items-center gap-2">
       <Link href="/login">
-        <Button variant="ghost" size="sm">
-          登录
-        </Button>
-      </Link>
-      <Link href="/register">
-        <Button size="sm">注册</Button>
+        <Button size="sm">登录</Button>
       </Link>
     </div>
   );

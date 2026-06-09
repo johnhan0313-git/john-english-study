@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+import logging
 from collections.abc import Generator
 from pathlib import Path
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.config import get_settings
+
+logger = logging.getLogger(__name__)
 
 _engine: Engine | None = None
 _SessionLocal: sessionmaker[Session] | None = None
@@ -68,6 +71,30 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 
+def run_migrations() -> None:
+    from alembic import command
+    from alembic.config import Config
+
+    backend_dir = Path(__file__).resolve().parents[1]
+    cfg = Config(str(backend_dir / "alembic.ini"))
+    command.upgrade(cfg, "head")
+    logger.info("Database migrations applied (alembic upgrade head)")
+
+
+def _needs_auth_migration(engine: Engine) -> bool:
+    insp = inspect(engine)
+    if not insp.has_table("users"):
+        return False
+    user_cols = {c["name"] for c in insp.get_columns("users")}
+    if "display_name" not in user_cols:
+        return True
+    if insp.has_table("user_word_progress"):
+        progress_cols = {c["name"] for c in insp.get_columns("user_word_progress")}
+        if "user_id" not in progress_cols:
+            return True
+    return False
+
+
 def init_db() -> None:
     settings = get_settings()
     settings.media_dir.mkdir(parents=True, exist_ok=True)
@@ -75,9 +102,21 @@ def init_db() -> None:
     if db_path and not db_path.startswith(":"):
         Path(db_path).parent.mkdir(parents=True, exist_ok=True)
 
-    if settings.use_migrations:
-        return
-
     from app import models  # noqa: F401
 
-    Base.metadata.create_all(bind=get_engine())
+    engine = get_engine()
+
+    if settings.testing:
+        Base.metadata.create_all(bind=engine)
+        return
+
+    if settings.use_migrations:
+        run_migrations()
+        return
+
+    if _needs_auth_migration(engine):
+        logger.info("Legacy database detected; applying auth schema migration...")
+        run_migrations()
+        return
+
+    Base.metadata.create_all(bind=engine)

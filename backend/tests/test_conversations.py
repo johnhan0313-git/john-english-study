@@ -6,7 +6,7 @@ from tests.auth_helpers import auth_headers, register_user
 
 
 def test_create_conversation(client: TestClient):
-    data = register_user(client, username="chat_user1")
+    data = register_user(client, email="chat1@example.com")
     headers = auth_headers(data["access_token"])
     resp = client.post("/api/conversations", json={"level": "cet4", "theme": "travel"}, headers=headers)
     assert resp.status_code == 200
@@ -14,7 +14,7 @@ def test_create_conversation(client: TestClient):
 
 
 def test_send_message(client: TestClient):
-    data = register_user(client, username="chat_user2")
+    data = register_user(client, email="chat2@example.com")
     headers = auth_headers(data["access_token"])
     create = client.post("/api/conversations", json={"level": "cet4"}, headers=headers)
     session_id = create.json()["id"]
@@ -28,7 +28,7 @@ def test_send_message(client: TestClient):
 
 
 def test_stream_message(client: TestClient):
-    data = register_user(client, username="chat_user3")
+    data = register_user(client, email="chat3@example.com")
     headers = auth_headers(data["access_token"])
     create = client.post("/api/conversations", json={"level": "cet4"}, headers=headers)
     session_id = create.json()["id"]
@@ -42,7 +42,7 @@ def test_stream_message(client: TestClient):
 
 
 def test_list_conversations(client: TestClient):
-    data = register_user(client, username="list_user")
+    data = register_user(client, email="list@example.com")
     headers = auth_headers(data["access_token"])
     client.post("/api/conversations", json={"level": "cet4"}, headers=headers)
     resp = client.get("/api/conversations", headers=headers)
@@ -51,7 +51,7 @@ def test_list_conversations(client: TestClient):
 
 
 def test_end_conversation(client: TestClient):
-    data = register_user(client, username="end_user")
+    data = register_user(client, email="end@example.com")
     headers = auth_headers(data["access_token"])
     create = client.post("/api/conversations", json={"level": "cet4"}, headers=headers)
     session_id = create.json()["id"]

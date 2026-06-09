@@ -23,7 +23,7 @@ def test_words_list(client):
 
 
 def test_word_stats(client):
-    data = register_user(client, username="stats_user")
+    data = register_user(client, email="stats@example.com")
     resp = client.get("/api/words/stats", headers=auth_headers(data["access_token"]))
     assert resp.status_code == 200
     assert resp.json()["total"] > 0

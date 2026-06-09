@@ -4,6 +4,7 @@ import os
 
 # Must run before any app imports so Settings and engine use test configuration.
 os.environ["TESTING"] = "1"
+os.environ["AUTH_EXPOSE_CODES"] = "true"
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 os.environ["AI_LLM_API_KEY"] = ""
 os.environ["AI_STT_API_KEY"] = ""

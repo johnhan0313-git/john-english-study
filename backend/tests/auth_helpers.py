@@ -4,17 +4,35 @@ import pytest
 from fastapi.testclient import TestClient
 
 
-def register_user(
+def login_user(
     client: TestClient,
-    username: str = "testuser",
-    password: str = "password123",
+    email: str = "test@example.com",
 ) -> dict:
-    resp = client.post(
-        "/api/auth/register",
-        json={"username": username, "password": password},
+    cap = client.get("/api/auth/captcha")
+    assert cap.status_code == 200, cap.text
+    cap_data = cap.json()
+    captcha_answer = cap_data.get("dev_answer")
+    assert captcha_answer, "dev_answer required in test mode"
+
+    send = client.post(
+        "/api/auth/email/send-code",
+        json={
+            "email": email,
+            "captcha_id": cap_data["captcha_id"],
+            "captcha_code": captcha_answer,
+        },
     )
-    assert resp.status_code == 200, resp.text
-    return resp.json()
+    assert send.status_code == 200, send.text
+    code = send.json().get("dev_code")
+    assert code, "dev_code required in test mode"
+
+    login = client.post("/api/auth/email/login", json={"email": email, "code": code})
+    assert login.status_code == 200, login.text
+    return login.json()
+
+
+# Backward-compatible alias for existing tests
+register_user = login_user
 
 
 def auth_headers(token: str) -> dict[str, str]:
@@ -23,6 +41,6 @@ def auth_headers(token: str) -> dict[str, str]:
 
 @pytest.fixture
 def auth_client(client: TestClient) -> tuple[TestClient, str, dict]:
-    data = register_user(client, username="fixture_user")
+    data = login_user(client, email="fixture@example.com")
     token = data["access_token"]
     return client, token, auth_headers(token)

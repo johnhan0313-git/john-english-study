@@ -56,6 +56,23 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60 * 24 * 7
 
+    # Email OTP
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""
+    smtp_use_tls: bool = True
+    email_code_expire_minutes: int = 10
+    email_code_cooldown_seconds: int = 60
+    auth_expose_codes: bool = False
+
+    # WeChat OAuth (网站应用扫码登录)
+    wechat_app_id: str = ""
+    wechat_app_secret: str = ""
+    wechat_redirect_uri: str = ""
+    frontend_base_url: str = "http://localhost:3000"
+
     # Scheduler / startup
     daily_scenario_hour: int = 6
     daily_scenario_count: int = 3
@@ -68,6 +85,10 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def smtp_configured(self) -> bool:
+        return bool(self.smtp_host and self.smtp_from)
 
     def llm_config(self) -> AIEndpointConfig:
         return AIEndpointConfig(

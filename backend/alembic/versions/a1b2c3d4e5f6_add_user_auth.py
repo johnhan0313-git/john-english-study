@@ -1,14 +1,14 @@
 """Add user auth columns and migrate device_id to user_id."""
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "a1b2c3d4e5f6"
-down_revision: str | None = "ce53e6acf63d"
-branch_labels: str | Sequence[str] | None = None
-depends_on: str | Sequence[str] | None = None
+revision = "a1b2c3d4e5f6"
+down_revision: Optional[str] = "ce53e6acf63d"
+branch_labels: Optional[Sequence[str]] = None
+depends_on: Optional[Sequence[str]] = None
 
 
 def upgrade() -> None:
