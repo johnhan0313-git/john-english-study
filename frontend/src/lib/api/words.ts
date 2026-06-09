@@ -7,9 +7,9 @@ export const wordsApi = {
     return request<WordListResponse>(`/words?${qs}`);
   },
 
-  getWordStats: (deviceId: string) =>
+  getWordStats: () =>
     request<{ total: number; learned: number; mastered: number; due_review: number; mastery_rate: number }>(
-      `/words/stats?device_id=${deviceId}`,
+      "/words/stats",
     ),
 
   getWordGroups: () => request<WordGroup[]>("/words/groups"),

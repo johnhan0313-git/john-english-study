@@ -4,14 +4,13 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { Calendar, ChevronRight } from "lucide-react";
 import { api } from "@/lib/api";
-import { getDeviceId } from "@/lib/utils";
+import { RequireAuth } from "@/components/auth/require-auth";
 import { Badge, Card, EmptyState, PageHeader, Spinner } from "@/components/ui";
 
-export default function ScenariosPage() {
-  const deviceId = getDeviceId();
+function ScenariosListContent() {
   const { data, isLoading } = useQuery({
-    queryKey: ["scenarios", deviceId],
-    queryFn: () => api.listScenarios(deviceId),
+    queryKey: ["scenarios"],
+    queryFn: () => api.listScenarios(),
   });
 
   return (
@@ -53,5 +52,13 @@ export default function ScenariosPage() {
         <EmptyState title="暂无场景" description="去首页获取今日场景，或手动生成一个新场景" />
       )}
     </div>
+  );
+}
+
+export default function ScenariosPage() {
+  return (
+    <RequireAuth>
+      <ScenariosListContent />
+    </RequireAuth>
   );
 }

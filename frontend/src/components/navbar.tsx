@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { BookOpen, Home, Layers, Library, LineChart, MessageCircle, Settings, Sparkles, GraduationCap } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AuthNavActions } from "@/components/auth/user-menu";
 import { prefetchAllRoutes, prefetchNavTarget } from "@/lib/route-prefetch";
 
 const nav = [
@@ -40,7 +41,8 @@ export function Navbar() {
             <span className="text-[10px] font-semibold uppercase tracking-wider text-brand-600">CET-4 / CET-6</span>
           </div>
         </Link>
-        <nav className="flex items-center gap-0.5 overflow-x-auto rounded-2xl border border-surface-border/80 bg-white p-1 shadow-sm [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex items-center gap-2">
+          <nav className="flex items-center gap-0.5 overflow-x-auto rounded-2xl border border-surface-border/80 bg-white p-1 shadow-sm [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {nav.map(({ href, label, icon: Icon }) => {
             const active = href === "/reference/phonetics"
               ? pathname.startsWith("/reference")
@@ -66,7 +68,9 @@ export function Navbar() {
               </Link>
             );
           })}
-        </nav>
+          </nav>
+          <AuthNavActions />
+        </div>
       </div>
     </header>
   );

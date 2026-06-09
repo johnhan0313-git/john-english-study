@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { Headphones, MessageCircle, Mic, BookOpen, PenLine, Play, Pause } from "lucide-react";
 import { api } from "@/lib/api";
-import { getDeviceId } from "@/lib/utils";
+import { useAuth } from "@/contexts/auth-context";
 import { Badge, Button, Card, Spinner, Tabs, Textarea } from "@/components/ui";
 import type { ScenarioDetail } from "@/lib/api";
 
@@ -74,7 +74,7 @@ function WordDefinitionPanel({
 export default function ScenarioDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const deviceId = getDeviceId();
+  const { isAuthenticated } = useAuth();
   const [tab, setTab] = useState("read");
   const [playing, setPlaying] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
@@ -95,7 +95,6 @@ export default function ScenarioDetailPage() {
   const startChat = useMutation({
     mutationFn: () =>
       api.createConversation({
-        device_id: deviceId,
         scenario_id: Number(id),
         level: scenario?.level ?? "cet4",
       }),
@@ -141,7 +140,6 @@ export default function ScenarioDetailPage() {
       prompt: `Write a short paragraph using these words: ${scenario.words.join(", ")}`,
       content: writingContent,
       target_words: scenario.words.slice(0, 5),
-      device_id: deviceId,
     });
     setWritingResult(result);
   };
@@ -174,7 +172,13 @@ export default function ScenarioDetailPage() {
             size="lg"
             variant="outline"
             disabled={startChat.isPending}
-            onClick={() => startChat.mutate()}
+            onClick={() => {
+              if (!isAuthenticated) {
+                router.push(`/login?next=/scenarios/${id}`);
+                return;
+              }
+              startChat.mutate();
+            }}
           >
             <MessageCircle className="mr-2 h-4 w-4 shrink-0" />
             1v1 对话

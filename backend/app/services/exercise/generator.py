@@ -89,7 +89,7 @@ def submit_exercise(
     db: Session,
     exercise: Exercise,
     answer: str | list[str],
-    device_id: str,
+    user_id: int,
 ) -> dict:
     correct, correct_answer = check_exercise_answer(exercise, answer)
     payload = parse_json_field(exercise.payload, {})
@@ -100,7 +100,7 @@ def submit_exercise(
     ]
     familiarity_updates = []
     for word_id in word_ids[:3]:
-        progress = record_answer(db, device_id, word_id, correct)
+        progress = record_answer(db, user_id, word_id, correct)
         familiarity_updates.append({"word_id": word_id, "familiarity": progress.familiarity})
 
     db.commit()

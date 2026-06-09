@@ -6,7 +6,6 @@ from pydantic import BaseModel, Field
 
 
 class ConversationCreateRequest(BaseModel):
-    device_id: str = "default"
     scenario_id: int | None = None
     level: str = "cet4"
     theme: str | None = None
@@ -56,7 +55,7 @@ class SendMessageRequest(BaseModel):
 
 
 class EndConversationRequest(BaseModel):
-    device_id: str = "default"
+    pass
 
 
 class ConversationSummaryResponse(BaseModel):

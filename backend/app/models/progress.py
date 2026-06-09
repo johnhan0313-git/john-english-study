@@ -11,12 +11,13 @@ from app.database import Base
 
 class UserWordProgress(Base):
     __tablename__ = "user_word_progress"
-    __table_args__ = (UniqueConstraint("device_id", "word_id", name="uq_device_word"),)
+    __table_args__ = (UniqueConstraint("user_id", "word_id", name="uq_user_word"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    device_id: Mapped[str] = mapped_column(String(64), index=True, default="default")
+    user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=True)
+    device_id: Mapped[Optional[str]] = mapped_column(String(64), index=True, nullable=True)
     word_id: Mapped[int] = mapped_column(ForeignKey("words.id", ondelete="CASCADE"), index=True)
-    familiarity: Mapped[int] = mapped_column(Integer, default=0)  # 0-5
+    familiarity: Mapped[int] = mapped_column(Integer, default=0)
     next_review: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     correct_count: Mapped[int] = mapped_column(Integer, default=0)
     wrong_count: Mapped[int] = mapped_column(Integer, default=0)
@@ -31,7 +32,8 @@ class ScenarioAttempt(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     scenario_id: Mapped[int] = mapped_column(ForeignKey("scenarios.id", ondelete="CASCADE"), index=True)
-    device_id: Mapped[str] = mapped_column(String(64), index=True, default="default")
+    user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=True)
+    device_id: Mapped[Optional[str]] = mapped_column(String(64), index=True, nullable=True)
     score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     total_questions: Mapped[int] = mapped_column(Integer, default=0)
     correct_questions: Mapped[int] = mapped_column(Integer, default=0)
@@ -43,10 +45,10 @@ class ScenarioAttempt(Base):
 
 class LearningStreak(Base):
     __tablename__ = "learning_streaks"
-    __table_args__ = (UniqueConstraint("device_id", name="uq_device_streak"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    device_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=True, index=True)
+    device_id: Mapped[Optional[str]] = mapped_column(String(64), unique=True, nullable=True, index=True)
     current_streak: Mapped[int] = mapped_column(Integer, default=0)
     longest_streak: Mapped[int] = mapped_column(Integer, default=0)
     last_active_date: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)

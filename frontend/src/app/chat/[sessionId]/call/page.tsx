@@ -5,24 +5,22 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect } from "react";
 import { Mic, MicOff, PhoneOff } from "lucide-react";
-import { cn, getDeviceId } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { Alert, Button, Card, Spinner } from "@/components/ui";
 import { formatCallTime, useVoiceTurn } from "@/hooks/use-voice-turn";
 import { api } from "@/lib/api";
 
 export default function ChatCallPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
-  const deviceId = getDeviceId();
   const id = Number(sessionId);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["conversation", id, deviceId],
-    queryFn: () => api.getConversation(id, deviceId),
+    queryKey: ["conversation", id],
+    queryFn: () => api.getConversation(id),
   });
 
   const voice = useVoiceTurn({
     sessionId: id,
-    deviceId,
     enabled: data?.status === "active",
     initialStarted: true,
   });

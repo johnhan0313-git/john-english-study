@@ -1,0 +1,42 @@
+"""Add user auth columns and migrate device_id to user_id."""
+
+from typing import Sequence
+
+import sqlalchemy as sa
+from alembic import op
+
+revision: str = "a1b2c3d4e5f6"
+down_revision: str | None = "ce53e6acf63d"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
+
+
+def upgrade() -> None:
+    with op.batch_alter_table("users") as batch:
+        batch.add_column(sa.Column("display_name", sa.String(64), nullable=True))
+        batch.add_column(sa.Column("avatar_url", sa.String(512), nullable=True))
+        batch.add_column(sa.Column("last_login_at", sa.DateTime(), nullable=True))
+        batch.add_column(sa.Column("oauth_provider", sa.String(32), nullable=True))
+        batch.add_column(sa.Column("oauth_subject", sa.String(128), nullable=True))
+        batch.add_column(sa.Column("legacy_device_id", sa.String(64), nullable=True))
+        batch.create_index("ix_users_legacy_device_id", ["legacy_device_id"], unique=True)
+
+    for table in ("user_word_progress", "scenario_attempts", "scenarios", "conversation_sessions", "learning_streaks"):
+        with op.batch_alter_table(table) as batch:
+            batch.add_column(sa.Column("user_id", sa.Integer(), nullable=True))
+            batch.create_foreign_key(f"fk_{table}_user_id", "users", ["user_id"], ["id"], ondelete="CASCADE")
+            batch.create_index(f"ix_{table}_user_id", ["user_id"])
+
+    with op.batch_alter_table("user_word_progress") as batch:
+        batch.alter_column("device_id", existing_type=sa.String(64), nullable=True)
+        batch.drop_constraint("uq_device_word", type_="unique")
+        batch.create_unique_constraint("uq_user_word", ["user_id", "word_id"])
+
+    with op.batch_alter_table("learning_streaks") as batch:
+        batch.alter_column("device_id", existing_type=sa.String(64), nullable=True)
+        batch.drop_constraint("uq_device_streak", type_="unique")
+        batch.create_unique_constraint("uq_user_streak", ["user_id"])
+
+
+def downgrade() -> None:
+    raise NotImplementedError("Auth migration downgrade is not supported")

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Search, Sparkles } from "lucide-react";
 import { api } from "@/lib/api";
-import { getDeviceId } from "@/lib/utils";
+import { useAuth } from "@/contexts/auth-context";
 import {
   loadWordsViewMode,
   pageSizeForView,
@@ -32,7 +32,7 @@ const LEVEL_FILTERS: { value: string; label: string }[] = [
 ];
 
 export default function WordsPage() {
-  const deviceId = getDeviceId();
+  const { user } = useAuth();
   const [page, setPage] = useState(1);
   const [level, setLevel] = useState<string>("");
   const [theme, setTheme] = useState<string>("");
@@ -52,12 +52,11 @@ export default function WordsPage() {
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ["words", page, pageSize, level, theme, search, deviceId],
+    queryKey: ["words", page, pageSize, level, theme, search, user?.id ?? "guest"],
     queryFn: () =>
       api.getWords({
         page,
         page_size: pageSize,
-        device_id: deviceId,
         ...(level && { level }),
         ...(theme && { theme }),
         ...(search && { search }),

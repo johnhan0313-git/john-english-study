@@ -3,8 +3,10 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.auth.dependencies import get_current_user
 from app.database import get_db
 from app.models.exercise import Exercise
+from app.models.user import User
 from app.schemas.exercise import (
     BatchSubmitRequest,
     BatchSubmitResponse,
@@ -41,16 +43,26 @@ def list_exercises(scenario_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/{exercise_id}/submit", response_model=ExerciseSubmitResponse)
-def submit_single(exercise_id: int, body: ExerciseSubmitRequest, db: Session = Depends(get_db)):
+def submit_single(
+    exercise_id: int,
+    body: ExerciseSubmitRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     exercise = db.query(Exercise).filter(Exercise.id == exercise_id).first()
     if not exercise:
         raise HTTPException(status_code=404, detail="Exercise not found")
-    result = submit_exercise(db, exercise, body.answer, body.device_id)
+    result = submit_exercise(db, exercise, body.answer, user.id)
     return ExerciseSubmitResponse(**result)
 
 
 @router.post("/scenario/{scenario_id}/submit", response_model=BatchSubmitResponse)
-def submit_batch(scenario_id: int, body: BatchSubmitRequest, db: Session = Depends(get_db)):
+def submit_batch(
+    scenario_id: int,
+    body: BatchSubmitRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     exercises = (
         db.query(Exercise)
         .filter(Exercise.scenario_id == scenario_id)
@@ -61,13 +73,13 @@ def submit_batch(scenario_id: int, body: BatchSubmitRequest, db: Session = Depen
     correct = 0
     for ex in exercises:
         answer = body.answers.get(ex.id, "")
-        result = submit_exercise(db, ex, answer, body.device_id)
+        result = submit_exercise(db, ex, answer, user.id)
         if result["correct"]:
             correct += 1
         results.append(ExerciseSubmitResponse(**result))
 
     total = len(exercises)
-    record_scenario_attempt(db, scenario_id, body.device_id, total, correct)
+    record_scenario_attempt(db, scenario_id, user.id, total, correct)
     return BatchSubmitResponse(
         score=round(correct / total * 100, 1) if total else 0,
         total=total,

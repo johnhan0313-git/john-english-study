@@ -4,15 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { MessageCircle, Plus } from "lucide-react";
 import { api } from "@/lib/api";
-import { getDeviceId } from "@/lib/utils";
 import { Badge, Button, Card, EmptyState, PageHeader, Spinner } from "@/components/ui";
 
 export default function ChatListPage() {
-  const deviceId = getDeviceId();
-
   const { data, isLoading } = useQuery({
-    queryKey: ["conversations", deviceId],
-    queryFn: () => api.listConversations(deviceId),
+    queryKey: ["conversations"],
+    queryFn: () => api.listConversations(),
   });
 
   return (

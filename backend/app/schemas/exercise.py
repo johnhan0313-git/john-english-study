@@ -26,7 +26,6 @@ class ExerciseResponse(BaseModel):
 
 class ExerciseSubmitRequest(BaseModel):
     answer: str | list[str]
-    device_id: str = "default"
 
 
 class ExerciseSubmitResponse(BaseModel):
@@ -38,7 +37,6 @@ class ExerciseSubmitResponse(BaseModel):
 
 class BatchSubmitRequest(BaseModel):
     answers: dict[int, str | list[str]]
-    device_id: str = "default"
 
 
 class BatchSubmitResponse(BaseModel):

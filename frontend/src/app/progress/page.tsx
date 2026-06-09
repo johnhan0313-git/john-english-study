@@ -12,14 +12,12 @@ import {
   Trophy,
 } from "lucide-react";
 import { api } from "@/lib/api";
-import { getDeviceId } from "@/lib/utils";
 import { Card, PageHeader, ProgressBar, Spinner, StatCard } from "@/components/ui";
 
 export default function ProgressPage() {
-  const deviceId = getDeviceId();
   const { data, isLoading } = useQuery({
-    queryKey: ["progress", deviceId],
-    queryFn: () => api.getProgress(deviceId),
+    queryKey: ["progress"],
+    queryFn: () => api.getProgress(),
   });
 
   return (

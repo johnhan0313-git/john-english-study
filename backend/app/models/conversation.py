@@ -15,7 +15,8 @@ class ConversationSession(Base):
     __tablename__ = "conversation_sessions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    device_id: Mapped[str] = mapped_column(String(64), index=True, default="default")
+    user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=True)
+    device_id: Mapped[Optional[str]] = mapped_column(String(64), index=True, nullable=True)
     scenario_id: Mapped[Optional[int]] = mapped_column(ForeignKey("scenarios.id", ondelete="SET NULL"), nullable=True)
     title: Mapped[str] = mapped_column(String(256))
     theme: Mapped[str] = mapped_column(String(128), default="general")

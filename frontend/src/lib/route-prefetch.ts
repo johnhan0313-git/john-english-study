@@ -2,7 +2,7 @@ import type { QueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
 import { API_BASE } from "@/lib/env";
-import { getDeviceId } from "@/lib/utils";
+import { getAccessToken } from "@/lib/auth/token";
 
 export const NAV_ROUTES = [
   "/",
@@ -19,19 +19,25 @@ export const NAV_ROUTES = [
 
 type AppRouter = { prefetch: (href: string) => void };
 
+function isAuthenticated() {
+  return !!getAccessToken();
+}
+
 export function prefetchRouteData(qc: QueryClient, href: string) {
-  const deviceId = getDeviceId();
+  const authed = isAuthenticated();
 
   switch (href) {
     case "/":
-      void qc.prefetchQuery({
-        queryKey: ["progress", deviceId],
-        queryFn: () => api.getProgress(deviceId),
-      });
-      void qc.prefetchQuery({
-        queryKey: ["daily", deviceId],
-        queryFn: () => api.getDailyScenarios(deviceId),
-      });
+      if (authed) {
+        void qc.prefetchQuery({
+          queryKey: ["progress"],
+          queryFn: () => api.getProgress(),
+        });
+        void qc.prefetchQuery({
+          queryKey: ["daily"],
+          queryFn: () => api.getDailyScenarios(),
+        });
+      }
       break;
     case "/words":
       void qc.prefetchQuery({
@@ -39,22 +45,26 @@ export function prefetchRouteData(qc: QueryClient, href: string) {
         queryFn: () => api.getWordGroups(),
       });
       void qc.prefetchQuery({
-        queryKey: ["words", 1, "", "", "", deviceId],
-        queryFn: () => api.getWords({ page: 1, page_size: 30, device_id: deviceId }),
+        queryKey: ["words", 1, "", "", ""],
+        queryFn: () => api.getWords({ page: 1, page_size: 30 }),
       });
       break;
     case "/scenarios":
-      void qc.prefetchQuery({
-        queryKey: ["scenarios", deviceId],
-        queryFn: () => api.listScenarios(deviceId),
-      });
+      if (authed) {
+        void qc.prefetchQuery({
+          queryKey: ["scenarios"],
+          queryFn: () => api.listScenarios(),
+        });
+      }
       break;
     case "/chat":
     case "/chat/new":
-      void qc.prefetchQuery({
-        queryKey: ["conversations", deviceId],
-        queryFn: () => api.listConversations(deviceId),
-      });
+      if (authed) {
+        void qc.prefetchQuery({
+          queryKey: ["conversations"],
+          queryFn: () => api.listConversations(),
+        });
+      }
       void qc.prefetchQuery({
         queryKey: ["groups"],
         queryFn: () => api.getWordGroups(),
@@ -79,10 +89,12 @@ export function prefetchRouteData(qc: QueryClient, href: string) {
       });
       break;
     case "/progress":
-      void qc.prefetchQuery({
-        queryKey: ["progress", deviceId],
-        queryFn: () => api.getProgress(deviceId),
-      });
+      if (authed) {
+        void qc.prefetchQuery({
+          queryKey: ["progress"],
+          queryFn: () => api.getProgress(),
+        });
+      }
       break;
     case "/settings":
       void qc.prefetchQuery({

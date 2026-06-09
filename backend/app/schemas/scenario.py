@@ -28,7 +28,6 @@ class ScenarioGenerateRequest(BaseModel):
     level: str = "cet4"
     word_ids: list[int] = Field(default_factory=list)
     scenario_type: str = "narrative"  # narrative | dialogue
-    device_id: str = "default"
     word_count: int = Field(default=10, ge=5, le=15)
 
 

@@ -7,7 +7,6 @@ import { useLipsyncAudio } from "@/hooks/use-lipsync-audio";
 
 interface UseVoiceTurnOptions {
   sessionId: number;
-  deviceId: string;
   enabled?: boolean;
   autoPlayOpening?: boolean;
   initialStarted?: boolean;
@@ -15,7 +14,6 @@ interface UseVoiceTurnOptions {
 
 export function useVoiceTurn({
   sessionId,
-  deviceId,
   enabled = true,
   autoPlayOpening = true,
   initialStarted = false,
@@ -85,10 +83,10 @@ export function useVoiceTurn({
       openingPlayedRef.current = true;
       setSubtitle(lastAssistant.content);
       if (status === "active") {
-        playAudio(api.getConversationMessageAudioUrl(sessionId, lastAssistant.id, deviceId));
+        playAudio(api.getConversationMessageAudioUrl(sessionId, lastAssistant.id));
       }
     },
-    [autoPlayOpening, deviceId, playAudio, sessionId],
+    [autoPlayOpening, playAudio, sessionId],
   );
 
   const playOpeningIfNeeded = useCallback(
@@ -127,10 +125,10 @@ export function useVoiceTurn({
       const blob = new Blob(chunksRef.current, { type: "audio/webm" });
       setProcessing(true);
       try {
-        const result = await api.sendVoiceTurn(sessionId, deviceId, blob);
+        const result = await api.sendVoiceTurn(sessionId, blob);
         setSubtitle(`${result.transcript}\n\n— ${result.content}`);
-        await queryClient.invalidateQueries({ queryKey: ["conversation", sessionId, deviceId] });
-        queryClient.invalidateQueries({ queryKey: ["conversations", deviceId] });
+        await queryClient.invalidateQueries({ queryKey: ["conversation", sessionId] });
+        queryClient.invalidateQueries({ queryKey: ["conversations"] });
         playAudio(result.audio_url);
       } catch (e) {
         setError(e instanceof Error ? e.message : "语音发送失败");
@@ -141,7 +139,7 @@ export function useVoiceTurn({
     recorder.start();
     mediaRecorderRef.current = recorder;
     setRecording(true);
-  }, [deviceId, enabled, playAudio, playing, processing, queryClient, sessionId]);
+  }, [enabled, playAudio, playing, processing, queryClient, sessionId]);
 
   const stopRecording = useCallback(() => {
     mediaRecorderRef.current?.stop();

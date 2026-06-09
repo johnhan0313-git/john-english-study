@@ -4,8 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
+from app.auth.dependencies import get_current_user
 from app.config import get_settings
 from app.database import get_db
+from app.models.user import User
 from app.schemas.scenario import (
     DailyScenariosResponse,
     ScenarioBrief,
@@ -21,15 +23,19 @@ router = APIRouter(prefix="/scenarios", tags=["scenarios"])
 
 
 @router.post("/generate", response_model=ScenarioDetail)
-async def generate_scenario(body: ScenarioGenerateRequest, db: Session = Depends(get_db)):
+async def generate_scenario(
+    body: ScenarioGenerateRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     service = ScenarioService(db)
     try:
         scenario = await service.generate_scenario(
+            user_id=user.id,
             level=body.level,
             theme=body.theme,
             word_ids=body.word_ids,
             scenario_type=body.scenario_type,
-            device_id=body.device_id,
             word_count=body.word_count,
         )
     except ValueError as e:
@@ -42,12 +48,12 @@ async def generate_scenario(body: ScenarioGenerateRequest, db: Session = Depends
 
 
 @router.get("/daily", response_model=DailyScenariosResponse)
-async def daily_scenarios(device_id: str = "default", db: Session = Depends(get_db)):
+async def daily_scenarios(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     settings = get_settings()
     service = ScenarioService(db)
     today = local_today(settings.app_timezone).isoformat()
     try:
-        scenarios = await service.ensure_daily_scenarios(device_id)
+        scenarios = await service.ensure_daily_scenarios(user.id)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Daily scenario generation failed: {e}") from e
     return DailyScenariosResponse(
@@ -59,13 +65,13 @@ async def daily_scenarios(device_id: str = "default", db: Session = Depends(get_
 
 @router.get("", response_model=ScenarioListResponse)
 def list_scenarios(
-    device_id: str = "default",
+    user: User = Depends(get_current_user),
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=50),
     db: Session = Depends(get_db),
 ):
     service = ScenarioService(db)
-    items, total = service.list_scenarios(device_id, skip, limit)
+    items, total = service.list_scenarios(user.id, skip, limit)
     return ScenarioListResponse(
         items=[ScenarioBrief(**service.scenario_to_brief(s)) for s in items],
         total=total,

@@ -28,7 +28,6 @@ class WritingEvaluateRequest(BaseModel):
     prompt: str
     content: str
     target_words: list[str] = Field(default_factory=list)
-    device_id: str = "default"
 
 
 class WritingEvaluateResponse(BaseModel):

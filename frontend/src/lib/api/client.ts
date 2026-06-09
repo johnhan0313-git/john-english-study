@@ -1,4 +1,5 @@
 import { API_BASE } from "@/lib/env";
+import { clearAccessToken, getAccessToken } from "@/lib/auth/token";
 
 export class ApiError extends Error {
   constructor(
@@ -9,14 +10,45 @@ export class ApiError extends Error {
   }
 }
 
+export function authHeaders(): HeadersInit {
+  const token = getAccessToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function handleUnauthorized() {
+  clearAccessToken();
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("auth:unauthorized"));
+  }
+}
+
+export async function authFetch(path: string, options?: RequestInit): Promise<Response> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: {
+      ...authHeaders(),
+      ...options?.headers,
+    },
+  });
+  if (res.status === 401) {
+    handleUnauthorized();
+  }
+  return res;
+}
+
 export async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
+      ...authHeaders(),
       ...options?.headers,
     },
   });
+  if (res.status === 401) {
+    handleUnauthorized();
+    throw new ApiError("Not authenticated", 401);
+  }
   if (!res.ok) {
     const text = await res.text();
     throw new ApiError(text || res.statusText, res.status);

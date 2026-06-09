@@ -7,24 +7,22 @@ import { useEffect } from "react";
 import { Mic, MicOff, PhoneOff, Sparkles } from "lucide-react";
 import { api } from "@/lib/api";
 import { resolveConversationVisuals } from "@/lib/conversation-visuals";
-import { cn, getDeviceId } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { Alert, Button, Spinner } from "@/components/ui";
 import { TalkingPortrait } from "@/components/talking-portrait";
 import { formatCallTime, useVoiceTurn } from "@/hooks/use-voice-turn";
 
 export default function ChatImmersivePage() {
   const { sessionId } = useParams<{ sessionId: string }>();
-  const deviceId = getDeviceId();
   const id = Number(sessionId);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["conversation", id, deviceId],
-    queryFn: () => api.getConversation(id, deviceId),
+    queryKey: ["conversation", id],
+    queryFn: () => api.getConversation(id),
   });
 
   const voice = useVoiceTurn({
     sessionId: id,
-    deviceId,
     enabled: data?.status === "active",
   });
 

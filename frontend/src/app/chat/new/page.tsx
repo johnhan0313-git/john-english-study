@@ -5,13 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { Loader2, MessageCircle } from "lucide-react";
 import { api } from "@/lib/api";
-import { getDeviceId } from "@/lib/utils";
 import { Button, Card, PageHeader, Select, Spinner } from "@/components/ui";
 
 function NewChatForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const deviceId = getDeviceId();
   const scenarioId = searchParams.get("scenario_id");
 
   const [level, setLevel] = useState("cet4");
@@ -27,7 +25,6 @@ function NewChatForm() {
   const mutation = useMutation({
     mutationFn: () =>
       api.createConversation({
-        device_id: deviceId,
         level,
         theme: theme || undefined,
         word_count: wordCount,

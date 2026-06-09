@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
+from tests.auth_helpers import auth_headers, register_user
 from app.services.exercise.generator import check_exercise_answer, normalize_answer
 from app.models.exercise import Exercise
 from app.utils.json_helpers import dump_json_field
@@ -22,7 +23,8 @@ def test_words_list(client):
 
 
 def test_word_stats(client):
-    resp = client.get("/api/words/stats")
+    data = register_user(client, username="stats_user")
+    resp = client.get("/api/words/stats", headers=auth_headers(data["access_token"]))
     assert resp.status_code == 200
     assert resp.json()["total"] > 0
 

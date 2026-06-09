@@ -6,13 +6,11 @@ import { Suspense, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Sparkles, Wand2 } from "lucide-react";
 import { api } from "@/lib/api";
-import { getDeviceId } from "@/lib/utils";
 import { Alert, Button, Card, PageHeader, Select, Spinner } from "@/components/ui";
 
 function GenerateForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const deviceId = getDeviceId();
   const wordIdsParam = searchParams.get("word_ids");
   const initialWordIds = wordIdsParam ? wordIdsParam.split(",").map(Number).filter(Boolean) : [];
 
@@ -33,7 +31,6 @@ function GenerateForm() {
         theme: theme || undefined,
         word_ids: initialWordIds.length ? initialWordIds : undefined,
         scenario_type: scenarioType,
-        device_id: deviceId,
         word_count: wordCount,
       }),
     onSuccess: (data) => router.push(`/scenarios/${data.id}`),

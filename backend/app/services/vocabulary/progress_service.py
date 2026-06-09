@@ -6,42 +6,41 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.progress import LearningStreak, ScenarioAttempt, UserWordProgress
-from app.models.scenario import Scenario
 from app.models.word import Word
 from app.utils.json_helpers import parse_json_field
 from app.utils.time import local_today, utc_now
 
 
-def get_progress_overview(db: Session, device_id: str) -> dict:
+def get_progress_overview(db: Session, user_id: int) -> dict:
     total = db.query(Word).count()
     learned = (
         db.query(UserWordProgress)
-        .filter(UserWordProgress.device_id == device_id, UserWordProgress.familiarity > 0)
+        .filter(UserWordProgress.user_id == user_id, UserWordProgress.familiarity > 0)
         .count()
     )
     mastered = (
         db.query(UserWordProgress)
-        .filter(UserWordProgress.device_id == device_id, UserWordProgress.familiarity >= 5)
+        .filter(UserWordProgress.user_id == user_id, UserWordProgress.familiarity >= 5)
         .count()
     )
     now = utc_now()
     due_review = (
         db.query(UserWordProgress)
         .filter(
-            UserWordProgress.device_id == device_id,
+            UserWordProgress.user_id == user_id,
             UserWordProgress.next_review.isnot(None),
             UserWordProgress.next_review <= now,
         )
         .count()
     )
     scenarios_completed = (
-        db.query(ScenarioAttempt).filter(ScenarioAttempt.device_id == device_id).count()
+        db.query(ScenarioAttempt).filter(ScenarioAttempt.user_id == user_id).count()
     )
     exercises_completed = db.query(func.sum(ScenarioAttempt.correct_questions)).filter(
-        ScenarioAttempt.device_id == device_id
+        ScenarioAttempt.user_id == user_id
     ).scalar() or 0
 
-    streak = db.query(LearningStreak).filter(LearningStreak.device_id == device_id).first()
+    streak = db.query(LearningStreak).filter(LearningStreak.user_id == user_id).first()
     current_streak = streak.current_streak if streak else 0
     longest_streak = streak.longest_streak if streak else 0
 
@@ -59,13 +58,13 @@ def get_progress_overview(db: Session, device_id: str) -> dict:
     }
 
 
-def get_review_words(db: Session, device_id: str, limit: int = 20) -> list[dict]:
+def get_review_words(db: Session, user_id: int, limit: int = 20) -> list[dict]:
     now = utc_now()
     rows = (
         db.query(UserWordProgress, Word)
         .join(Word, Word.id == UserWordProgress.word_id)
         .filter(
-            UserWordProgress.device_id == device_id,
+            UserWordProgress.user_id == user_id,
             UserWordProgress.next_review.isnot(None),
             UserWordProgress.next_review <= now,
         )
@@ -89,30 +88,30 @@ def get_review_words(db: Session, device_id: str, limit: int = 20) -> list[dict]
 def record_scenario_attempt(
     db: Session,
     scenario_id: int,
-    device_id: str,
+    user_id: int,
     total: int,
     correct: int,
     details: dict | None = None,
 ) -> ScenarioAttempt:
     attempt = ScenarioAttempt(
         scenario_id=scenario_id,
-        device_id=device_id,
+        user_id=user_id,
         total_questions=total,
         correct_questions=correct,
         score=round(correct / total * 100, 1) if total else 0,
         details=str(details or {}),
     )
     db.add(attempt)
-    update_streak(db, device_id)
+    update_streak(db, user_id)
     db.commit()
     return attempt
 
 
-def update_streak(db: Session, device_id: str, tz_name: str = "Asia/Shanghai") -> LearningStreak:
+def update_streak(db: Session, user_id: int, tz_name: str = "Asia/Shanghai") -> LearningStreak:
     today = local_today(tz_name).isoformat()
-    streak = db.query(LearningStreak).filter(LearningStreak.device_id == device_id).first()
+    streak = db.query(LearningStreak).filter(LearningStreak.user_id == user_id).first()
     if not streak:
-        streak = LearningStreak(device_id=device_id, current_streak=1, longest_streak=1, last_active_date=today)
+        streak = LearningStreak(user_id=user_id, current_streak=1, longest_streak=1, last_active_date=today)
         db.add(streak)
         return streak
 

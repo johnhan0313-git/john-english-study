@@ -28,11 +28,14 @@ async def cmd_daily_scenarios() -> int:
     settings = get_settings()
     db = SessionLocal()
     try:
+        from app.models.user import User
         from app.services.scenario.service import ScenarioService
 
         service = ScenarioService(db, settings)
-        await service.ensure_daily_scenarios(settings.default_device_id)
-        print("Daily scenarios ensured.")
+        users = db.query(User).filter(User.is_active.is_(True)).all()
+        for user in users:
+            await service.ensure_daily_scenarios(user.id)
+        print(f"Daily scenarios ensured for {len(users)} user(s).")
     finally:
         db.close()
     return 0

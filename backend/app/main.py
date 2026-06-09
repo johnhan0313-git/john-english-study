@@ -7,7 +7,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import common, conversations, exercises, progress, reference, scenario_complete, scenarios, words
+from app.api import auth, common, conversations, exercises, progress, reference, scenario_complete, scenarios, words
 from app.config import get_settings
 from app.database import SessionLocal, init_db
 from app.logging_config import configure_logging
@@ -21,10 +21,13 @@ async def daily_scenario_job():
     settings = get_settings()
     db = SessionLocal()
     try:
+        from app.models.user import User
         from app.services.scenario.service import ScenarioService
 
         service = ScenarioService(db, settings)
-        await service.ensure_daily_scenarios(settings.default_device_id)
+        users = db.query(User).filter(User.is_active.is_(True)).all()
+        for user in users:
+            await service.ensure_daily_scenarios(user.id)
     finally:
         db.close()
 
@@ -94,6 +97,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     app.include_router(common.router, prefix="/api")
+    app.include_router(auth.router, prefix="/api")
     app.include_router(words.router, prefix="/api")
     app.include_router(scenarios.router, prefix="/api")
     app.include_router(scenario_complete.router, prefix="/api")

@@ -2,7 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { API_BASE } from "@/lib/env";
-import { Alert, Card, PageHeader } from "@/components/ui";
+import { Alert, Button, Card, PageHeader } from "@/components/ui";
+import { useAuth } from "@/contexts/auth-context";
 
 type AIEndpointStatus = {
   base_url: string;
@@ -48,6 +49,7 @@ function EndpointRow({
 }
 
 export default function SettingsPage() {
+  const { user, isAuthenticated, logout } = useAuth();
   const { data } = useQuery<AIConfig>({
     queryKey: ["ai-config"],
     queryFn: async () => {
@@ -58,7 +60,34 @@ export default function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <PageHeader badge="系统" title="设置" description="前后端环境变量与 AI 服务配置" />
+      <PageHeader badge="系统" title="设置" description="账号、前后端环境变量与 AI 服务配置" />
+
+      <Card>
+        <h2 className="font-semibold">账号</h2>
+        {isAuthenticated && user ? (
+          <dl className="mt-4 space-y-2 text-sm">
+            <div className="flex justify-between gap-4">
+              <dt className="text-slate-500">用户名</dt>
+              <dd>{user.username}</dd>
+            </div>
+            {user.email && (
+              <div className="flex justify-between gap-4">
+                <dt className="text-slate-500">邮箱</dt>
+                <dd>{user.email}</dd>
+              </div>
+            )}
+            <div className="pt-2">
+              <Button variant="outline" size="sm" onClick={logout}>
+                退出登录
+              </Button>
+            </div>
+          </dl>
+        ) : (
+          <p className="mt-2 text-sm text-slate-600">
+            未登录。学习进度与场景数据需登录后保存。
+          </p>
+        )}
+      </Card>
 
       <Card>
         <h2 className="font-semibold">前端配置</h2>

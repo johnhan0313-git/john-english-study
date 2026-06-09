@@ -6,8 +6,7 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import { CheckCircle, XCircle } from "lucide-react";
 import { api, Exercise } from "@/lib/api";
-import { API_BASE } from "@/lib/env";
-import { getDeviceId } from "@/lib/utils";
+import { RequireAuth } from "@/components/auth/require-auth";
 import { Badge, Button, Card, Input, ProgressBar, Spinner } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
@@ -73,9 +72,8 @@ function ExerciseItem({
   return null;
 }
 
-export default function PracticePage() {
+function PracticeContent() {
   const { id } = useParams<{ id: string }>();
-  const deviceId = getDeviceId();
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [results, setResults] = useState<Record<number, { correct: boolean; correct_answer: string | string[]; explanation?: string }>>({});
@@ -89,7 +87,7 @@ export default function PracticePage() {
 
   const submitOne = useMutation({
     mutationFn: ({ exerciseId, answer }: { exerciseId: number; answer: string }) =>
-      api.submitExercise(exerciseId, answer, deviceId),
+      api.submitExercise(exerciseId, answer),
     onSuccess: (data, vars) => {
       setResults((prev) => ({ ...prev, [vars.exerciseId]: data }));
     },
@@ -110,11 +108,7 @@ export default function PracticePage() {
       const correct = Object.values(updatedResults).filter((r) => r.correct).length;
       setBatchScore({ score: Math.round((correct / exercises.length) * 100), correct, total: exercises.length });
       setFinished(true);
-      await fetch(`${API_BASE}/scenarios/${id}/complete`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ device_id: deviceId, total: exercises.length, correct }),
-      });
+      await api.completeScenario(Number(id), exercises.length, correct);
     }
   };
 
@@ -196,5 +190,13 @@ export default function PracticePage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function PracticePage() {
+  return (
+    <RequireAuth>
+      <PracticeContent />
+    </RequireAuth>
   );
 }

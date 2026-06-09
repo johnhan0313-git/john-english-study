@@ -6,12 +6,11 @@ import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Loader2, Phone, Send, Sparkles, Square } from "lucide-react";
 import { api, ConversationMessage } from "@/lib/api";
-import { cn, getDeviceId } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { Alert, Badge, Button, Card, Spinner } from "@/components/ui";
 
 export default function ChatSessionPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
-  const deviceId = getDeviceId();
   const queryClient = useQueryClient();
   const id = Number(sessionId);
 
@@ -25,8 +24,8 @@ export default function ChatSessionPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ["conversation", id, deviceId],
-    queryFn: () => api.getConversation(id, deviceId),
+    queryKey: ["conversation", id],
+    queryFn: () => api.getConversation(id),
   });
 
   useEffect(() => {
@@ -50,17 +49,17 @@ export default function ChatSessionPage() {
       created_at: new Date().toISOString(),
     };
 
-    queryClient.setQueryData(["conversation", id, deviceId], (old: typeof data) =>
+    queryClient.setQueryData(["conversation", id], (old: typeof data) =>
       old ? { ...old, messages: [...old.messages, optimisticUser] } : old,
     );
 
-    await api.streamConversationMessage(id, deviceId, text, showChineseHint, {
+    await api.streamConversationMessage(id, text, showChineseHint, {
       onToken: (token) => setStreamContent((prev) => prev + token),
       onDone: async () => {
         setStreaming(false);
         setStreamContent("");
         await refetch();
-        queryClient.invalidateQueries({ queryKey: ["conversations", deviceId] });
+        queryClient.invalidateQueries({ queryKey: ["conversations"] });
       },
       onError: (message) => {
         setStreaming(false);
@@ -76,10 +75,10 @@ export default function ChatSessionPage() {
     setEnding(true);
     setError(null);
     try {
-      const result = await api.endConversation(id, deviceId);
+      const result = await api.endConversation(id);
       setSummary(result);
       await refetch();
-      queryClient.invalidateQueries({ queryKey: ["conversations", deviceId] });
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
     } catch (e) {
       setError(e instanceof Error ? e.message : "生成总结失败，请重试");
     } finally {

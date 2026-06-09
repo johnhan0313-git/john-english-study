@@ -56,7 +56,7 @@ class ConversationService:
     async def create_session(
         self,
         *,
-        device_id: str,
+        user_id: int,
         scenario_id: int | None = None,
         level: str = "cet4",
         theme: str | None = None,
@@ -67,14 +67,14 @@ class ConversationService:
             session_data = await self._setup_from_scenario(scenario_id, level)
         else:
             session_data = await self._setup_standalone(
-                device_id=device_id,
+                user_id=user_id,
                 level=level,
                 theme=theme or "daily",
                 word_count=word_count,
             )
 
         session = ConversationSession(
-            device_id=device_id,
+            user_id=user_id,
             scenario_id=scenario_id,
             title=session_data["title"],
             theme=session_data["theme"],
@@ -137,7 +137,7 @@ class ConversationService:
     async def _setup_standalone(
         self,
         *,
-        device_id: str,
+        user_id: int,
         level: str,
         theme: str,
         word_count: int,
@@ -147,7 +147,7 @@ class ConversationService:
             theme=theme if theme != "daily" else None,
             word_ids=[],
             word_count=word_count,
-            device_id=device_id,
+            user_id=user_id,
         )
         lemmas = [w.lemma for w in words]
 
@@ -234,18 +234,18 @@ class ConversationService:
             "We should confirm your schedule and luggage details."
         )
 
-    def get_session(self, session_id: int, device_id: str | None = None) -> ConversationSession | None:
+    def get_session(self, session_id: int, user_id: int | None = None) -> ConversationSession | None:
         q = (
             self.db.query(ConversationSession)
             .options(joinedload(ConversationSession.messages))
             .filter(ConversationSession.id == session_id)
         )
-        if device_id:
-            q = q.filter(ConversationSession.device_id == device_id)
+        if user_id is not None:
+            q = q.filter(ConversationSession.user_id == user_id)
         return q.first()
 
-    def list_sessions(self, device_id: str, skip: int = 0, limit: int = 20) -> tuple[list[ConversationSession], int]:
-        q = self.db.query(ConversationSession).filter(ConversationSession.device_id == device_id)
+    def list_sessions(self, user_id: int, skip: int = 0, limit: int = 20) -> tuple[list[ConversationSession], int]:
+        q = self.db.query(ConversationSession).filter(ConversationSession.user_id == user_id)
         total = q.count()
         items = q.order_by(ConversationSession.created_at.desc()).offset(skip).limit(limit).all()
         return items, total
@@ -413,7 +413,7 @@ class ConversationService:
         except (AIProviderError, Exception):
             pass
 
-        self._apply_srs_for_words(session.device_id, words_used)
+        self._apply_srs_for_words(session.user_id, words_used)
         session.status = "ended"
         session.ended_at = utc_now()
         session.summary = summary_data.get("summary", "")
@@ -430,13 +430,13 @@ class ConversationService:
             "suggestions": summary_data.get("suggestions", []),
         }
 
-    def _apply_srs_for_words(self, device_id: str, lemmas: list[str]) -> None:
-        if not lemmas:
+    def _apply_srs_for_words(self, user_id: int | None, lemmas: list[str]) -> None:
+        if not lemmas or user_id is None:
             return
         words = self.db.query(Word).filter(Word.lemma.in_(lemmas)).all()
         by_lemma = {w.lemma: w.id for w in words}
         for lemma in lemmas:
             word_id = by_lemma.get(lemma)
             if word_id:
-                record_answer(self.db, device_id, word_id, correct=True)
+                record_answer(self.db, user_id, word_id, correct=True)
         self.db.commit()

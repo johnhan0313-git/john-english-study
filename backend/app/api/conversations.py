@@ -4,8 +4,10 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Upload
 from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
+from app.auth.dependencies import get_current_user
 from app.config import get_settings
 from app.database import get_db
+from app.models.user import User
 from app.schemas.conversation import (
     ConversationBrief,
     ConversationCreateRequest,
@@ -31,12 +33,23 @@ def _conversation_service(db: Session) -> ConversationService:
     return ConversationService(db, providers=build_providers())
 
 
+def _get_user_session(service: ConversationService, session_id: int, user_id: int):
+    session = service.get_session(session_id, user_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    return session
+
+
 @router.post("", response_model=ConversationDetail)
-async def create_conversation(body: ConversationCreateRequest, db: Session = Depends(get_db)):
+async def create_conversation(
+    body: ConversationCreateRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     service = _conversation_service(db)
     try:
         session = await service.create_session(
-            device_id=body.device_id,
+            user_id=user.id,
             scenario_id=body.scenario_id,
             level=body.level,
             theme=body.theme,
@@ -45,42 +58,46 @@ async def create_conversation(body: ConversationCreateRequest, db: Session = Dep
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    session = service.get_session(session.id)
+    session = service.get_session(session.id, user.id)
     return ConversationDetail(**service.session_to_detail(session))
 
 
 @router.get("", response_model=ConversationListResponse)
 def list_conversations(
-    device_id: str = Query("default"),
+    user: User = Depends(get_current_user),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=50),
     db: Session = Depends(get_db),
 ):
     service = _conversation_service(db)
     skip = (page - 1) * page_size
-    items, total = service.list_sessions(device_id, skip=skip, limit=page_size)
+    items, total = service.list_sessions(user.id, skip=skip, limit=page_size)
     briefs = []
     for item in items:
-        loaded = service.get_session(item.id)
+        loaded = service.get_session(item.id, user.id)
         briefs.append(ConversationBrief(**service.session_to_brief(loaded or item)))
     return ConversationListResponse(items=briefs, total=total)
 
 
 @router.get("/{session_id}", response_model=ConversationDetail)
-def get_conversation(session_id: int, device_id: str = Query("default"), db: Session = Depends(get_db)):
+def get_conversation(
+    session_id: int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     service = _conversation_service(db)
-    session = service.get_session(session_id, device_id)
-    if not session:
-        raise HTTPException(status_code=404, detail="Conversation not found")
+    session = _get_user_session(service, session_id, user.id)
     return ConversationDetail(**service.session_to_detail(session))
 
 
 @router.get("/{session_id}/messages", response_model=list[ConversationMessageResponse])
-def list_messages(session_id: int, device_id: str = Query("default"), db: Session = Depends(get_db)):
+def list_messages(
+    session_id: int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     service = _conversation_service(db)
-    session = service.get_session(session_id, device_id)
-    if not session:
-        raise HTTPException(status_code=404, detail="Conversation not found")
+    session = _get_user_session(service, session_id, user.id)
     return [ConversationMessageResponse(**service.message_to_dict(m)) for m in sorted(session.messages, key=lambda x: x.id)]
 
 
@@ -88,13 +105,11 @@ def list_messages(session_id: int, device_id: str = Query("default"), db: Sessio
 async def send_message(
     session_id: int,
     body: SendMessageRequest,
-    device_id: str = Query("default"),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     service = _conversation_service(db)
-    session = service.get_session(session_id, device_id)
-    if not session:
-        raise HTTPException(status_code=404, detail="Conversation not found")
+    session = _get_user_session(service, session_id, user.id)
     try:
         message = await service.send_message(session, body.content, show_chinese_hint=body.show_chinese_hint)
     except ValueError as exc:
@@ -108,13 +123,11 @@ async def send_message(
 async def stream_message(
     session_id: int,
     body: SendMessageRequest,
-    device_id: str = Query("default"),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     service = _conversation_service(db)
-    session = service.get_session(session_id, device_id)
-    if not session:
-        raise HTTPException(status_code=404, detail="Conversation not found")
+    session = _get_user_session(service, session_id, user.id)
 
     async def event_generator():
         try:
@@ -138,12 +151,11 @@ async def stream_message(
 async def end_conversation(
     session_id: int,
     body: EndConversationRequest,
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     service = _conversation_service(db)
-    session = service.get_session(session_id, body.device_id)
-    if not session:
-        raise HTTPException(status_code=404, detail="Conversation not found")
+    session = _get_user_session(service, session_id, user.id)
     result = await service.end_session(session)
     return ConversationSummaryResponse(**result)
 
@@ -152,13 +164,11 @@ async def end_conversation(
 async def get_message_audio(
     session_id: int,
     message_id: int,
-    device_id: str = Query("default"),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     service = _conversation_service(db)
-    session = service.get_session(session_id, device_id)
-    if not session:
-        raise HTTPException(status_code=404, detail="Conversation not found")
+    session = _get_user_session(service, session_id, user.id)
 
     message = next((m for m in session.messages if m.id == message_id), None)
     if not message or message.role != "assistant":
@@ -181,9 +191,9 @@ async def get_message_audio(
 @router.post("/{session_id}/turns/voice", response_model=VoiceTurnResponse)
 async def voice_turn(
     session_id: int,
-    device_id: str = Form("default"),
     show_chinese_hint: bool = Form(True),
     audio: UploadFile = File(...),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     settings = get_settings()
@@ -192,9 +202,7 @@ async def voice_turn(
         raise HTTPException(status_code=503, detail="STT is not configured")
 
     service = _conversation_service(db)
-    session = service.get_session(session_id, device_id)
-    if not session:
-        raise HTTPException(status_code=404, detail="Conversation not found")
+    session = _get_user_session(service, session_id, user.id)
 
     audio_bytes = await audio.read()
     transcript = await stt.speech_to_text(audio_bytes, audio.filename or "recording.webm")
@@ -214,6 +222,6 @@ async def voice_turn(
         assistant_message_id=assistant.id,
         transcript=transcript.strip(),
         content=assistant.content,
-        audio_url=f"/conversations/{session_id}/messages/{assistant.id}/audio?device_id={device_id}",
+        audio_url=f"/conversations/{session_id}/messages/{assistant.id}/audio",
         used_words=used_words,
     )

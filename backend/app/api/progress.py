@@ -3,8 +3,10 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
+from app.auth.dependencies import get_current_user
 from app.config import get_settings
 from app.database import get_db
+from app.models.user import User
 from app.schemas.progress import ProgressOverview, ReviewWordItem, WritingEvaluateRequest, WritingEvaluateResponse
 from app.schemas.speaking import SpeakingEvaluateResponse
 from app.services.ai.openai_provider import get_stt_provider
@@ -15,17 +17,24 @@ router = APIRouter(prefix="/progress", tags=["progress"])
 
 
 @router.get("/overview", response_model=ProgressOverview)
-def progress_overview(device_id: str = "default", db: Session = Depends(get_db)):
-    return ProgressOverview(**get_progress_overview(db, device_id))
+def progress_overview(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return ProgressOverview(**get_progress_overview(db, user.id))
 
 
 @router.get("/review", response_model=list[ReviewWordItem])
-def review_words(device_id: str = "default", limit: int = 20, db: Session = Depends(get_db)):
-    return [ReviewWordItem(**w) for w in get_review_words(db, device_id, limit)]
+def review_words(
+    user: User = Depends(get_current_user),
+    limit: int = 20,
+    db: Session = Depends(get_db),
+):
+    return [ReviewWordItem(**w) for w in get_review_words(db, user.id, limit)]
 
 
 @router.post("/writing/evaluate", response_model=WritingEvaluateResponse)
-async def writing_evaluate(body: WritingEvaluateRequest):
+async def writing_evaluate(
+    body: WritingEvaluateRequest,
+    user: User = Depends(get_current_user),
+):
     settings = get_settings()
     result = await evaluate_writing(settings, body.prompt, body.content, body.target_words)
     return WritingEvaluateResponse(**result)
@@ -35,6 +44,7 @@ async def writing_evaluate(body: WritingEvaluateRequest):
 async def speaking_evaluate(
     expected: str = Form(...),
     audio: UploadFile = File(...),
+    user: User = Depends(get_current_user),
 ):
     settings = get_settings()
     audio_bytes = await audio.read()

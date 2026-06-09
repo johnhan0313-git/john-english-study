@@ -4,8 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { ArrowRight, Flame, RefreshCw, Sparkles, Target, Trophy, Zap } from "lucide-react";
 import { api } from "@/lib/api";
-import { getDeviceId } from "@/lib/utils";
 import { Badge, Button, Card, EmptyState, PageHeader, ProgressBar, SectionTitle, Spinner, StatCard } from "@/components/ui";
+import { useAuth } from "@/contexts/auth-context";
 
 const dailyKindLabel: Record<string, string> = {
   review: "复习场景",
@@ -20,16 +20,18 @@ const dailyKindVariant: Record<string, "warning" | "brand" | "purple"> = {
 };
 
 export default function HomePage() {
-  const deviceId = getDeviceId();
+  const { isAuthenticated } = useAuth();
 
   const { data: progress } = useQuery({
-    queryKey: ["progress", deviceId],
-    queryFn: () => api.getProgress(deviceId),
+    queryKey: ["progress"],
+    queryFn: () => api.getProgress(),
+    enabled: isAuthenticated,
   });
 
   const { data: daily, isLoading, refetch, isFetching } = useQuery({
-    queryKey: ["daily", deviceId],
-    queryFn: () => api.getDailyScenarios(deviceId),
+    queryKey: ["daily"],
+    queryFn: () => api.getDailyScenarios(),
+    enabled: isAuthenticated,
   });
 
   return (
@@ -39,7 +41,7 @@ export default function HomePage() {
         title="沉浸式场景学英语"
         description="把 CET-4/6 词汇放进真实语境，听说读写一站练完"
         action={
-          <Link href="/generate">
+          <Link href={isAuthenticated ? "/generate" : "/login?next=/generate"}>
             <Button size="lg">
               <Sparkles className="mr-2 h-4 w-4" />
               生成场景
@@ -47,6 +49,15 @@ export default function HomePage() {
           </Link>
         }
       />
+
+      {!isAuthenticated && (
+        <Card className="border-brand-100 bg-brand-50/50">
+          <p className="text-sm text-slate-700">
+            <Link href="/login" className="font-semibold text-brand-700 hover:underline">登录</Link>
+            {" "}后可查看学习进度、今日场景与对话记录。词库与参考内容可匿名浏览。
+          </p>
+        </Card>
+      )}
 
       {progress && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -63,14 +74,26 @@ export default function HomePage() {
         <SectionTitle
           title="今日场景"
           action={
-            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-              <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
-              刷新
-            </Button>
+            isAuthenticated ? (
+              <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+                <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+                刷新
+              </Button>
+            ) : undefined
           }
         />
 
-        {isLoading ? (
+        {!isAuthenticated ? (
+          <EmptyState
+            title="登录查看今日场景"
+            description="每日场景会根据你的学习进度自动生成"
+            action={
+              <Link href="/login?next=/">
+                <Button>登录</Button>
+              </Link>
+            }
+          />
+        ) : isLoading ? (
           <Spinner label="正在加载今日场景..." />
         ) : daily?.items.length ? (
           <div className="grid gap-4 md:grid-cols-3">
@@ -115,7 +138,7 @@ export default function HomePage() {
             <h3 className="text-lg font-bold text-slate-900">自定义学习场景</h3>
             <p className="mt-1 text-sm text-slate-600">自选主题、级别和词汇，AI 为你生成专属阅读材料与练习</p>
           </div>
-          <Link href="/generate">
+          <Link href={isAuthenticated ? "/generate" : "/login?next=/generate"}>
             <Button variant="secondary" size="lg">
               <Sparkles className="mr-2 h-4 w-4" />
               手动生成

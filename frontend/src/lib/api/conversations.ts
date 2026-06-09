@@ -1,11 +1,8 @@
-import { API_BASE } from "@/lib/env";
-
-import { ApiError, request } from "./client";
+import { API_BASE, ApiError, authFetch, authHeaders, request } from "./client";
 import type { ConversationDetail, ConversationListResponse, ConversationSummary, VoiceTurnResponse } from "./types";
 
 export const conversationsApi = {
   createConversation: (body: {
-    device_id: string;
     scenario_id?: number;
     level?: string;
     theme?: string;
@@ -17,24 +14,22 @@ export const conversationsApi = {
       body: JSON.stringify(body),
     }),
 
-  listConversations: (deviceId: string, page = 1) =>
-    request<ConversationListResponse>(`/conversations?device_id=${deviceId}&page=${page}`),
+  listConversations: (page = 1) =>
+    request<ConversationListResponse>(`/conversations?page=${page}`),
 
-  getConversation: (id: number, deviceId: string) =>
-    request<ConversationDetail>(`/conversations/${id}?device_id=${deviceId}`),
+  getConversation: (id: number) => request<ConversationDetail>(`/conversations/${id}`),
 
-  endConversation: (id: number, deviceId: string) =>
+  endConversation: (id: number) =>
     request<ConversationSummary>(`/conversations/${id}/end`, {
       method: "POST",
-      body: JSON.stringify({ device_id: deviceId }),
+      body: JSON.stringify({}),
     }),
 
-  getConversationMessageAudioUrl: (sessionId: number, messageId: number, deviceId: string) =>
-    `${API_BASE}/conversations/${sessionId}/messages/${messageId}/audio?device_id=${deviceId}`,
+  getConversationMessageAudioUrl: (sessionId: number, messageId: number) =>
+    `${API_BASE}/conversations/${sessionId}/messages/${messageId}/audio`,
 
   async streamConversationMessage(
     sessionId: number,
-    deviceId: string,
     content: string,
     showChineseHint: boolean,
     handlers: {
@@ -43,14 +38,11 @@ export const conversationsApi = {
       onError: (message: string) => void;
     },
   ) {
-    const res = await fetch(
-      `${API_BASE}/conversations/${sessionId}/messages/stream?device_id=${encodeURIComponent(deviceId)}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, show_chinese_hint: showChineseHint }),
-      },
-    );
+    const res = await authFetch(`/conversations/${sessionId}/messages/stream`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content, show_chinese_hint: showChineseHint }),
+    });
     if (!res.ok) {
       handlers.onError((await res.text()) || res.statusText);
       return;
@@ -88,15 +80,18 @@ export const conversationsApi = {
     }
   },
 
-  async sendVoiceTurn(sessionId: number, deviceId: string, audioBlob: Blob, showChineseHint = true) {
+  async sendVoiceTurn(sessionId: number, audioBlob: Blob, showChineseHint = true) {
     const form = new FormData();
-    form.append("device_id", deviceId);
     form.append("show_chinese_hint", String(showChineseHint));
     form.append("audio", audioBlob, "recording.webm");
     const res = await fetch(`${API_BASE}/conversations/${sessionId}/turns/voice`, {
       method: "POST",
+      headers: authHeaders(),
       body: form,
     });
+    if (res.status === 401) {
+      throw new ApiError("Not authenticated", 401);
+    }
     if (!res.ok) throw new ApiError(await res.text(), res.status);
     const data = (await res.json()) as VoiceTurnResponse;
     return {

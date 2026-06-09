@@ -42,7 +42,7 @@ class ScenarioService:
         theme: str | None,
         word_ids: list[int],
         word_count: int,
-        device_id: str,
+        user_id: int,
         prefer_review: bool = False,
     ) -> list[Word]:
         if word_ids:
@@ -67,7 +67,7 @@ class ScenarioService:
                     query = query.filter(Word.id.in_(member_ids))
 
         if prefer_review:
-            due_ids = get_due_word_ids(self.db, device_id, word_count * 2)
+            due_ids = get_due_word_ids(self.db, user_id, word_count * 2)
             if due_ids:
                 due_words = self.db.query(Word).filter(Word.id.in_(due_ids)).limit(word_count).all()
                 if len(due_words) >= 5:
@@ -115,11 +115,11 @@ class ScenarioService:
 
     async def generate_scenario(
         self,
+        user_id: int,
         level: str = "cet4",
         theme: str | None = None,
         word_ids: list[int] | None = None,
         scenario_type: str = "narrative",
-        device_id: str = "default",
         word_count: int = 10,
         is_daily: bool = False,
         daily_kind: str | None = None,
@@ -134,7 +134,7 @@ class ScenarioService:
             theme=theme,
             word_ids=word_ids or [],
             word_count=word_count,
-            device_id=device_id,
+            user_id=user_id,
             prefer_review=prefer_review,
         )
         if len(words) < 3:
@@ -159,7 +159,7 @@ class ScenarioService:
             scenario_type=scenario_type,
             content=dump_json_field(content),
             dialogue=dump_json_field(dialogue),
-            device_id=device_id,
+            user_id=user_id,
             is_daily=is_daily,
             daily_date=local_today(self.settings.app_timezone).isoformat() if is_daily else None,
             daily_kind=daily_kind,
@@ -179,11 +179,11 @@ class ScenarioService:
         self.db.refresh(scenario)
         return scenario
 
-    async def ensure_daily_scenarios(self, device_id: str) -> list[Scenario]:
+    async def ensure_daily_scenarios(self, user_id: int) -> list[Scenario]:
         today = local_today(self.settings.app_timezone).isoformat()
         existing = (
             self.db.query(Scenario)
-            .filter(Scenario.device_id == device_id, Scenario.is_daily.is_(True), Scenario.daily_date == today)
+            .filter(Scenario.user_id == user_id, Scenario.is_daily.is_(True), Scenario.daily_date == today)
             .order_by(Scenario.id)
             .all()
         )
@@ -200,8 +200,8 @@ class ScenarioService:
             if any(s.daily_kind == kind for s in generated):
                 continue
             scenario = await self.generate_scenario(
+                user_id=user_id,
                 level=level,
-                device_id=device_id,
                 is_daily=True,
                 daily_kind=kind,
                 prefer_review=prefer_review,
@@ -218,8 +218,8 @@ class ScenarioService:
             .first()
         )
 
-    def list_scenarios(self, device_id: str, skip: int = 0, limit: int = 20) -> tuple[list[Scenario], int]:
-        q = self.db.query(Scenario).filter(Scenario.device_id == device_id)
+    def list_scenarios(self, user_id: int, skip: int = 0, limit: int = 20) -> tuple[list[Scenario], int]:
+        q = self.db.query(Scenario).filter(Scenario.user_id == user_id)
         total = q.count()
         items = q.order_by(Scenario.created_at.desc()).offset(skip).limit(limit).all()
         return items, total

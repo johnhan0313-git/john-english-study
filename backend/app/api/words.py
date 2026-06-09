@@ -1,17 +1,18 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, joinedload
 
+from app.auth.dependencies import get_current_user, get_current_user_optional
 from app.database import get_db
 from app.models.progress import UserWordProgress
 from app.models.scenario import ScenarioWord
+from app.models.user import User
 from app.models.word import Word, WordGroup, WordGroupMember, WordTag
 from app.schemas.word import WordBrief, WordDetail, WordGroupResponse, WordListResponse, WordStatsResponse
 from app.services.vocabulary.definition_lookup import enrich_definitions
-from app.services.vocabulary.exam_tags import count_words_for_exam_level, sync_all_exam_tags
-from app.services.vocabulary.levels import ALL_EXAM_LEVELS, PETS_LEVELS, exam_level_filter, is_exam_tag, resolve_exam_levels
+from app.services.vocabulary.exam_tags import count_words_for_exam_level
+from app.services.vocabulary.levels import ALL_EXAM_LEVELS, exam_level_filter, is_exam_tag, resolve_exam_levels
 from app.utils.json_helpers import parse_json_field
 from app.utils.time import utc_now
 
@@ -25,8 +26,8 @@ def list_words(
     level: str | None = None,
     theme: str | None = None,
     search: str | None = None,
-    device_id: str = "default",
     db: Session = Depends(get_db),
+    user: User | None = Depends(get_current_user_optional),
 ):
     query = db.query(Word)
     if level:
@@ -41,16 +42,17 @@ def list_words(
     total = query.count()
     words = query.order_by(Word.lemma).offset((page - 1) * page_size).limit(page_size).all()
 
-    progress_map = {}
+    progress_map: dict[int, int] = {}
     exam_tags_map: dict[int, list[str]] = {}
     if words:
         word_ids = [w.id for w in words]
-        progresses = (
-            db.query(UserWordProgress)
-            .filter(UserWordProgress.device_id == device_id, UserWordProgress.word_id.in_(word_ids))
-            .all()
-        )
-        progress_map = {p.word_id: p.familiarity for p in progresses}
+        if user:
+            progresses = (
+                db.query(UserWordProgress)
+                .filter(UserWordProgress.user_id == user.id, UserWordProgress.word_id.in_(word_ids))
+                .all()
+            )
+            progress_map = {p.word_id: p.familiarity for p in progresses}
         tag_rows = (
             db.query(WordTag)
             .filter(WordTag.word_id.in_(word_ids), WordTag.tag.in_(ALL_EXAM_LEVELS))
@@ -67,7 +69,7 @@ def list_words(
             level=w.level,
             pos=w.pos,
             definitions=enrich_definitions(w.lemma, parse_json_field(w.definitions, [])),
-            familiarity=progress_map.get(w.id),
+            familiarity=progress_map.get(w.id) if user else None,
             exam_levels=resolve_exam_levels(w.level, exam_tags_map.get(w.id, [])),
         )
         for w in words
@@ -76,25 +78,25 @@ def list_words(
 
 
 @router.get("/stats", response_model=WordStatsResponse)
-def word_stats(device_id: str = "default", db: Session = Depends(get_db)):
+def word_stats(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     total = db.query(Word).count()
     cet4_count = count_words_for_exam_level(db, "cet4")
     cet6_count = count_words_for_exam_level(db, "cet6")
     learned = (
         db.query(UserWordProgress)
-        .filter(UserWordProgress.device_id == device_id, UserWordProgress.familiarity > 0)
+        .filter(UserWordProgress.user_id == user.id, UserWordProgress.familiarity > 0)
         .count()
     )
     mastered = (
         db.query(UserWordProgress)
-        .filter(UserWordProgress.device_id == device_id, UserWordProgress.familiarity >= 5)
+        .filter(UserWordProgress.user_id == user.id, UserWordProgress.familiarity >= 5)
         .count()
     )
     now = utc_now()
     due_review = (
         db.query(UserWordProgress)
         .filter(
-            UserWordProgress.device_id == device_id,
+            UserWordProgress.user_id == user.id,
             UserWordProgress.next_review.isnot(None),
             UserWordProgress.next_review <= now,
         )
@@ -136,7 +138,11 @@ def list_groups(db: Session = Depends(get_db)):
 
 
 @router.get("/{word_id}", response_model=WordDetail)
-def get_word(word_id: int, device_id: str = "default", db: Session = Depends(get_db)):
+def get_word(
+    word_id: int,
+    db: Session = Depends(get_db),
+    user: User | None = Depends(get_current_user_optional),
+):
     word = (
         db.query(Word)
         .options(joinedload(Word.tags), joinedload(Word.group_memberships).joinedload(WordGroupMember.group))
@@ -146,11 +152,15 @@ def get_word(word_id: int, device_id: str = "default", db: Session = Depends(get
     if not word:
         raise HTTPException(status_code=404, detail="Word not found")
 
-    progress = (
-        db.query(UserWordProgress)
-        .filter(UserWordProgress.device_id == device_id, UserWordProgress.word_id == word_id)
-        .first()
-    )
+    familiarity = 0
+    if user:
+        progress = (
+            db.query(UserWordProgress)
+            .filter(UserWordProgress.user_id == user.id, UserWordProgress.word_id == word_id)
+            .first()
+        )
+        familiarity = progress.familiarity if progress else 0
+
     scenario_count = db.query(ScenarioWord).filter(ScenarioWord.word_id == word_id).count()
     groups = [m.group.slug for m in word.group_memberships if m.group]
     exam_tag_list = [t.tag for t in word.tags if is_exam_tag(t.tag)]
@@ -165,7 +175,7 @@ def get_word(word_id: int, device_id: str = "default", db: Session = Depends(get
         examples=parse_json_field(word.examples, []),
         tags=[t.tag for t in word.tags if not is_exam_tag(t.tag)],
         groups=groups,
-        familiarity=progress.familiarity if progress else 0,
+        familiarity=familiarity if user else None,
         scenario_count=scenario_count,
         exam_levels=resolve_exam_levels(word.level, exam_tag_list),
     )
