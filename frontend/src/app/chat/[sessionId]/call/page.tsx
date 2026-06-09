@@ -27,9 +27,11 @@ export default function ChatCallPage() {
     initialStarted: true,
   });
 
+  const { playOpeningIfNeeded, started } = voice;
+
   useEffect(() => {
-    voice.playOpeningIfNeeded(data?.messages, data?.status ?? "active");
-  }, [data?.messages, data?.status, voice.playOpeningIfNeeded, voice.started]);
+    playOpeningIfNeeded(data?.messages, data?.status ?? "active");
+  }, [data?.messages, data?.status, playOpeningIfNeeded, started]);
 
   if (isLoading || !data) return <Spinner label="连接通话..." />;
 

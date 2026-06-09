@@ -10,6 +10,7 @@ from app.models.scenario import ScenarioWord
 from app.models.word import Word, WordGroup, WordGroupMember, WordTag
 from app.schemas.word import WordBrief, WordDetail, WordGroupResponse, WordListResponse, WordStatsResponse
 from app.utils.json_helpers import parse_json_field
+from app.utils.time import utc_now
 
 router = APIRouter(prefix="/words", tags=["words"])
 
@@ -76,9 +77,7 @@ def word_stats(device_id: str = "default", db: Session = Depends(get_db)):
         .filter(UserWordProgress.device_id == device_id, UserWordProgress.familiarity >= 5)
         .count()
     )
-    from datetime import datetime
-
-    now = datetime.utcnow()
+    now = utc_now()
     due_review = (
         db.query(UserWordProgress)
         .filter(

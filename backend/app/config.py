@@ -31,8 +31,10 @@ class Settings(BaseSettings):
 
     app_name: str = "John English Study"
     debug: bool = False
+    testing: bool = False
     database_url: str = "sqlite:///./data/app.db"
     media_dir: Path = Path("./data/media")
+    use_migrations: bool = False
     cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
 
     ai_llm_base_url: str = "https://api.openai.com/v1"
@@ -54,10 +56,14 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60 * 24 * 7
 
-    # Scheduler
+    # Scheduler / startup
     daily_scenario_hour: int = 6
     daily_scenario_count: int = 3
     default_device_id: str = "default"
+    enable_scheduler: bool = True
+    skip_startup_seed: bool = False
+    seed_on_startup: bool = True
+    app_timezone: str = "Asia/Shanghai"
 
     @property
     def cors_origin_list(self) -> list[str]:

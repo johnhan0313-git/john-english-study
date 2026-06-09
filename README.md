@@ -53,6 +53,17 @@ cp frontend/.env.example frontend/.env
 docker compose up --build
 ```
 
+`NEXT_PUBLIC_API_URL` 在 **构建期** 注入 Next.js，修改后需重新 build。示例：
+
+```yaml
+# docker-compose.yml
+services:
+  frontend:
+    build:
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000/api
+```
+
 ## 环境变量
 
 - 后端：[backend/.env.example](backend/.env.example)
@@ -64,6 +75,9 @@ docker compose up --build
 |------|------|
 | `AI_LLM_*` / `AI_STT_*` / `AI_TTS_*` | 按能力分别配置 API（可混用 Groq、DeepSeek、OpenAI 等） |
 | `USE_EDGE_TTS` | `true` 使用免费 Edge TTS |
+| `USE_MIGRATIONS` | `true` 时启动跳过 `create_all()`，需先 `alembic upgrade head` |
+| `SKIP_STARTUP_SEED` | `true` 跳过启动 seed |
+| `ENABLE_SCHEDULER` | `false` 关闭内置每日场景调度 |
 
 前端关键配置：
 
@@ -90,7 +104,35 @@ cd backend
 pytest
 ```
 
+## 数据库迁移（Alembic）
+
+默认开发环境仍使用 `create_all()` 建表。生产或需要版本化迁移时：
+
+```bash
+cd backend
+source .venv/bin/activate
+export USE_MIGRATIONS=true   # 启动时跳过 create_all，仅依赖迁移
+alembic upgrade head
+```
+
+## CLI 数据灌库
+
+启动时可通过 `SKIP_STARTUP_SEED=true` 跳过 seed；独立灌库：
+
+```bash
+cd backend
+python -m app.cli seed
+python -m app.cli daily-scenarios   # 手动触发每日场景
+```
+
+多实例部署时建议 `ENABLE_SCHEDULER=false`，由 cron/k8s 调用 `daily-scenarios`。
+
+## 认证说明
+
+当前 MVP 使用 `device_id` 区分学习进度，**非安全认证**。JWT 接口（`/api/auth/*`）为后续多用户预留。
+
 ## 扩展
 
 - 多用户：JWT 骨架已就绪，见 `/api/auth/*`
 - PostgreSQL：见 [docs/POSTGRESQL_MIGRATION.md](docs/POSTGRESQL_MIGRATION.md)
+- 前端 TypeScript 类型可从 `/openapi.json` 生成（暂未引入 codegen 依赖）

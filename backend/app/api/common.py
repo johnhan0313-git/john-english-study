@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import timedelta
+
+from app.utils.time import utc_now
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from jose import JWTError, jwt
@@ -65,7 +67,7 @@ def get_ai_config():
 
 def create_access_token(username: str) -> str:
     settings = get_settings()
-    expire = datetime.utcnow() + timedelta(minutes=settings.jwt_expire_minutes)
+    expire = utc_now() + timedelta(minutes=settings.jwt_expire_minutes)
     payload = {"sub": username, "exp": expire}
     return jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
 

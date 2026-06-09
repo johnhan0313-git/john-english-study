@@ -1,26 +1,13 @@
 from __future__ import annotations
 
-import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
-from app.database import init_db, SessionLocal
-from app.services.vocabulary.import_words import import_words
 from app.services.exercise.generator import check_exercise_answer, normalize_answer
 from app.models.exercise import Exercise
 from app.utils.json_helpers import dump_json_field
 
 
-@pytest.fixture
-def client():
-    init_db()
-    db = SessionLocal()
-    import_words(db)
-    db.close()
-    return TestClient(app)
-
-
-def test_health(client):
+def test_health(client: TestClient):
     resp = client.get("/api/health")
     assert resp.status_code == 200
     assert resp.json()["status"] == "ok"

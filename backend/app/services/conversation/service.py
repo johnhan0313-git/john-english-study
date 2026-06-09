@@ -2,14 +2,15 @@ from __future__ import annotations
 
 import re
 from collections.abc import AsyncIterator
-from datetime import datetime
+from app.utils.time import utc_now
 
 from sqlalchemy.orm import Session, joinedload
 
 from app.config import Settings, get_settings
 from app.models.conversation import ConversationMessage, ConversationSession
 from app.models.word import Word
-from app.services.ai.openai_provider import AIProviderError, get_llm_provider
+from app.services.ai.factory import AIProviders, build_providers
+from app.services.ai.openai_provider import AIProviderError
 from app.services.conversation.prompts import (
     CONVERSATION_SETUP_SCHEMA,
     CONVERSATION_SUMMARY_SCHEMA,
@@ -40,11 +41,17 @@ def merge_words_used(existing: list[str], new_words: list[str]) -> list[str]:
 
 
 class ConversationService:
-    def __init__(self, db: Session, settings: Settings | None = None):
+    def __init__(
+        self,
+        db: Session,
+        settings: Settings | None = None,
+        providers: AIProviders | None = None,
+    ):
         self.db = db
         self.settings = settings or get_settings()
-        self.ai = get_llm_provider(self.settings)
-        self.scenario_service = ScenarioService(db, self.settings)
+        resolved = providers or build_providers(self.settings)
+        self.ai = resolved.llm
+        self.scenario_service = ScenarioService(db, self.settings, providers=resolved)
 
     async def create_session(
         self,
@@ -408,7 +415,7 @@ class ConversationService:
 
         self._apply_srs_for_words(session.device_id, words_used)
         session.status = "ended"
-        session.ended_at = datetime.utcnow()
+        session.ended_at = utc_now()
         session.summary = summary_data.get("summary", "")
         self.db.commit()
 

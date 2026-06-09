@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+from app.db.json_type import JSONField
 
 
 class Scenario(Base):
@@ -16,14 +17,14 @@ class Scenario(Base):
     title: Mapped[str] = mapped_column(String(256))
     theme: Mapped[str] = mapped_column(String(128), index=True)
     level: Mapped[str] = mapped_column(String(16), index=True)
-    scenario_type: Mapped[str] = mapped_column(String(32), default="narrative")  # narrative | dialogue
-    content: Mapped[str] = mapped_column(Text)  # JSON: passage, summary_zh, fun_fact, word_usage
-    dialogue: Mapped[str] = mapped_column(Text, default="[]")  # JSON array
+    scenario_type: Mapped[str] = mapped_column(String(32), default="narrative")
+    content: Mapped[Any] = mapped_column(JSONField)
+    dialogue: Mapped[Any] = mapped_column(JSONField, default=list)
     audio_path: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     device_id: Mapped[str] = mapped_column(String(64), index=True, default="default")
     is_daily: Mapped[bool] = mapped_column(Boolean, default=False)
-    daily_date: Mapped[Optional[str]] = mapped_column(String(10), nullable=True, index=True)  # YYYY-MM-DD
-    daily_kind: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)  # review | new | challenge
+    daily_date: Mapped[Optional[str]] = mapped_column(String(10), nullable=True, index=True)
+    daily_kind: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     words: Mapped[list["ScenarioWord"]] = relationship(back_populates="scenario", cascade="all, delete-orphan")

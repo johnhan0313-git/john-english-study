@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useState } from "react";
 import { CheckCircle, XCircle } from "lucide-react";
 import { api, Exercise } from "@/lib/api";
@@ -75,7 +75,6 @@ function ExerciseItem({
 
 export default function PracticePage() {
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
   const deviceId = getDeviceId();
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});

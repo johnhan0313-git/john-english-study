@@ -74,7 +74,7 @@ export default function HomePage() {
           <Spinner label="正在加载今日场景..." />
         ) : daily?.items.length ? (
           <div className="grid gap-4 md:grid-cols-3">
-            {daily.items.map((s, i) => (
+            {daily.items.map((s) => (
               <Link key={s.id} href={`/scenarios/${s.id}`} className="block">
                 <Card hover className="group h-full">
                   <div className="flex items-start justify-between gap-2">

@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from sqlalchemy.orm import Session
 
 from app.models.progress import UserWordProgress
+from app.utils.time import utc_now
 
 SRS_INTERVALS_DAYS = [1, 3, 7, 14, 30]
 
@@ -24,7 +25,7 @@ def get_or_create_progress(db: Session, device_id: str, word_id: int) -> UserWor
 
 def record_answer(db: Session, device_id: str, word_id: int, correct: bool) -> UserWordProgress:
     progress = get_or_create_progress(db, device_id, word_id)
-    now = datetime.utcnow()
+    now = utc_now()
     progress.last_reviewed = now
 
     if correct:
@@ -42,7 +43,7 @@ def record_answer(db: Session, device_id: str, word_id: int, correct: bool) -> U
 
 
 def get_due_word_ids(db: Session, device_id: str, limit: int = 12) -> list[int]:
-    now = datetime.utcnow()
+    now = utc_now()
     rows = (
         db.query(UserWordProgress.word_id)
         .filter(

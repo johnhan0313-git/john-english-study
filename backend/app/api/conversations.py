@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import json
-from pathlib import Path
-
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.orm import Session
@@ -20,16 +17,23 @@ from app.schemas.conversation import (
     SendMessageRequest,
     VoiceTurnResponse,
 )
+from app.services.ai.factory import build_providers
 from app.services.ai.openai_provider import AIProviderError, get_stt_provider
-from app.services.ai.tts_service import generate_speech
 from app.services.conversation.service import ConversationService
+from app.services.conversation.sse import encode_sse_error, stream_conversation_sse
+from app.services.media.tts_facade import ensure_conversation_message_audio
+from app.utils.json_helpers import parse_json_field
 
 router = APIRouter(prefix="/conversations", tags=["conversations"])
 
 
+def _conversation_service(db: Session) -> ConversationService:
+    return ConversationService(db, providers=build_providers())
+
+
 @router.post("", response_model=ConversationDetail)
 async def create_conversation(body: ConversationCreateRequest, db: Session = Depends(get_db)):
-    service = ConversationService(db)
+    service = _conversation_service(db)
     try:
         session = await service.create_session(
             device_id=body.device_id,
@@ -52,7 +56,7 @@ def list_conversations(
     page_size: int = Query(20, ge=1, le=50),
     db: Session = Depends(get_db),
 ):
-    service = ConversationService(db)
+    service = _conversation_service(db)
     skip = (page - 1) * page_size
     items, total = service.list_sessions(device_id, skip=skip, limit=page_size)
     briefs = []
@@ -64,7 +68,7 @@ def list_conversations(
 
 @router.get("/{session_id}", response_model=ConversationDetail)
 def get_conversation(session_id: int, device_id: str = Query("default"), db: Session = Depends(get_db)):
-    service = ConversationService(db)
+    service = _conversation_service(db)
     session = service.get_session(session_id, device_id)
     if not session:
         raise HTTPException(status_code=404, detail="Conversation not found")
@@ -73,7 +77,7 @@ def get_conversation(session_id: int, device_id: str = Query("default"), db: Ses
 
 @router.get("/{session_id}/messages", response_model=list[ConversationMessageResponse])
 def list_messages(session_id: int, device_id: str = Query("default"), db: Session = Depends(get_db)):
-    service = ConversationService(db)
+    service = _conversation_service(db)
     session = service.get_session(session_id, device_id)
     if not session:
         raise HTTPException(status_code=404, detail="Conversation not found")
@@ -87,7 +91,7 @@ async def send_message(
     device_id: str = Query("default"),
     db: Session = Depends(get_db),
 ):
-    service = ConversationService(db)
+    service = _conversation_service(db)
     session = service.get_session(session_id, device_id)
     if not session:
         raise HTTPException(status_code=404, detail="Conversation not found")
@@ -107,32 +111,25 @@ async def stream_message(
     device_id: str = Query("default"),
     db: Session = Depends(get_db),
 ):
-    service = ConversationService(db)
+    service = _conversation_service(db)
     session = service.get_session(session_id, device_id)
     if not session:
         raise HTTPException(status_code=404, detail="Conversation not found")
 
     async def event_generator():
-        message_id = 0
         try:
-            async for token in service.stream_assistant_reply(
-                session,
-                body.content,
-                show_chinese_hint=body.show_chinese_hint,
+            async for chunk in stream_conversation_sse(
+                service.stream_assistant_reply(
+                    session,
+                    body.content,
+                    show_chinese_hint=body.show_chinese_hint,
+                ),
             ):
-                if token.startswith("\n__DONE__:"):
-                    message_id = int(token.split(":")[1])
-                    payload = json.dumps({"type": "done", "message_id": message_id})
-                    yield f"data: {payload}\n\n"
-                else:
-                    payload = json.dumps({"type": "token", "content": token})
-                    yield f"data: {payload}\n\n"
+                yield chunk
         except ValueError as exc:
-            payload = json.dumps({"type": "error", "message": str(exc)})
-            yield f"data: {payload}\n\n"
+            yield encode_sse_error(str(exc))
         except AIProviderError as exc:
-            payload = json.dumps({"type": "error", "message": str(exc)})
-            yield f"data: {payload}\n\n"
+            yield encode_sse_error(str(exc))
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
@@ -143,17 +140,12 @@ async def end_conversation(
     body: EndConversationRequest,
     db: Session = Depends(get_db),
 ):
-    service = ConversationService(db)
+    service = _conversation_service(db)
     session = service.get_session(session_id, body.device_id)
     if not session:
         raise HTTPException(status_code=404, detail="Conversation not found")
     result = await service.end_session(session)
     return ConversationSummaryResponse(**result)
-
-
-def _message_audio_path(session_id: int, message_id: int) -> Path:
-    settings = get_settings()
-    return settings.media_dir / "conversations" / f"conversation_{session_id}_{message_id}.mp3"
 
 
 @router.get("/{session_id}/messages/{message_id}/audio")
@@ -163,7 +155,7 @@ async def get_message_audio(
     device_id: str = Query("default"),
     db: Session = Depends(get_db),
 ):
-    service = ConversationService(db)
+    service = _conversation_service(db)
     session = service.get_session(session_id, device_id)
     if not session:
         raise HTTPException(status_code=404, detail="Conversation not found")
@@ -172,13 +164,16 @@ async def get_message_audio(
     if not message or message.role != "assistant":
         raise HTTPException(status_code=404, detail="Assistant message not found")
 
-    audio_path = _message_audio_path(session_id, message_id)
-    if not audio_path.exists():
-        settings = get_settings()
-        try:
-            await generate_speech(message.content[:500], audio_path, settings)
-        except AIProviderError as exc:
-            raise HTTPException(status_code=503, detail=str(exc)) from exc
+    settings = get_settings()
+    try:
+        audio_path = await ensure_conversation_message_audio(
+            session_id,
+            message_id,
+            message.content,
+            settings,
+        )
+    except AIProviderError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     return FileResponse(audio_path, media_type="audio/mpeg", filename=audio_path.name)
 
@@ -196,7 +191,7 @@ async def voice_turn(
     if not stt:
         raise HTTPException(status_code=503, detail="STT is not configured")
 
-    service = ConversationService(db)
+    service = _conversation_service(db)
     session = service.get_session(session_id, device_id)
     if not session:
         raise HTTPException(status_code=404, detail="Conversation not found")
@@ -210,10 +205,8 @@ async def voice_turn(
     db.refresh(session)
     user_messages = [m for m in session.messages if m.role == "user"]
     user_msg = user_messages[-1] if user_messages else None
-    audio_path = _message_audio_path(session_id, assistant.id)
-    await generate_speech(assistant.content[:500], audio_path, settings)
+    await ensure_conversation_message_audio(session_id, assistant.id, assistant.content, settings)
 
-    from app.utils.json_helpers import parse_json_field
     used_words = parse_json_field(user_msg.meta, {}).get("used_words", []) if user_msg else []
 
     return VoiceTurnResponse(

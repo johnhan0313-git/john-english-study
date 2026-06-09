@@ -1,3 +1,4 @@
+# Sync with pyproject.toml — run scripts/sync-requirements.sh to refresh
 fastapi>=0.115.0
 uvicorn[standard]>=0.32.0
 sqlalchemy>=2.0.36

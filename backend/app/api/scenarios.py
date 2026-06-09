@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from datetime import date
-
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
@@ -15,8 +13,9 @@ from app.schemas.scenario import (
     ScenarioGenerateRequest,
     ScenarioListResponse,
 )
-from app.services.ai.tts_service import generate_speech
+from app.services.media.tts_facade import ensure_scenario_audio
 from app.services.scenario.service import ScenarioService
+from app.utils.time import local_today
 
 router = APIRouter(prefix="/scenarios", tags=["scenarios"])
 
@@ -44,8 +43,9 @@ async def generate_scenario(body: ScenarioGenerateRequest, db: Session = Depends
 
 @router.get("/daily", response_model=DailyScenariosResponse)
 async def daily_scenarios(device_id: str = "default", db: Session = Depends(get_db)):
+    settings = get_settings()
     service = ScenarioService(db)
-    today = date.today().isoformat()
+    today = local_today(settings.app_timezone).isoformat()
     try:
         scenarios = await service.ensure_daily_scenarios(device_id)
     except Exception as e:
@@ -89,18 +89,20 @@ async def get_scenario_audio(scenario_id: int, db: Session = Depends(get_db)):
     if not scenario:
         raise HTTPException(status_code=404, detail="Scenario not found")
 
-    from pathlib import Path
+    content = service.scenario_to_detail(scenario)
+    passage = content["content"].get("passage", "")
+    dialogue_lines = content.get("dialogue", [])
+    text = passage
+    if dialogue_lines:
+        text += " " + " ".join(f"{d['speaker']}: {d['text']}" for d in dialogue_lines)
 
-    audio_path = Path(scenario.audio_path) if scenario.audio_path else settings.media_dir / f"scenario_{scenario_id}.mp3"
-
-    if not audio_path.exists():
-        content = service.scenario_to_detail(scenario)
-        passage = content["content"].get("passage", "")
-        dialogue_lines = content.get("dialogue", [])
-        text = passage
-        if dialogue_lines:
-            text += " " + " ".join(f"{d['speaker']}: {d['text']}" for d in dialogue_lines)
-        await generate_speech(text, audio_path, settings)
+    audio_path = await ensure_scenario_audio(
+        scenario_id,
+        text,
+        settings,
+        stored_path=scenario.audio_path,
+    )
+    if scenario.audio_path != str(audio_path):
         scenario.audio_path = str(audio_path)
         db.commit()
 

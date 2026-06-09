@@ -248,6 +248,8 @@ def _provider_from_config(config: AIEndpointConfig) -> OpenAICompatibleProvider 
 
 
 def get_llm_provider(settings: Settings) -> OpenAICompatibleProvider | MockAIProvider:
+    if settings.testing:
+        return MockAIProvider()
     provider = _provider_from_config(settings.llm_config())
     return provider or MockAIProvider()
 

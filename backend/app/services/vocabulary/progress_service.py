@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import timedelta
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -9,6 +9,7 @@ from app.models.progress import LearningStreak, ScenarioAttempt, UserWordProgres
 from app.models.scenario import Scenario
 from app.models.word import Word
 from app.utils.json_helpers import parse_json_field
+from app.utils.time import local_today, utc_now
 
 
 def get_progress_overview(db: Session, device_id: str) -> dict:
@@ -23,7 +24,7 @@ def get_progress_overview(db: Session, device_id: str) -> dict:
         .filter(UserWordProgress.device_id == device_id, UserWordProgress.familiarity >= 5)
         .count()
     )
-    now = datetime.utcnow()
+    now = utc_now()
     due_review = (
         db.query(UserWordProgress)
         .filter(
@@ -59,7 +60,7 @@ def get_progress_overview(db: Session, device_id: str) -> dict:
 
 
 def get_review_words(db: Session, device_id: str, limit: int = 20) -> list[dict]:
-    now = datetime.utcnow()
+    now = utc_now()
     rows = (
         db.query(UserWordProgress, Word)
         .join(Word, Word.id == UserWordProgress.word_id)
@@ -107,8 +108,8 @@ def record_scenario_attempt(
     return attempt
 
 
-def update_streak(db: Session, device_id: str) -> LearningStreak:
-    today = datetime.utcnow().strftime("%Y-%m-%d")
+def update_streak(db: Session, device_id: str, tz_name: str = "Asia/Shanghai") -> LearningStreak:
+    today = local_today(tz_name).isoformat()
     streak = db.query(LearningStreak).filter(LearningStreak.device_id == device_id).first()
     if not streak:
         streak = LearningStreak(device_id=device_id, current_streak=1, longest_streak=1, last_active_date=today)
@@ -118,10 +119,7 @@ def update_streak(db: Session, device_id: str) -> LearningStreak:
     if streak.last_active_date == today:
         return streak
 
-    yesterday = (datetime.utcnow().replace(hour=0, minute=0, second=0)).strftime("%Y-%m-%d")
-    from datetime import timedelta
-
-    yesterday_str = (datetime.utcnow() - timedelta(days=1)).strftime("%Y-%m-%d")
+    yesterday_str = (local_today(tz_name) - timedelta(days=1)).isoformat()
     if streak.last_active_date == yesterday_str:
         streak.current_streak += 1
     else:

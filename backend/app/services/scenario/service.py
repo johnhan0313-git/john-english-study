@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import random
-from datetime import date, datetime
+from app.utils.time import local_today
 
 from sqlalchemy.orm import Session, joinedload
 
@@ -10,7 +10,8 @@ from app.config import Settings, get_settings
 from app.models.exercise import Exercise
 from app.models.scenario import Scenario, ScenarioWord
 from app.models.word import Word, WordGroup, WordGroupMember
-from app.services.ai.openai_provider import AIProviderError, get_ai_provider
+from app.services.ai.factory import AIProviders, build_providers
+from app.services.ai.openai_provider import AIProviderError
 from app.services.ai.prompts import EXERCISE_SCHEMA, SCENARIO_SCHEMA, build_exercise_prompt, build_scenario_prompt
 from app.services.ai.response_normalizer import (
     WrongResponseTypeError,
@@ -24,10 +25,16 @@ from app.utils.json_helpers import dump_json_field, parse_json_field
 
 
 class ScenarioService:
-    def __init__(self, db: Session, settings: Settings | None = None):
+    def __init__(
+        self,
+        db: Session,
+        settings: Settings | None = None,
+        providers: AIProviders | None = None,
+    ):
         self.db = db
         self.settings = settings or get_settings()
-        self.ai = get_ai_provider(self.settings)
+        resolved = providers or build_providers(self.settings)
+        self.ai = resolved.llm
 
     def pick_words(
         self,
@@ -154,7 +161,7 @@ class ScenarioService:
             dialogue=dump_json_field(dialogue),
             device_id=device_id,
             is_daily=is_daily,
-            daily_date=date.today().isoformat() if is_daily else None,
+            daily_date=local_today(self.settings.app_timezone).isoformat() if is_daily else None,
             daily_kind=daily_kind,
         )
         self.db.add(scenario)
@@ -173,7 +180,7 @@ class ScenarioService:
         return scenario
 
     async def ensure_daily_scenarios(self, device_id: str) -> list[Scenario]:
-        today = date.today().isoformat()
+        today = local_today(self.settings.app_timezone).isoformat()
         existing = (
             self.db.query(Scenario)
             .filter(Scenario.device_id == device_id, Scenario.is_daily.is_(True), Scenario.daily_date == today)

@@ -28,10 +28,12 @@ export default function ChatImmersivePage() {
     enabled: data?.status === "active",
   });
 
+  const { playOpeningIfNeeded, started } = voice;
+
   useEffect(() => {
-    if (!voice.started) return;
-    voice.playOpeningIfNeeded(data?.messages, data?.status ?? "active");
-  }, [data?.messages, data?.status, voice.playOpeningIfNeeded, voice.started]);
+    if (!started) return;
+    playOpeningIfNeeded(data?.messages, data?.status ?? "active");
+  }, [data?.messages, data?.status, playOpeningIfNeeded, started]);
 
   if (isLoading || !data) return <Spinner label="加载沉浸场景..." />;
 
@@ -58,6 +60,7 @@ export default function ChatImmersivePage() {
             {visuals.ambientLabel} 场景中练习英语。角色会根据语音实时口型动画（非真人录像）。
           </p>
           <Button
+            type="button"
             size="lg"
             className="relative z-20 w-full"
             onClick={() => voice.unlockAndStart(data.messages, data.status)}

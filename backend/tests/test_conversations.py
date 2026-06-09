@@ -1,23 +1,9 @@
 from __future__ import annotations
 
-import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
-from app.database import init_db, SessionLocal
-from app.services.vocabulary.import_words import import_words
 
-
-@pytest.fixture
-def client():
-    init_db()
-    db = SessionLocal()
-    import_words(db)
-    db.close()
-    return TestClient(app)
-
-
-def test_create_standalone_conversation(client):
+def test_create_standalone_conversation(client: TestClient):
     resp = client.post("/api/conversations", json={"device_id": "test-chat", "level": "cet4", "theme": "travel"})
     assert resp.status_code == 200
     data = resp.json()
