@@ -160,8 +160,8 @@ export default function ScenarioDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0 flex-1">
           <div className="flex flex-wrap gap-2">
             <Badge variant="brand">{scenario.level.toUpperCase()}</Badge>
             <Badge variant="purple">{scenario.theme}</Badge>
@@ -169,17 +169,17 @@ export default function ScenarioDetailPage() {
           <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">{scenario.title}</h1>
           <p className="mt-2 text-slate-600">{scenario.content.summary_zh}</p>
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
+        <div className="flex shrink-0 flex-row flex-wrap items-center gap-2">
           <Button
             size="lg"
             variant="outline"
             disabled={startChat.isPending}
             onClick={() => startChat.mutate()}
           >
-            <MessageCircle className="mr-2 h-4 w-4" />
+            <MessageCircle className="mr-2 h-4 w-4 shrink-0" />
             1v1 对话
           </Button>
-          <Link href={`/scenarios/${id}/practice`}>
+          <Link href={`/scenarios/${id}/practice`} className="inline-flex shrink-0">
             <Button size="lg">开始练习</Button>
           </Link>
         </div>

@@ -61,7 +61,7 @@ export function Button({
     <button
       type="button"
       className={cn(
-        "inline-flex items-center justify-center font-semibold transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none",
+        "inline-flex shrink-0 items-center justify-center whitespace-nowrap font-semibold transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none",
         variant === "primary" ? variants.primary : variants[variant],
         sizes[size],
         className,

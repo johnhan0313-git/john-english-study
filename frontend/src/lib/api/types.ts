@@ -6,6 +6,7 @@ export interface WordBrief {
   pos: string | null;
   definitions: string[];
   familiarity: number | null;
+  exam_levels?: string[];
 }
 
 export interface WordListResponse {

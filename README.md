@@ -4,7 +4,7 @@
 
 ## 功能
 
-- **词库**：CET-4/6 合并词表（6000+ 词），按主题分组浏览
+- **词库**：CET-4/6 + PETS 公共英语等级考试词库，按主题分组浏览
 - **场景学习**：AI 生成叙事/对话场景，高亮目标词汇
 - **练习**：单选题、填空题，SRS 间隔重复
 - **听力**：Edge TTS / OpenAI TTS 音频播放，多语速
@@ -78,6 +78,8 @@ services:
 | `USE_MIGRATIONS` | `true` 时启动跳过 `create_all()`，需先 `alembic upgrade head` |
 | `SKIP_STARTUP_SEED` | `true` 跳过启动 seed |
 | `ENABLE_SCHEDULER` | `false` 关闭内置每日场景调度 |
+
+词库中文释义来自 `backend/data/dict_lookup.json`（约 1.2 万词条，数据源 [KyleBing/english-vocabulary](https://github.com/KyleBing/english-vocabulary)）。更新释义可运行 `python scripts/build_dict_lookup.py` 后执行 `python -m app.cli seed`。
 
 前端关键配置：
 

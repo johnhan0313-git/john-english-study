@@ -8,6 +8,39 @@ import { api } from "@/lib/api";
 import { getDeviceId, cn } from "@/lib/utils";
 import { Badge, Button, Card, Input, PageHeader, Spinner } from "@/components/ui";
 
+const LEVEL_FILTERS: { value: string; label: string }[] = [
+  { value: "", label: "全部级别" },
+  { value: "cet4", label: "CET-4" },
+  { value: "cet6", label: "CET-6" },
+  { value: "pets1", label: "PETS-1" },
+  { value: "pets2", label: "PETS-2" },
+  { value: "pets3", label: "PETS-3" },
+  { value: "pets4", label: "PETS-4" },
+  { value: "pets5", label: "PETS-5" },
+];
+
+function levelBadgeVariant(level: string): "brand" | "purple" | "success" | "warning" | "outline" {
+  if (level === "cet6") return "purple";
+  if (level.startsWith("pets1") || level.startsWith("pets2")) return "success";
+  if (level.startsWith("pets4") || level.startsWith("pets5")) return "warning";
+  if (level.startsWith("pets")) return "outline";
+  return "brand";
+}
+
+function levelLabel(level: string): string {
+  const map: Record<string, string> = {
+    cet4: "CET-4",
+    cet6: "CET-6",
+    both: "CET-4/6",
+    pets1: "PETS-1",
+    pets2: "PETS-2",
+    pets3: "PETS-3",
+    pets4: "PETS-4",
+    pets5: "PETS-5",
+  };
+  return map[level] ?? level.toUpperCase();
+}
+
 export default function WordsPage() {
   const deviceId = getDeviceId();
   const [page, setPage] = useState(1);
@@ -51,8 +84,8 @@ export default function WordsPage() {
     <div className="space-y-6">
       <PageHeader
         badge="词汇库"
-        title="CET-4/6 词库"
-        description={`共 ${data?.total ?? "..."} 词 · 点击选词可批量生成场景`}
+        title="CET / PETS 词库"
+        description={`共 ${data?.total ?? "..."} 词 · CET-4/6 + 全国公共英语等级考试 · 点击选词可批量生成场景`}
         action={
           selected.length > 0 ? (
             <Link href={`/generate?word_ids=${selected.join(",")}`}>
@@ -76,14 +109,14 @@ export default function WordsPage() {
           />
         </div>
         <div className="flex flex-wrap gap-2">
-          {["", "cet4", "cet6"].map((l) => (
+          {LEVEL_FILTERS.map(({ value, label }) => (
             <button
-              key={l || "all"}
+              key={value || "all"}
               type="button"
-              className={level === l ? "chip-active" : "chip-inactive"}
-              onClick={() => { setLevel(l); setPage(1); }}
+              className={level === value ? "chip-active" : "chip-inactive"}
+              onClick={() => { setLevel(value); setPage(1); }}
             >
-              {l === "" ? "全部级别" : l.toUpperCase()}
+              {label}
             </button>
           ))}
         </div>
@@ -125,9 +158,19 @@ export default function WordsPage() {
                     <span className="text-lg font-bold text-slate-900">{w.lemma}</span>
                     {w.pos && <span className="text-xs text-slate-400">{w.pos}</span>}
                   </div>
-                  <Badge variant={w.level === "cet6" ? "purple" : "brand"}>{w.level}</Badge>
+                  <div className="flex flex-wrap justify-end gap-1">
+                    {(w.exam_levels?.length ? w.exam_levels : [w.level]).map((lv) => (
+                      <Badge key={lv} variant={levelBadgeVariant(lv)}>
+                        {levelLabel(lv)}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
-                <p className="mt-2 line-clamp-2 text-sm text-slate-600">{w.definitions[0]}</p>
+                <p className="mt-2 line-clamp-2 text-sm text-slate-600">
+                  {w.definitions[0] ?? (
+                    <span className="text-slate-400">暂无中文释义</span>
+                  )}
+                </p>
                 {w.familiarity != null && w.familiarity > 0 && (
                   <div className="mt-3 flex gap-1">
                     {Array.from({ length: 5 }).map((_, i) => (

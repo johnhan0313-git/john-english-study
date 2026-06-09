@@ -8,6 +8,10 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from app.models.word import Word, WordGroup, WordGroupMember, WordTag
+from app.services.vocabulary.definition_lookup import enrich_definitions, fill_missing_definitions, lookup_definition
+from app.services.vocabulary.definitions import normalize_definitions
+from app.services.vocabulary.exam_tags import sync_all_exam_tags
+from app.services.vocabulary.import_pets import import_pets_words
 from app.utils.json_helpers import dump_json_field, parse_json_field
 
 DATA_DIR = Path(__file__).resolve().parents[3] / "data"
@@ -72,7 +76,23 @@ def _build_seed_words() -> list[dict]:
         "convenient": ("adj.", "方便的"), "purchase": ("n./v.", "购买"), "delivery": ("n.", "配送"),
         "repair": ("n./v.", "修理"), "laundry": ("n.", "洗衣"), "kitchen": ("n.", "厨房"),
         "garden": ("n.", "花园"), "community": ("n.", "社区"),
+        "X-ray": ("n.", "X光；X射线"),
     }
+
+    def _word_entry(lemma: str, level: str, pos_map: dict[str, tuple[str, str]]) -> dict:
+        pos, defn = pos_map.get(lemma, pos_map.get(lemma.lower(), ("n.", "")))
+        definitions = enrich_definitions(lemma, normalize_definitions(lemma, [defn] if defn else []))
+        if not definitions:
+            _, pos_hint = lookup_definition(lemma)
+            if pos_hint and not pos:
+                pos = pos_hint
+        return {
+            "lemma": lemma,
+            "level": level,
+            "pos": pos or "n.",
+            "definitions": definitions,
+            "examples": [f"This is an example sentence with {lemma}."],
+        }
 
     cet4_extra = [
         "ability", "absorb", "abstract", "abundant", "academic", "accept", "access", "accompany",
@@ -563,46 +583,52 @@ def _build_seed_words() -> list[dict]:
     ]
 
     for lemma in cet4_extra:
-        pos, defn = pos_map.get(lemma, ("n.", lemma))
         if lemma not in words:
-            words[lemma] = {
-                "lemma": lemma,
-                "level": "cet4",
-                "pos": pos,
-                "definitions": [defn if isinstance(defn, str) and defn != lemma else f"{lemma} 释义"],
-                "examples": [f"This is an example sentence with {lemma}."],
-            }
+            words[lemma] = _word_entry(lemma, "cet4", pos_map)
+            words[lemma]["examples"] = [f"This is an example sentence with {lemma}."]
 
     for lemma in cet6_extra:
         if lemma in words:
             if words[lemma]["level"] == "cet4":
                 words[lemma]["level"] = "both"
         else:
-            pos, defn = pos_map.get(lemma, ("n.", lemma))
-            words[lemma] = {
-                "lemma": lemma,
-                "level": "cet6",
-                "pos": pos,
-                "definitions": [defn if isinstance(defn, str) and defn != lemma else f"{lemma} 释义"],
-                "examples": [f"An advanced example using {lemma}."],
-            }
+            words[lemma] = _word_entry(lemma, "cet6", pos_map)
+            words[lemma]["examples"] = [f"An advanced example using {lemma}."]
 
     for group in WORD_GROUPS:
         for lemma in group["words"]:
             if lemma not in words:
-                pos, defn = pos_map.get(lemma, ("n.", lemma))
-                words[lemma] = {
-                    "lemma": lemma,
-                    "level": "cet4",
-                    "pos": pos,
-                    "definitions": [defn if isinstance(defn, str) else f"{lemma} 释义"],
-                    "examples": [f"Example with {lemma}."],
-                }
+                words[lemma] = _word_entry(lemma, "cet4", pos_map)
+                words[lemma]["examples"] = [f"Example with {lemma}."]
 
     return list(words.values())
 
 
 SEED_WORDS = _build_seed_words()
+
+
+def repair_placeholder_definitions(db: Session) -> int:
+    """Remove legacy `{lemma} 释义` placeholders and apply seed updates where available."""
+    seed_by_lemma = {entry["lemma"]: entry for entry in SEED_WORDS}
+    updated = 0
+    for word in db.query(Word).all():
+        current = normalize_definitions(word.lemma, parse_json_field(word.definitions, []))
+        seed = seed_by_lemma.get(word.lemma)
+        target = enrich_definitions(word.lemma, normalize_definitions(word.lemma, seed.get("definitions", []) if seed else []))
+        if target:
+            next_defs = target
+        elif current:
+            next_defs = current
+        else:
+            next_defs = enrich_definitions(word.lemma, [])
+
+        stored = parse_json_field(word.definitions, [])
+        if next_defs != stored:
+            word.definitions = dump_json_field(next_defs)
+            updated += 1
+    if updated:
+        db.commit()
+    return updated
 
 
 def export_seed_json() -> None:
@@ -611,10 +637,22 @@ def export_seed_json() -> None:
     output.write_text(json.dumps(SEED_WORDS, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def import_words(db: Session) -> dict[str, int]:
+def import_words(db: Session) -> dict[str, int | bool]:
     existing = db.query(Word).count()
     if existing > 0:
-        return {"words": existing, "groups": db.query(WordGroup).count(), "skipped": True}
+        repaired = repair_placeholder_definitions(db)
+        filled = fill_missing_definitions(db)
+        pets = import_pets_words(db)
+        synced = sync_all_exam_tags(db)
+        return {
+            "words": db.query(Word).count(),
+            "groups": db.query(WordGroup).count(),
+            "skipped": True,
+            "repaired_definitions": repaired,
+            "filled_definitions": filled,
+            "synced_exam_tags": synced,
+            "pets": pets,
+        }
 
     lemma_to_id: dict[str, int] = {}
     for entry in SEED_WORDS:
@@ -646,10 +684,16 @@ def import_words(db: Session) -> dict[str, int]:
                 db.add(WordTag(word_id=word_id, tag=group_def["slug"]))
 
     db.commit()
+    filled = fill_missing_definitions(db)
+    pets = import_pets_words(db)
+    synced = sync_all_exam_tags(db)
     return {
         "words": db.query(Word).count(),
         "groups": db.query(WordGroup).count(),
         "skipped": False,
+        "filled_definitions": filled,
+        "synced_exam_tags": synced,
+        "pets": pets,
     }
 
 

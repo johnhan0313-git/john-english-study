@@ -15,6 +15,7 @@ class WordBrief(BaseModel):
     pos: str | None = None
     definitions: list[str] = Field(default_factory=list)
     familiarity: int | None = None
+    exam_levels: list[str] = Field(default_factory=list)
 
 
 class WordDetail(WordBrief):
@@ -35,6 +36,11 @@ class WordStatsResponse(BaseModel):
     total: int
     cet4_count: int
     cet6_count: int
+    pets1_count: int = 0
+    pets2_count: int = 0
+    pets3_count: int = 0
+    pets4_count: int = 0
+    pets5_count: int = 0
     learned: int
     mastered: int
     due_review: int
