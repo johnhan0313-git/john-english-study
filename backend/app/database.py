@@ -4,7 +4,7 @@ import logging
 from collections.abc import Generator
 from pathlib import Path
 
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import create_engine, event, inspect
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -19,6 +19,14 @@ _SessionLocal: sessionmaker[Session] | None = None
 
 class Base(DeclarativeBase):
     pass
+
+
+def _sqlite_on_connect(dbapi_connection, _connection_record) -> None:
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA journal_mode=WAL")
+    cursor.execute("PRAGMA synchronous=NORMAL")
+    cursor.execute("PRAGMA busy_timeout=30000")
+    cursor.close()
 
 
 def ensure_engine() -> Engine:
@@ -37,10 +45,13 @@ def ensure_engine() -> Engine:
     engine_kwargs: dict[str, object] = {}
     if url.startswith("sqlite"):
         connect_args["check_same_thread"] = False
+        connect_args["timeout"] = 30
         if url.endswith(":memory:") or url.rstrip("/").endswith(":memory:"):
             engine_kwargs["poolclass"] = StaticPool
 
     _engine = create_engine(url, connect_args=connect_args, **engine_kwargs)
+    if url.startswith("sqlite"):
+        event.listen(_engine, "connect", _sqlite_on_connect)
     _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
     return _engine
 

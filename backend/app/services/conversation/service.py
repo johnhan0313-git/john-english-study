@@ -88,10 +88,12 @@ class ConversationService:
         )
         self.db.add(session)
         self.db.flush()
+        session_id = session.id
+        self.db.commit()
 
         opening = await self._generate_opening(session, show_chinese_hint)
         self.db.add(ConversationMessage(
-            session_id=session.id,
+            session_id=session_id,
             role="assistant",
             content=opening,
             meta=dump_json_field({"kind": "opening"}),
@@ -159,6 +161,8 @@ class ConversationService:
             "task": "Practice a natural conversation using target vocabulary",
             "background_zh": f"围绕{theme}主题进行英语对话练习",
         }
+
+        self.db.commit()
 
         try:
             setup = await self.ai.chat_json(

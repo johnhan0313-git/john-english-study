@@ -142,6 +142,8 @@ class ScenarioService:
 
         word_dicts = [word_to_dict(w) for w in words]
         messages = build_scenario_prompt(word_dicts, level, theme, scenario_type)
+        self.db.commit()
+
         result = await self._fetch_scenario_with_retry(messages)
 
         content = {
@@ -171,9 +173,12 @@ class ScenarioService:
             self.db.add(ScenarioWord(scenario_id=scenario.id, word_id=word.id))
 
         target_lemmas = [w.lemma for w in words]
+        scenario_id = scenario.id
+        self.db.commit()
+
         exercise_messages = build_exercise_prompt(scenario.title, content["passage"], target_lemmas)
         exercise_result = await self._fetch_exercises_with_retry(exercise_messages)
-        save_exercises_from_ai(self.db, scenario.id, exercise_result.get("exercises", []))
+        save_exercises_from_ai(self.db, scenario_id, exercise_result.get("exercises", []))
 
         self.db.commit()
         self.db.refresh(scenario)
