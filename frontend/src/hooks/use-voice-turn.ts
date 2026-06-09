@@ -71,41 +71,48 @@ export function useVoiceTurn({
     [connect, ensureAudio, stopAnalysis],
   );
 
-  const playOpeningIfNeeded = useCallback(
+  const playOpening = useCallback(
     (
-      messages: { id: number; role: string; content: string }[] | undefined,
+      messages: { id: number; role: string; content: string }[],
       status: string,
-      options?: { force?: boolean },
     ) => {
-      if (!autoPlayOpening || !messages?.length || openingPlayedRef.current) return;
-      if (!options?.force && !started) return;
+      if (!autoPlayOpening || !messages.length || openingPlayedRef.current) return;
       const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
-      if (!lastAssistant) return;
+      if (!lastAssistant) {
+        setError("未找到 AI 开场消息");
+        return;
+      }
       openingPlayedRef.current = true;
       setSubtitle(lastAssistant.content);
       if (status === "active") {
         playAudio(api.getConversationMessageAudioUrl(sessionId, lastAssistant.id, deviceId));
       }
     },
-    [autoPlayOpening, deviceId, playAudio, sessionId, started],
+    [autoPlayOpening, deviceId, playAudio, sessionId],
+  );
+
+  const playOpeningIfNeeded = useCallback(
+    (
+      messages: { id: number; role: string; content: string }[] | undefined,
+      status: string,
+    ) => {
+      if (!messages?.length || !started) return;
+      playOpening(messages, status);
+    },
+    [playOpening, started],
   );
 
   const unlockAndStart = useCallback(
-    async (
-      messages?: { id: number; role: string; content: string }[],
-      status?: string,
-    ) => {
-      const audio = ensureAudio();
-      await audio.play().catch(() => undefined);
-      audio.pause();
-      audio.currentTime = 0;
+    (messages?: { id: number; role: string; content: string }[], status?: string) => {
       setStarted(true);
       setError(null);
-      if (messages?.length) {
-        playOpeningIfNeeded(messages, status ?? "active", { force: true });
+      if (!messages?.length) {
+        setError("暂无对话消息，请返回重新开始");
+        return;
       }
+      playOpening(messages, status ?? "active");
     },
-    [ensureAudio, playOpeningIfNeeded],
+    [playOpening],
   );
 
   const startRecording = useCallback(async () => {

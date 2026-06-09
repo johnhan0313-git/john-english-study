@@ -49,8 +49,8 @@ export default function ChatImmersivePage() {
             e.currentTarget.src = "/scenes/default.svg";
           }}
         />
-        <div className="absolute inset-0 bg-slate-900/55" />
-        <div className="relative z-10 mx-4 max-w-md space-y-5 rounded-2xl border border-white/20 bg-white/10 p-8 text-center backdrop-blur-md">
+        <div className="absolute inset-0 z-[1] bg-slate-900/55" />
+        <div className="relative z-20 mx-4 max-w-md space-y-5 rounded-2xl border border-white/20 bg-white/10 p-8 text-center backdrop-blur-md">
           <Sparkles className="mx-auto h-10 w-10 text-brand-200" />
           <h1 className="text-2xl font-bold text-white">沉浸式角色对话</h1>
           <p className="text-sm leading-relaxed text-white/80">
@@ -59,8 +59,8 @@ export default function ChatImmersivePage() {
           </p>
           <Button
             size="lg"
-            className="w-full"
-            onClick={() => void voice.unlockAndStart(data.messages, data.status)}
+            className="relative z-20 w-full"
+            onClick={() => voice.unlockAndStart(data.messages, data.status)}
           >
             开始沉浸对话
           </Button>

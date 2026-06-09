@@ -61,20 +61,28 @@ export function useLipsyncAudio() {
 
   const connect = useCallback(
     (audio: HTMLAudioElement) => {
-      if (!lipsyncRef.current) lipsyncRef.current = new Lipsync();
-      lipsyncRef.current.connectAudio(audio);
+      try {
+        if (!lipsyncRef.current) lipsyncRef.current = new Lipsync();
+        lipsyncRef.current.connectAudio(audio);
+      } catch {
+        return;
+      }
       stopAnalysis();
       setIsAnalyzing(true);
 
       const loop = () => {
-        const manager = lipsyncRef.current;
-        if (!manager) return;
-        manager.processAudio();
-        const currentViseme = manager.viseme;
-        const volume = manager.features?.volume ?? 0;
-        const shape = visemeToMouthShape(currentViseme);
-        setViseme(currentViseme);
-        setMouthOpen(mouthShapeToOpenAmount(shape, volume));
+        try {
+          const manager = lipsyncRef.current;
+          if (!manager) return;
+          manager.processAudio();
+          const currentViseme = manager.viseme;
+          const volume = manager.features?.volume ?? 0;
+          const shape = visemeToMouthShape(currentViseme);
+          setViseme(currentViseme);
+          setMouthOpen(mouthShapeToOpenAmount(shape, volume));
+        } catch {
+          // ignore frame errors
+        }
         rafRef.current = requestAnimationFrame(loop);
       };
       rafRef.current = requestAnimationFrame(loop);
