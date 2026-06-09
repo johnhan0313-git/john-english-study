@@ -22,13 +22,13 @@ export interface SendCodeResult {
 export const authApi = {
   getCaptcha: () => request<CaptchaData>("/auth/captcha"),
 
-  sendEmailCode: (body: { email: string; captcha_id: string; captcha_x: number }) =>
+  sendEmailCode: (body: { email: string }) =>
     request<SendCodeResult>("/auth/email/send-code", {
       method: "POST",
       body: JSON.stringify(body),
     }),
 
-  emailLogin: (body: { email: string; code: string }) =>
+  emailLogin: (body: { email: string; code: string; captcha_id: string; captcha_x: number }) =>
     request<AuthResponse>("/auth/email/login", { method: "POST", body: JSON.stringify(body) }),
 
   me: () => request<AuthUser>("/auth/me"),

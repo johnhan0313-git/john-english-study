@@ -20,7 +20,11 @@ interface AuthContextValue {
   user: AuthUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  loginWithEmail: (email: string, code: string) => Promise<void>;
+  loginWithEmail: (
+    email: string,
+    code: string,
+    captcha: { captcha_id: string; captcha_x: number },
+  ) => Promise<void>;
   finishOAuthLogin: (token: string) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
@@ -70,8 +74,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const loginWithEmail = useCallback(
-    async (email: string, code: string) => {
-      const res = await authApi.emailLogin({ email, code });
+    async (email: string, code: string, captcha: { captcha_id: string; captcha_x: number }) => {
+      const res = await authApi.emailLogin({ email, code, ...captcha });
       await finishAuth(res.access_token);
     },
     [finishAuth],

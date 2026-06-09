@@ -86,9 +86,6 @@ def send_email_code(
     body: SendEmailCodeRequest,
     settings: Settings = Depends(get_settings),
 ):
-    if not verify_captcha(body.captcha_id, body.captcha_x):
-        raise HTTPException(status_code=400, detail="拼图验证失败，请重试")
-
     email = normalize_email(body.email)
     if not settings.testing:
         allowed, wait_seconds = can_send_code(email, cooldown_seconds=settings.email_code_cooldown_seconds)
@@ -111,6 +108,9 @@ def send_email_code(
 
 @router.post("/email/login", response_model=TokenResponse)
 def email_login(body: EmailLoginRequest, db: Session = Depends(get_db)):
+    if not verify_captcha(body.captcha_id, body.captcha_x):
+        raise HTTPException(status_code=400, detail="拼图验证失败，请重试")
+
     email = normalize_email(body.email)
     if not verify_email_code(email, body.code):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired code")

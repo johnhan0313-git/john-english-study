@@ -71,6 +71,7 @@ case "$CMD" in
     ;;
 
   stop)
+     echo "[stop] 停止服务..."
     if [[ -f "$BACKEND_PID" ]]; then
       kill "$(cat "$BACKEND_PID")" 2>/dev/null || true
       rm -f "$BACKEND_PID"
@@ -88,7 +89,7 @@ case "$CMD" in
       fi
     done
 
-    echo "[stop] 已停止"
+    echo "[stop] 服务已停止"
     ;;
 
   restart)

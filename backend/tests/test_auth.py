@@ -23,13 +23,18 @@ def test_email_login_auto_register(client: TestClient):
     assert first["user"]["email"] == "bob@example.com"
 
 
-def test_send_code_invalid_captcha(client: TestClient):
+def test_login_invalid_captcha(client: TestClient):
+    send = client.post("/api/auth/email/send-code", json={"email": "bad@example.com"})
+    assert send.status_code == 200
+    code = send.json()["dev_code"]
+
     cap = client.get("/api/auth/captcha")
     assert cap.status_code == 200
     resp = client.post(
-        "/api/auth/email/send-code",
+        "/api/auth/email/login",
         json={
             "email": "bad@example.com",
+            "code": code,
             "captcha_id": cap.json()["captcha_id"],
             "captcha_x": 0,
         },

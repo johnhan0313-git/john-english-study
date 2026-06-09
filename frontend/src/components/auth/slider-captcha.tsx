@@ -7,106 +7,196 @@ import type { CaptchaData } from "@/lib/auth/api";
 
 interface SliderCaptchaProps {
   data: CaptchaData;
-  value: number;
-  onChange: (x: number) => void;
+  onComplete: (x: number) => void;
   onRefresh: () => void;
+  disabled?: boolean;
+  error?: string;
 }
 
-export function SliderCaptcha({ data, value, onChange, onRefresh }: SliderCaptchaProps) {
+const HANDLE_SIZE = 32;
+const MOVE_THRESHOLD = 4;
+
+export function SliderCaptcha({ data, onComplete, onRefresh, disabled, error }: SliderCaptchaProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
-  const [draggingVisual, setDraggingVisual] = useState(false);
+  const hasMoved = useRef(false);
+  const rafId = useRef<number | null>(null);
+  const pendingX = useRef(0);
+  const startPosition = useRef(0);
 
   const maxX = data.width - data.piece_width;
+  const maxHandleX = data.width - HANDLE_SIZE;
+
+  const [position, setPosition] = useState(0);
+  const [draggingVisual, setDraggingVisual] = useState(false);
+  const [shaking, setShaking] = useState(false);
 
   const clamp = useCallback((x: number) => Math.max(0, Math.min(maxX, x)), [maxX]);
 
-  const updateFromClientX = useCallback(
+  useEffect(() => {
+    setPosition(0);
+    hasMoved.current = false;
+  }, [data.captcha_id]);
+
+  useEffect(() => {
+    if (!error) return;
+    setPosition(0);
+    setShaking(true);
+    const timer = window.setTimeout(() => setShaking(false), 450);
+    return () => window.clearTimeout(timer);
+  }, [error]);
+
+  const positionToHandleX = useCallback(
+    (x: number) => (maxX > 0 ? (x / maxX) * maxHandleX : 0),
+    [maxX, maxHandleX],
+  );
+
+  const clientXToPosition = useCallback(
     (clientX: number) => {
       const track = trackRef.current;
-      if (!track) return;
+      if (!track) return 0;
       const rect = track.getBoundingClientRect();
-      const ratio = (clientX - rect.left) / rect.width;
-      onChange(clamp(Math.round(ratio * maxX)));
+      const handleX = Math.max(0, Math.min(maxHandleX, clientX - rect.left - HANDLE_SIZE / 2));
+      return maxHandleX > 0 ? (handleX / maxHandleX) * maxX : 0;
     },
-    [clamp, maxX, onChange],
+    [maxHandleX, maxX],
   );
+
+  const schedulePosition = useCallback(
+    (x: number) => {
+      pendingX.current = clamp(x);
+      if (rafId.current !== null) return;
+      rafId.current = requestAnimationFrame(() => {
+        rafId.current = null;
+        setPosition(pendingX.current);
+      });
+    },
+    [clamp],
+  );
+
+  const endDrag = useCallback(() => {
+    if (!dragging.current) return;
+    dragging.current = false;
+    setDraggingVisual(false);
+
+    const rounded = Math.round(clamp(pendingX.current));
+    setPosition(rounded);
+
+    if (hasMoved.current && !disabled) {
+      onComplete(rounded);
+    }
+  }, [clamp, disabled, onComplete]);
 
   useEffect(() => {
     const onMove = (event: PointerEvent) => {
-      if (!dragging.current) return;
-      updateFromClientX(event.clientX);
+      if (!dragging.current || disabled) return;
+      event.preventDefault();
+      const next = clientXToPosition(event.clientX);
+      if (Math.abs(next - startPosition.current) >= MOVE_THRESHOLD) {
+        hasMoved.current = true;
+      }
+      schedulePosition(next);
     };
-    const onUp = () => {
-      dragging.current = false;
-      setDraggingVisual(false);
-    };
-    window.addEventListener("pointermove", onMove);
+    const onUp = () => endDrag();
+
+    window.addEventListener("pointermove", onMove, { passive: false });
     window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
     return () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+      if (rafId.current !== null) {
+        cancelAnimationFrame(rafId.current);
+        rafId.current = null;
+      }
     };
-  }, [updateFromClientX]);
+  }, [clientXToPosition, disabled, endDrag, schedulePosition]);
 
-  const handlePointerDown = (event: React.PointerEvent) => {
+  const startDrag = (event: React.PointerEvent) => {
+    if (disabled) return;
     dragging.current = true;
+    hasMoved.current = false;
     setDraggingVisual(true);
     event.currentTarget.setPointerCapture(event.pointerId);
-    updateFromClientX(event.clientX);
+    const next = clientXToPosition(event.clientX);
+    startPosition.current = next;
+    schedulePosition(next);
   };
 
-  const handleRatio = maxX > 0 ? value / maxX : 0;
+  const handleX = positionToHandleX(position);
+  const fillWidth = handleX + HANDLE_SIZE / 2;
 
   return (
-    <div className="space-y-3">
+    <div className={`space-y-3 select-none ${shaking ? "animate-captcha-shake" : ""}`}>
+
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-slate-700">拖动滑块完成拼图</span>
+        <span className="text-sm font-medium text-slate-700">
+          {disabled ? "验证中..." : "拖动滑块对齐拼图，松手自动验证"}
+        </span>
         <button
           type="button"
           onClick={onRefresh}
-          className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-brand-600"
+          disabled={disabled}
+          className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-brand-600 disabled:opacity-50"
         >
-          <RefreshCw className="h-3.5 w-3.5" />
+          <RefreshCw className={`h-3.5 w-3.5 ${disabled ? "animate-spin" : ""}`} />
           刷新
         </button>
       </div>
 
       <div
-        className="relative overflow-hidden rounded-lg border border-slate-200 bg-slate-50"
+        className={`relative touch-none overflow-hidden rounded-lg border border-slate-200 bg-slate-50 ${disabled ? "pointer-events-none opacity-70" : ""}`}
         style={{ width: data.width, height: data.height }}
+        onPointerDown={startDrag}
       >
-        <div className="absolute inset-0" dangerouslySetInnerHTML={{ __html: data.background_svg }} />
+        <div className="pointer-events-none absolute inset-0" dangerouslySetInnerHTML={{ __html: data.background_svg }} />
         <div
-          className="pointer-events-none absolute drop-shadow-md"
-          style={{ left: value, top: data.puzzle_y, width: data.piece_width, height: data.piece_width }}
+          className={`pointer-events-none absolute top-0 will-change-transform ${draggingVisual ? "drop-shadow-lg" : "drop-shadow-md"}`}
+          style={{
+            width: data.piece_width,
+            height: data.piece_width,
+            top: data.puzzle_y,
+            transform: `translate3d(${position}px, 0, 0)`,
+            transition: draggingVisual ? "none" : "transform 200ms ease-out",
+          }}
           dangerouslySetInnerHTML={{ __html: data.piece_svg }}
         />
       </div>
 
       <div
         ref={trackRef}
-        className="relative h-10 rounded-full border border-slate-200 bg-slate-100"
+        className={`relative h-10 touch-none rounded-full border border-slate-200 bg-slate-100 ${disabled ? "pointer-events-none opacity-70" : ""}`}
         style={{ width: data.width }}
+        onPointerDown={startDrag}
       >
-        <div className="absolute inset-y-0 left-3 flex items-center text-xs text-slate-400">
-          按住滑块拖动
+        <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-xs text-slate-400">
+          {disabled ? "请稍候" : "向右拖动 ››"}
         </div>
         <div
-          className="absolute inset-y-0 rounded-full bg-brand-100/80 transition-[width]"
-          style={{ width: `${Math.max(12, handleRatio * 100)}%` }}
+          className="pointer-events-none absolute inset-y-0 left-0 rounded-full bg-brand-100/80"
+          style={{
+            width: fillWidth,
+            transition: draggingVisual ? "none" : "width 200ms ease-out",
+          }}
         />
-        <button
-          type="button"
-          onPointerDown={handlePointerDown}
-          className={`absolute top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-brand-300 bg-white shadow-sm transition-shadow ${
-            draggingVisual ? "cursor-grabbing shadow-md ring-2 ring-brand-200" : "cursor-grab"
+        <div
+          role="slider"
+          aria-valuemin={0}
+          aria-valuemax={maxX}
+          aria-valuenow={Math.round(position)}
+          tabIndex={disabled ? -1 : 0}
+          onPointerDown={startDrag}
+          className={`absolute top-1/2 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-brand-300 bg-white shadow-sm will-change-transform ${
+            draggingVisual ? "cursor-grabbing scale-105 shadow-md ring-2 ring-brand-200" : disabled ? "cursor-wait" : "cursor-grab"
           }`}
-          style={{ left: `calc(${handleRatio * 100}% - 16px)` }}
-          aria-label="拖动滑块"
+          style={{
+            transform: `translate3d(${handleX}px, -50%, 0)`,
+            transition: draggingVisual ? "none" : "transform 200ms ease-out",
+          }}
         >
-          <span className="text-brand-600">››</span>
-        </button>
+          <span className="pointer-events-none text-brand-600">››</span>
+        </div>
       </div>
     </div>
   );

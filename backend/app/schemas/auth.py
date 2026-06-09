@@ -36,8 +36,6 @@ class CaptchaResponse(BaseModel):
 
 class SendEmailCodeRequest(BaseModel):
     email: str = Field(min_length=3, max_length=128)
-    captcha_id: str
-    captcha_x: int = Field(ge=0, le=500)
 
     @field_validator("email")
     @classmethod
@@ -57,6 +55,8 @@ class SendEmailCodeResponse(BaseModel):
 class EmailLoginRequest(BaseModel):
     email: str = Field(min_length=3, max_length=128)
     code: str = Field(min_length=4, max_length=8)
+    captcha_id: str
+    captcha_x: int = Field(ge=0, le=500)
 
     @field_validator("email")
     @classmethod
@@ -65,10 +65,6 @@ class EmailLoginRequest(BaseModel):
         if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", normalized):
             raise ValueError("Invalid email address")
         return normalized
-
-
-class WeChatAuthorizeResponse(BaseModel):
-    authorize_url: str
 
 
 class WeChatAuthorizeResponse(BaseModel):
