@@ -81,6 +81,26 @@ def run_migrations() -> None:
     logger.info("Database migrations applied (alembic upgrade head)")
 
 
+def _column_not_null(engine: Engine, table: str, column: str) -> bool:
+    insp = inspect(engine)
+    if not insp.has_table(table):
+        return False
+    cols = {c["name"]: c for c in insp.get_columns(table)}
+    col = cols.get(column)
+    if not col:
+        return False
+    return not col.get("nullable", True)
+
+
+_DEVICE_ID_NULLABLE_TABLES = (
+    "conversation_sessions",
+    "scenario_attempts",
+    "scenarios",
+    "user_word_progress",
+    "learning_streaks",
+)
+
+
 def _needs_auth_migration(engine: Engine) -> bool:
     insp = inspect(engine)
     if not insp.has_table("users"):
@@ -94,6 +114,9 @@ def _needs_auth_migration(engine: Engine) -> bool:
     if insp.has_table("user_word_progress"):
         progress_cols = {c["name"] for c in insp.get_columns("user_word_progress")}
         if "user_id" not in progress_cols:
+            return True
+    for table in _DEVICE_ID_NULLABLE_TABLES:
+        if _column_not_null(engine, table, "device_id"):
             return True
     return False
 
@@ -113,12 +136,9 @@ def init_db() -> None:
         Base.metadata.create_all(bind=engine)
         return
 
-    if settings.use_migrations:
-        run_migrations()
-        return
-
-    if _needs_auth_migration(engine):
-        logger.info("Legacy database detected; applying auth schema migration...")
+    insp = inspect(engine)
+    has_alembic = insp.has_table("alembic_version")
+    if settings.use_migrations or has_alembic or _needs_auth_migration(engine):
         run_migrations()
         return
 
