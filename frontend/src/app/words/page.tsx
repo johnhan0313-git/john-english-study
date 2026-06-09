@@ -1,12 +1,24 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Search, Sparkles } from "lucide-react";
 import { api } from "@/lib/api";
-import { getDeviceId, cn } from "@/lib/utils";
-import { Badge, Button, Card, Input, PageHeader, Spinner } from "@/components/ui";
+import { getDeviceId } from "@/lib/utils";
+import {
+  loadWordsViewMode,
+  pageSizeForView,
+  saveWordsViewMode,
+  type WordsViewMode,
+} from "@/lib/words-display";
+import { Button, Card, Input, PageHeader, Spinner } from "@/components/ui";
+import { WordsViewSwitcher } from "@/components/words/view-switcher";
+import { WordsGridView } from "@/components/words/views/grid-view";
+import { WordsListView } from "@/components/words/views/list-view";
+import { WordsTableView } from "@/components/words/views/table-view";
+import { WordsFlashcardView } from "@/components/words/views/flashcard-view";
+import { WordsIndexView } from "@/components/words/views/index-view";
 
 const LEVEL_FILTERS: { value: string; label: string }[] = [
   { value: "", label: "全部级别" },
@@ -19,28 +31,6 @@ const LEVEL_FILTERS: { value: string; label: string }[] = [
   { value: "pets5", label: "PETS-5" },
 ];
 
-function levelBadgeVariant(level: string): "brand" | "purple" | "success" | "warning" | "outline" {
-  if (level === "cet6") return "purple";
-  if (level.startsWith("pets1") || level.startsWith("pets2")) return "success";
-  if (level.startsWith("pets4") || level.startsWith("pets5")) return "warning";
-  if (level.startsWith("pets")) return "outline";
-  return "brand";
-}
-
-function levelLabel(level: string): string {
-  const map: Record<string, string> = {
-    cet4: "CET-4",
-    cet6: "CET-6",
-    both: "CET-4/6",
-    pets1: "PETS-1",
-    pets2: "PETS-2",
-    pets3: "PETS-3",
-    pets4: "PETS-4",
-    pets5: "PETS-5",
-  };
-  return map[level] ?? level.toUpperCase();
-}
-
 export default function WordsPage() {
   const deviceId = getDeviceId();
   const [page, setPage] = useState(1);
@@ -48,6 +38,13 @@ export default function WordsPage() {
   const [theme, setTheme] = useState<string>("");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<number[]>([]);
+  const [viewMode, setViewMode] = useState<WordsViewMode>("grid");
+
+  useEffect(() => {
+    setViewMode(loadWordsViewMode());
+  }, []);
+
+  const pageSize = pageSizeForView(viewMode);
 
   const { data: groups } = useQuery({
     queryKey: ["groups"],
@@ -55,11 +52,11 @@ export default function WordsPage() {
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ["words", page, level, theme, search, deviceId],
+    queryKey: ["words", page, pageSize, level, theme, search, deviceId],
     queryFn: () =>
       api.getWords({
         page,
-        page_size: 30,
+        page_size: pageSize,
         device_id: deviceId,
         ...(level && { level }),
         ...(theme && { theme }),
@@ -73,11 +70,29 @@ export default function WordsPage() {
     );
   };
 
-  const familiarityDot = (f: number | null) => {
-    if (f === null || f === 0) return "bg-slate-300";
-    if (f <= 2) return "bg-amber-400";
-    if (f <= 4) return "bg-brand-400";
-    return "bg-emerald-500";
+  const handleViewChange = (mode: WordsViewMode) => {
+    setViewMode(mode);
+    saveWordsViewMode(mode);
+    setPage(1);
+  };
+
+  const totalPages = Math.ceil((data?.total || 0) / pageSize) || 1;
+  const items = data?.items ?? [];
+
+  const renderView = () => {
+    const props = { words: items, selected, onToggle: toggleSelect };
+    switch (viewMode) {
+      case "list":
+        return <WordsListView {...props} />;
+      case "table":
+        return <WordsTableView {...props} />;
+      case "flashcard":
+        return <WordsFlashcardView {...props} />;
+      case "index":
+        return <WordsIndexView {...props} />;
+      default:
+        return <WordsGridView {...props} />;
+    }
   };
 
   return (
@@ -108,6 +123,7 @@ export default function WordsPage() {
             className="pl-10"
           />
         </div>
+        <WordsViewSwitcher value={viewMode} onChange={handleViewChange} />
         <div className="flex flex-wrap gap-2">
           {LEVEL_FILTERS.map(({ value, label }) => (
             <button
@@ -141,63 +157,19 @@ export default function WordsPage() {
         <Spinner label="加载词库..." />
       ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {data?.items.map((w) => (
-              <Card
-                key={w.id}
-                hover
-                className={cn(
-                  "cursor-pointer",
-                  selected.includes(w.id) && "ring-2 ring-brand-500 ring-offset-2",
-                )}
-                onClick={() => toggleSelect(w.id)}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className={cn("h-2 w-2 shrink-0 rounded-full", familiarityDot(w.familiarity))} />
-                    <span className="text-lg font-bold text-slate-900">{w.lemma}</span>
-                    {w.pos && <span className="text-xs text-slate-400">{w.pos}</span>}
-                  </div>
-                  <div className="flex flex-wrap justify-end gap-1">
-                    {(w.exam_levels?.length ? w.exam_levels : [w.level]).map((lv) => (
-                      <Badge key={lv} variant={levelBadgeVariant(lv)}>
-                        {levelLabel(lv)}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-                <p className="mt-2 line-clamp-2 text-sm text-slate-600">
-                  {w.definitions[0] ?? (
-                    <span className="text-slate-400">暂无中文释义</span>
-                  )}
-                </p>
-                {w.familiarity != null && w.familiarity > 0 && (
-                  <div className="mt-3 flex gap-1">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <div
-                        key={i}
-                        className={cn("h-1 flex-1 rounded-full", i < w.familiarity! ? "bg-brand-400" : "bg-slate-100")}
-                      />
-                    ))}
-                  </div>
-                )}
-              </Card>
-            ))}
-          </div>
+          {renderView()}
 
           <div className="flex items-center justify-center gap-3 pt-2">
             <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
               上一页
             </Button>
             <span className="rounded-full bg-white/80 px-4 py-1.5 text-sm font-medium text-slate-600 shadow-sm">
-              {page} / {Math.ceil((data?.total || 0) / 30) || 1}
+              {page} / {totalPages}
+              {viewMode === "index" && (
+                <span className="ml-1 text-xs text-slate-400">· 每页 {pageSize} 词</span>
+              )}
             </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= Math.ceil((data?.total || 0) / 30)}
-              onClick={() => setPage((p) => p + 1)}
-            >
+            <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
               下一页
             </Button>
           </div>
