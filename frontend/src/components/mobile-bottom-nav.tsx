@@ -10,8 +10,8 @@ import { useQueryClient } from "@tanstack/react-query";
 
 const tabs = [
   { href: "/", label: "首页", icon: Home },
-  { href: "/words", label: "词库", icon: BookOpen },
   { href: "/activity", label: "学习", icon: Layers },
+  { href: "/words", label: "词库", icon: BookOpen },
   { href: "/reference/phonetics", label: "参考", icon: Library },
 ] as const;
 
