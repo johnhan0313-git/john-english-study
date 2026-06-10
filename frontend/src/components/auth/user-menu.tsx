@@ -1,24 +1,30 @@
 "use client";
 
 import Link from "next/link";
-import { LogOut, Settings, User } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 
 import { Button } from "@/components/ui";
 import { useAuth } from "@/contexts/auth-context";
+import { resolveAvatarUrl } from "@/lib/profile/api";
 
 export function UserMenu() {
   const { user, logout } = useAuth();
   if (!user) return null;
 
+  const avatarSrc = resolveAvatarUrl(user.avatar_url);
+
   return (
     <div className="flex items-center gap-2">
-      <span className="hidden items-center gap-1.5 text-sm font-medium text-slate-700 sm:inline-flex">
-        <User className="h-4 w-4 text-brand-600" />
+      <Link
+        href="/profile"
+        className="hidden items-center gap-1.5 text-sm font-medium text-slate-700 hover:text-brand-700 sm:inline-flex"
+      >
+        <img src={avatarSrc} alt="" className="h-6 w-6 rounded-full object-cover" />
         {user.display_name || user.username}
-      </span>
-      <Link href="/settings">
-        <Button variant="ghost" size="sm" className="px-2">
-          <Settings className="h-4 w-4" />
+      </Link>
+      <Link href="/profile" className="sm:hidden">
+        <Button variant="ghost" size="sm" className="px-2" aria-label="个人中心">
+          <User className="h-4 w-4 text-brand-600" />
         </Button>
       </Link>
       <Button variant="outline" size="sm" onClick={logout}>

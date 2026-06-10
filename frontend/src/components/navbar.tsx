@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { BookOpen, Home, Layers, Library, LineChart, MessageCircle, Settings, Sparkles, GraduationCap } from "lucide-react";
+import { BookOpen, Home, Layers, Library, LineChart, MessageCircle, Sparkles, GraduationCap, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AuthNavActions } from "@/components/auth/user-menu";
 import { prefetchAllRoutes, prefetchNavTarget } from "@/lib/route-prefetch";
@@ -17,7 +17,7 @@ const nav = [
   { href: "/generate", label: "生成", icon: Sparkles },
   { href: "/reference/phonetics", label: "参考", icon: Library },
   { href: "/progress", label: "进度", icon: LineChart },
-  { href: "/settings", label: "设置", icon: Settings },
+  { href: "/profile", label: "我的", icon: User },
 ];
 
 export function Navbar() {
@@ -48,7 +48,9 @@ export function Navbar() {
               ? pathname.startsWith("/reference")
               : href === "/chat"
                 ? pathname.startsWith("/chat")
-                : pathname === href;
+                : href === "/profile"
+                  ? pathname.startsWith("/profile")
+                  : pathname === href;
             return (
               <Link
                 key={href}

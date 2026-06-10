@@ -12,6 +12,7 @@ class UserResponse(BaseModel):
     email: str | None
     display_name: str | None
     avatar_url: str | None
+    oauth_provider: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

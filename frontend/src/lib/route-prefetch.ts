@@ -1,7 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
-import { API_BASE } from "@/lib/env";
 import { getAccessToken } from "@/lib/auth/token";
 
 export const NAV_ROUTES = [
@@ -14,7 +13,7 @@ export const NAV_ROUTES = [
   "/reference/phonetics",
   "/reference/grammar",
   "/progress",
-  "/settings",
+  "/profile",
 ] as const;
 
 type AppRouter = { prefetch: (href: string) => void };
@@ -95,16 +94,6 @@ export function prefetchRouteData(qc: QueryClient, href: string) {
           queryFn: () => api.getProgress(),
         });
       }
-      break;
-    case "/settings":
-      void qc.prefetchQuery({
-        queryKey: ["ai-config"],
-        queryFn: async () => {
-          const res = await fetch(`${API_BASE}/config/ai`);
-          if (!res.ok) throw new Error("Failed to load AI config");
-          return res.json();
-        },
-      });
       break;
     default:
       break;

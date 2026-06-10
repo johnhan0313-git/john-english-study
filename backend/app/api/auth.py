@@ -48,6 +48,7 @@ def _user_response(user: User) -> UserResponse:
         email=user.email,
         display_name=display,
         avatar_url=user.avatar_url,
+        oauth_provider=user.oauth_provider,
         created_at=user.created_at,
     )
 

@@ -4,6 +4,7 @@ export interface AuthUser {
   email: string | null;
   display_name: string | null;
   avatar_url: string | null;
+  oauth_provider: string | null;
   created_at: string;
 }
 
