@@ -10,8 +10,8 @@ interface ContinueLearningSectionProps {
 }
 
 export function ContinueLearningSection({ overview }: ContinueLearningSectionProps) {
-  const active = overview?.continue.active_conversations ?? [];
-  const incomplete = overview?.continue.incomplete_scenarios ?? [];
+  const active = overview?.continue?.active_conversations ?? [];
+  const incomplete = overview?.continue?.incomplete_scenarios ?? [];
 
   if (active.length === 0 && incomplete.length === 0) return null;
 

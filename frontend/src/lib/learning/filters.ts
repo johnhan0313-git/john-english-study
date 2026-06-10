@@ -27,18 +27,22 @@ export function uniqueThemes(scenarios: ScenarioBrief[]): string[] {
 }
 
 export function filterScenarios(items: ScenarioBrief[], filters: ScenarioFilters): ScenarioBrief[] {
+  const levels = filters.levels ?? [];
+  const themes = filters.themes ?? [];
   return items.filter((s) => {
-    if (filters.levels.length && !filters.levels.includes(s.level)) return false;
-    if (filters.themes.length && !filters.themes.includes(s.theme)) return false;
+    if (levels.length && !levels.includes(s.level)) return false;
+    if (themes.length && !themes.includes(s.theme)) return false;
     if (filters.dailyOnly && !s.is_daily) return false;
     return true;
   });
 }
 
 export function filterConversations(items: ConversationBrief[], filters: ConversationFilters): ConversationBrief[] {
+  const levels = filters.levels ?? [];
+  const statuses = filters.statuses ?? [];
   return items.filter((c) => {
-    if (filters.levels.length && !filters.levels.includes(c.level)) return false;
-    if (filters.statuses.length && !filters.statuses.includes(c.status)) return false;
+    if (levels.length && !levels.includes(c.level)) return false;
+    if (statuses.length && !statuses.includes(c.status)) return false;
     return true;
   });
 }

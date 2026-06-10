@@ -2,6 +2,13 @@ import type { QueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
 import { getAccessToken } from "@/lib/auth/token";
+import {
+  ACTIVITY_LIST_PAGE_SIZE,
+  ACTIVITY_QUERY_KEYS,
+  conversationsNextPageParam,
+  normalizePage,
+  scenariosNextPageParam,
+} from "@/lib/learning/pagination";
 
 export const NAV_ROUTES = [
   "/",
@@ -23,16 +30,22 @@ function isAuthenticated() {
 
 function prefetchActivity(qc: QueryClient) {
   void qc.prefetchQuery({
-    queryKey: ["activity-overview"],
+    queryKey: ACTIVITY_QUERY_KEYS.overview,
     queryFn: () => api.getActivityOverview(),
   });
-  void qc.prefetchQuery({
-    queryKey: ["scenarios", "infinite"],
-    queryFn: () => api.listScenariosPage(0, 20),
+  void qc.prefetchInfiniteQuery({
+    queryKey: ACTIVITY_QUERY_KEYS.scenarios,
+    queryFn: async ({ pageParam = 0 }) =>
+      normalizePage(await api.listScenariosPage(pageParam, ACTIVITY_LIST_PAGE_SIZE)),
+    initialPageParam: 0,
+    getNextPageParam: scenariosNextPageParam,
   });
-  void qc.prefetchQuery({
-    queryKey: ["conversations", "infinite"],
-    queryFn: () => api.listConversationsPage(1, 20),
+  void qc.prefetchInfiniteQuery({
+    queryKey: ACTIVITY_QUERY_KEYS.conversations,
+    queryFn: async ({ pageParam = 1 }) =>
+      normalizePage(await api.listConversationsPage(pageParam, ACTIVITY_LIST_PAGE_SIZE)),
+    initialPageParam: 1,
+    getNextPageParam: conversationsNextPageParam,
   });
 }
 
@@ -69,10 +82,7 @@ export function prefetchRouteData(qc: QueryClient, href: string) {
       break;
     case "/chat/new":
       if (authed) {
-        void qc.prefetchQuery({
-          queryKey: ["conversations", "infinite"],
-          queryFn: () => api.listConversationsPage(1, 20),
-        });
+        prefetchActivity(qc);
       }
       void qc.prefetchQuery({
         queryKey: ["groups"],

@@ -28,9 +28,15 @@ import {
   scenarioFiltersToSearch,
   uniqueThemes,
 } from "@/lib/learning/filters";
+import {
+  ACTIVITY_LIST_PAGE_SIZE,
+  ACTIVITY_QUERY_KEYS,
+  conversationsNextPageParam,
+  normalizePage,
+  scenariosNextPageParam,
+  timelineNextPageParam,
+} from "@/lib/learning/pagination";
 import { Button, EmptyState, PageHeader, Spinner, Tabs } from "@/components/ui";
-
-const PAGE_SIZE = 20;
 
 type ActivityTab = "scenarios" | "conversations" | "timeline";
 
@@ -47,18 +53,16 @@ function ScenariosTabContent({
   filters: typeof EMPTY_SCENARIO_FILTERS;
   onFiltersChange: (filters: typeof EMPTY_SCENARIO_FILTERS) => void;
 }) {
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
-    queryKey: ["scenarios", "infinite"],
-    queryFn: ({ pageParam = 0 }) => api.listScenariosPage(pageParam, PAGE_SIZE),
-    getNextPageParam: (lastPage, pages) => {
-      const loaded = pages.reduce((sum, p) => sum + p.items.length, 0);
-      return loaded < lastPage.total ? loaded : undefined;
-    },
+  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
+    queryKey: ACTIVITY_QUERY_KEYS.scenarios,
+    queryFn: async ({ pageParam = 0 }) =>
+      normalizePage(await api.listScenariosPage(pageParam, ACTIVITY_LIST_PAGE_SIZE)),
+    getNextPageParam: scenariosNextPageParam,
     initialPageParam: 0,
   });
 
   const items = useMemo(
-    () => (data?.pages.flatMap((p) => p.items) ?? []) as ScenarioBrief[],
+    () => data?.pages.flatMap((p) => normalizePage(p).items) ?? [],
     [data],
   );
   const filtered = useMemo(() => filterScenarios(items, filters), [items, filters]);
@@ -76,9 +80,9 @@ function ScenariosTabContent({
   );
 
   const selectedChips = useMemo(() => {
-    const chips = [...filters.levels];
+    const chips = [...(filters.levels ?? [])];
     if (filters.dailyOnly) chips.push("daily");
-    for (const t of filters.themes) chips.push(`theme:${t}`);
+    for (const t of filters.themes ?? []) chips.push(`theme:${t}`);
     return chips;
   }, [filters]);
 
@@ -91,6 +95,10 @@ function ScenariosTabContent({
   };
 
   if (isLoading) return <Spinner label="加载场景..." />;
+
+  if (isError) {
+    return <EmptyState title="场景加载失败" description="请确认后端已启动并已登录" />;
+  }
 
   if (!items.length) {
     return (
@@ -148,18 +156,16 @@ function ConversationsTabContent({
   filters: typeof EMPTY_CONVERSATION_FILTERS;
   onFiltersChange: (filters: typeof EMPTY_CONVERSATION_FILTERS) => void;
 }) {
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
-    queryKey: ["conversations", "infinite"],
-    queryFn: ({ pageParam = 1 }) => api.listConversationsPage(pageParam, PAGE_SIZE),
-    getNextPageParam: (lastPage, pages) => {
-      const loaded = pages.reduce((sum, p) => sum + p.items.length, 0);
-      return loaded < lastPage.total ? pages.length + 1 : undefined;
-    },
+  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
+    queryKey: ACTIVITY_QUERY_KEYS.conversations,
+    queryFn: async ({ pageParam = 1 }) =>
+      normalizePage(await api.listConversationsPage(pageParam, ACTIVITY_LIST_PAGE_SIZE)),
+    getNextPageParam: conversationsNextPageParam,
     initialPageParam: 1,
   });
 
   const items = useMemo(
-    () => (data?.pages.flatMap((p) => p.items) ?? []) as ConversationBrief[],
+    () => data?.pages.flatMap((p) => normalizePage(p).items) ?? [],
     [data],
   );
   const active = useMemo(() => items.filter((c) => c.status === "active"), [items]);
@@ -178,6 +184,10 @@ function ConversationsTabContent({
   ];
 
   if (isLoading) return <Spinner label="加载对话..." />;
+
+  if (isError) {
+    return <EmptyState title="对话加载失败" description="请确认后端已启动并已登录" />;
+  }
 
   if (!items.length) {
     return (
@@ -250,19 +260,21 @@ function ConversationsTabContent({
 }
 
 function TimelineTabContent() {
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
-    queryKey: ["activity-timeline"],
-    queryFn: ({ pageParam = 0 }) => api.getActivityTimeline(pageParam, PAGE_SIZE),
-    getNextPageParam: (lastPage, pages) => {
-      const loaded = pages.reduce((sum, p) => sum + p.items.length, 0);
-      return loaded < lastPage.total ? loaded : undefined;
-    },
+  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
+    queryKey: ACTIVITY_QUERY_KEYS.timeline,
+    queryFn: async ({ pageParam = 0 }) =>
+      normalizePage(await api.getActivityTimeline(pageParam, ACTIVITY_LIST_PAGE_SIZE)),
+    getNextPageParam: timelineNextPageParam,
     initialPageParam: 0,
   });
 
-  const items = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data]);
+  const items = useMemo(() => data?.pages.flatMap((p) => normalizePage(p).items) ?? [], [data]);
 
   if (isLoading) return <Spinner label="加载动态..." />;
+
+  if (isError) {
+    return <EmptyState title="动态加载失败" description="请确认后端已更新并已登录" />;
+  }
 
   return (
     <div className="space-y-4">
@@ -289,7 +301,7 @@ function ActivityHubContent() {
   const [conversationFilters, setConversationFilters] = useState(EMPTY_CONVERSATION_FILTERS);
 
   const { data: overview, isLoading: overviewLoading } = useQuery({
-    queryKey: ["activity-overview"],
+    queryKey: ACTIVITY_QUERY_KEYS.overview,
     queryFn: () => api.getActivityOverview(),
   });
 
