@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, LogOut, User } from "lucide-react";
+import { ChevronDown, LineChart, LogOut, User } from "lucide-react";
 
 import { Button } from "@/components/ui";
 import { useAuth } from "@/contexts/auth-context";
@@ -69,6 +69,15 @@ export function UserMenu() {
           >
             <User className="h-4 w-4" />
             个人中心
+          </Link>
+          <Link
+            href="/progress"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-brand-50 hover:text-brand-700"
+          >
+            <LineChart className="h-4 w-4" />
+            学习进度
           </Link>
           <button
             type="button"

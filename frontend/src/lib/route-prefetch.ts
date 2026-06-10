@@ -55,6 +55,10 @@ export function prefetchRouteData(qc: QueryClient, href: string) {
           queryFn: () => api.listScenarios(),
         });
       }
+      void qc.prefetchQuery({
+        queryKey: ["groups"],
+        queryFn: () => api.getWordGroups(),
+      });
       break;
     case "/chat":
     case "/chat/new":

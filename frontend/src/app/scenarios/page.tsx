@@ -2,10 +2,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { Calendar, ChevronRight } from "lucide-react";
+import { Calendar, ChevronRight, Sparkles } from "lucide-react";
 import { api } from "@/lib/api";
 import { RequireAuth } from "@/components/auth/require-auth";
-import { Badge, Card, EmptyState, PageHeader, Spinner } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, PageHeader, Spinner } from "@/components/ui";
 
 function ScenariosListContent() {
   const { data, isLoading } = useQuery({
@@ -18,7 +18,15 @@ function ScenariosListContent() {
       <PageHeader
         badge="学习记录"
         title="场景列表"
-        description="回顾历史学习场景，继续未完成的练习"
+        description="回顾历史场景，或 AI 生成新的阅读与练习材料"
+        action={
+          <Link href="/generate">
+            <Button>
+              <Sparkles className="mr-2 h-4 w-4" />
+              生成场景
+            </Button>
+          </Link>
+        }
       />
 
       {isLoading ? (
@@ -49,7 +57,18 @@ function ScenariosListContent() {
           ))}
         </div>
       ) : (
-        <EmptyState title="暂无场景" description="去首页获取今日场景，或手动生成一个新场景" />
+        <EmptyState
+          title="暂无场景"
+          description="去首页获取今日场景，或在上方生成一个自定义场景"
+          action={
+            <Link href="/generate">
+              <Button>
+                <Sparkles className="mr-2 h-4 w-4" />
+                生成场景
+              </Button>
+            </Link>
+          }
+        />
       )}
     </div>
   );

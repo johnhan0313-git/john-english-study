@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { ArrowRight, Flame, RefreshCw, Sparkles, Target, Trophy, Zap } from "lucide-react";
+import { ArrowRight, Flame, RefreshCw, Target, Trophy, Zap } from "lucide-react";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, EmptyState, PageHeader, ProgressBar, SectionTitle, Spinner, StatCard } from "@/components/ui";
 import { useAuth } from "@/contexts/auth-context";
@@ -41,12 +41,18 @@ export default function HomePage() {
         title="沉浸式场景学英语"
         description="把 CET-4/6 词汇放进真实语境，听说读写一站练完"
         action={
-          <Link href={isAuthenticated ? "/generate" : "/login?next=/generate"}>
-            <Button size="lg">
-              <Sparkles className="mr-2 h-4 w-4" />
-              生成场景
-            </Button>
-          </Link>
+          isAuthenticated ? (
+            <Link href="/chat/new">
+              <Button size="lg">
+                <ArrowRight className="mr-2 h-4 w-4" />
+                开始对话
+              </Button>
+            </Link>
+          ) : (
+            <Link href="/login?next=/chat/new">
+              <Button size="lg">登录开始</Button>
+            </Link>
+          )
         }
       />
 
@@ -60,14 +66,23 @@ export default function HomePage() {
       )}
 
       {progress && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <section>
+          <div className="mb-4 flex items-end justify-between gap-3">
+            <h2 className="text-lg font-bold text-slate-900">学习进度</h2>
+            <Link href="/progress" className="text-sm font-medium text-brand-600 hover:text-brand-700">
+              查看详情
+              <ArrowRight className="ml-0.5 inline h-4 w-4" />
+            </Link>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard label="连续学习" value={progress.current_streak} suffix="天" icon={Flame} tone="amber" />
           <StatCard label="待复习" value={progress.due_review} icon={Zap} tone="violet" />
           <StatCard label="已掌握" value={progress.mastered_words} icon={Trophy} tone="emerald" />
           <StatCard label="掌握率" value={`${progress.mastery_rate}`} suffix="%" icon={Target} tone="brand">
             <ProgressBar value={progress.mastery_rate} />
           </StatCard>
-        </div>
+          </div>
+        </section>
       )}
 
       <section>
@@ -123,29 +138,14 @@ export default function HomePage() {
             title="还没有今日场景"
             description="点击下方按钮，AI 会根据你的学习进度生成专属场景"
             action={
-              <Link href="/generate">
-                <Button>立即生成</Button>
+              <Link href="/scenarios">
+                <Button>去场景页</Button>
               </Link>
             }
           />
         )}
       </section>
 
-      <Card className="relative overflow-hidden border-brand-100 bg-gradient-to-br from-brand-50/80 via-white to-accent-400/10">
-        <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-brand-200/30 blur-2xl" />
-        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h3 className="text-lg font-bold text-slate-900">自定义学习场景</h3>
-            <p className="mt-1 text-sm text-slate-600">自选主题、级别和词汇，AI 为你生成专属阅读材料与练习</p>
-          </div>
-          <Link href={isAuthenticated ? "/generate" : "/login?next=/generate"}>
-            <Button variant="secondary" size="lg">
-              <Sparkles className="mr-2 h-4 w-4" />
-              手动生成
-            </Button>
-          </Link>
-        </div>
-      </Card>
     </div>
   );
 }

@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { Camera } from "lucide-react";
+import { Camera, ChevronRight } from "lucide-react";
 
 import { Button, Input } from "@/components/ui";
 import { useAuth } from "@/contexts/auth-context";
@@ -180,6 +181,17 @@ export default function ProfilePage() {
           {feedback.text}
         </p>
       )}
+
+      <Link
+        href="/progress"
+        className="mb-5 flex items-center justify-between rounded-2xl border border-surface-border/80 bg-white px-4 py-3.5 shadow-sm transition hover:border-brand-200 hover:bg-brand-50/30"
+      >
+        <div>
+          <p className="text-sm font-medium text-slate-900">学习进度</p>
+          <p className="mt-0.5 text-xs text-slate-500">掌握率、连续打卡与复习统计</p>
+        </div>
+        <ChevronRight className="h-5 w-5 shrink-0 text-slate-300" />
+      </Link>
 
       <div className="overflow-hidden rounded-2xl border border-surface-border/80 bg-white shadow-sm">
         <div className="flex flex-col items-center px-5 pb-6 pt-8">

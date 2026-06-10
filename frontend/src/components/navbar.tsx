@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { BookOpen, Home, Layers, Library, LineChart, MessageCircle, Sparkles, GraduationCap } from "lucide-react";
+import { BookOpen, Home, Layers, Library, MessageCircle, GraduationCap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AuthNavActions } from "@/components/auth/user-menu";
 import { prefetchAllRoutes, prefetchNavTarget } from "@/lib/route-prefetch";
@@ -14,9 +14,7 @@ const nav = [
   { href: "/words", label: "词库", icon: BookOpen },
   { href: "/scenarios", label: "场景", icon: Layers },
   { href: "/chat", label: "对话", icon: MessageCircle },
-  { href: "/generate", label: "生成", icon: Sparkles },
   { href: "/reference/phonetics", label: "参考", icon: Library },
-  { href: "/progress", label: "进度", icon: LineChart },
 ];
 
 export function Navbar() {
@@ -46,10 +44,12 @@ export function Navbar() {
         <div className="flex min-w-0 items-center gap-2">
           <nav className="hidden items-center gap-0.5 overflow-x-auto rounded-2xl border border-surface-border/80 bg-white p-1 shadow-sm md:flex [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {nav.map(({ href, label, icon: Icon }) => {
-              const active = href === "/reference/phonetics"
-                ? pathname.startsWith("/reference")
-                : href === "/chat"
-                  ? pathname.startsWith("/chat")
+            const active = href === "/reference/phonetics"
+              ? pathname.startsWith("/reference")
+              : href === "/chat"
+                ? pathname.startsWith("/chat")
+                : href === "/scenarios"
+                  ? pathname.startsWith("/scenarios")
                   : pathname === href;
               return (
                 <Link
