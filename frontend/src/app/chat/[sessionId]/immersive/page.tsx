@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { useEffect } from "react";
 import { Mic, MicOff, PhoneOff, Sparkles } from "lucide-react";
 import { api } from "@/lib/api";
+import { getConversationChineseHint } from "@/lib/conversation-settings";
 import { resolveConversationVisuals } from "@/lib/conversation-visuals";
 import { cn } from "@/lib/utils";
 import { Alert, Button, Spinner } from "@/components/ui";
@@ -24,6 +25,7 @@ export default function ChatImmersivePage() {
   const voice = useVoiceTurn({
     sessionId: id,
     enabled: data?.status === "active",
+    showChineseHint: data ? getConversationChineseHint(data.scene_brief) : true,
   });
 
   const { playOpeningIfNeeded, started } = voice;
@@ -116,7 +118,7 @@ export default function ChatImmersivePage() {
         />
 
         <div className="w-full max-w-lg space-y-4">
-          <div className="min-h-[5rem] rounded-2xl border border-white/20 bg-black/40 px-4 py-3 text-left text-sm leading-relaxed text-white whitespace-pre-wrap backdrop-blur-sm">
+          <div className="min-h-[5rem] rounded-2xl border border-white/20 bg-black/40 px-4 py-3 text-left reading-text text-white whitespace-pre-wrap backdrop-blur-sm">
             {voice.subtitle || "等待对方发言..."}
           </div>
 

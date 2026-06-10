@@ -12,7 +12,9 @@
   }
 
   body {
-    @apply antialiased text-slate-800;
+    @apply antialiased text-[15px] leading-[1.65] text-slate-800;
+    font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+    text-rendering: optimizeLegibility;
   }
 }
 
@@ -45,7 +47,7 @@
   }
 
   .input-field {
-    @apply w-full rounded-xl border border-surface-border bg-white/90 px-4 py-2.5 text-sm shadow-sm transition-colors placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100;
+    @apply w-full rounded-xl border border-surface-border bg-white/90 px-4 py-2.5 text-[15px] leading-normal shadow-sm transition-colors placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100;
   }
 
   .chip {
@@ -58,6 +60,10 @@
 
   .chip-inactive {
     @apply chip border border-surface-border bg-white/80 text-slate-600 hover:border-brand-300 hover:text-brand-700;
+  }
+
+  .reading-text {
+    @apply text-[15px] leading-[1.75] tracking-[0.012em];
   }
 }
 

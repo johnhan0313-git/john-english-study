@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 CONVERSATION_SETUP_SCHEMA = """
 {
   "title": "string",
@@ -12,6 +14,15 @@ CONVERSATION_SETUP_SCHEMA = """
   }
 }
 """
+
+_CHINESE_HINT_SUFFIX = re.compile(
+    r"\s*[（(][^）)]*[\u4e00-\u9fff][^）)]*[）)]\s*$"
+)
+
+
+def strip_chinese_hint_suffix(text: str) -> str:
+    return _CHINESE_HINT_SUFFIX.sub("", text).strip()
+
 
 CONVERSATION_SUMMARY_SCHEMA = """
 {
@@ -41,9 +52,9 @@ def build_system_prompt(
     background = scene_brief.get("background_zh", "")
     words = ", ".join(target_words) if target_words else "none specified"
     hint_rule = (
-        "After your English reply, add ONE short line in Chinese in parentheses if it helps the learner."
+        "After your English reply, add ONE short Chinese gloss in parentheses, e.g. (你好)."
         if show_chinese_hint
-        else "Reply in English only. Do not add Chinese unless the learner writes in Chinese first."
+        else "Reply in English only. Never add Chinese translations, glosses, or parenthetical Chinese."
     )
     return (
         f"You are role-playing as {role_ai} in a 1-on-1 English learning scene.\n"

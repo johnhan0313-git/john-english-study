@@ -15,6 +15,8 @@ interface TalkingPortraitProps {
   className?: string;
 }
 
+const PORTRAIT_MOUTH_TOP_PERCENT = (112 / 260) * 100;
+
 function mouthStyles(shape: MouthShape, open: number) {
   const width = {
     closed: 22,
@@ -86,12 +88,12 @@ export function TalkingPortrait({
         <div
           className="absolute left-1/2 -translate-x-1/2 transition-all duration-75"
           style={{
-            top: "52%",
+            top: `${PORTRAIT_MOUTH_TOP_PERCENT}%`,
             width: mouth.width,
             height: mouth.height,
             borderRadius: mouth.borderRadius,
             backgroundColor: isSpeaking && mouthOpen > 0.08 ? "#7c2d12" : "#92400e",
-            opacity: isSpeaking ? 0.95 : 0.85,
+            opacity: isSpeaking ? 0.95 : 0,
           }}
         />
       </div>

@@ -6,6 +6,8 @@
   <ellipse cx="100" cy="88" rx="54" ry="48" fill="#f5c99a"/>
   <circle cx="78" cy="82" r="5" fill="#334155"/>
   <circle cx="122" cy="82" r="5" fill="#334155"/>
-  <path d="M88,68 Q100,58 112,68" stroke="#8b5a2b" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M72,74 Q78,69 84,74" stroke="#8b5a2b" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M116,74 Q122,69 128,74" stroke="#8b5a2b" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M90,108 Q100,114 110,108" stroke="#b45309" stroke-width="2.5" fill="none" stroke-linecap="round"/>
   <ellipse id="mouth-anchor" cx="100" cy="112" rx="0" ry="0" fill="none"/>
 </svg>

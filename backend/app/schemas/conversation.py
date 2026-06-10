@@ -54,6 +54,10 @@ class SendMessageRequest(BaseModel):
     show_chinese_hint: bool = True
 
 
+class ConversationSettingsRequest(BaseModel):
+    show_chinese_hint: bool
+
+
 class EndConversationRequest(BaseModel):
     pass
 

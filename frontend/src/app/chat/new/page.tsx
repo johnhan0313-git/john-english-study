@@ -92,7 +92,7 @@ function NewChatForm() {
           onChange={(e) => setShowChineseHint(e.target.checked)}
           className="rounded border-surface-border"
         />
-        AI 回复附带中文提示
+        AI 附带中文释义
       </label>
 
       <Button className="w-full" disabled={mutation.isPending} onClick={() => mutation.mutate()}>

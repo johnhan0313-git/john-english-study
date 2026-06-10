@@ -50,7 +50,7 @@ export function WordsFlashcardView({
         {!flipped ? (
           <div className="flex min-h-[200px] flex-col items-center justify-center gap-3">
             <p className="text-xs font-medium uppercase tracking-widest text-slate-400">点击翻面</p>
-            <h2 className="text-4xl font-bold text-slate-900">{current.lemma}</h2>
+            <h2 className="text-4xl font-bold tracking-[0.02em] text-slate-900">{current.lemma}</h2>
             {current.phonetic && <p className="text-lg text-slate-500">{current.phonetic}</p>}
           </div>
         ) : (

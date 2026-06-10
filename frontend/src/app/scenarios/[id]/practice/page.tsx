@@ -58,7 +58,7 @@ function ExerciseItem({
     return (
       <div className="space-y-3">
         <p className="font-medium">{exercise.payload.question || "填空题"}</p>
-        <p className="leading-relaxed text-slate-700">{exercise.payload.passage_with_blanks}</p>
+        <p className="reading-text text-slate-700">{exercise.payload.passage_with_blanks}</p>
         <Input
           value={answer}
           onChange={(e) => onChange(e.target.value)}

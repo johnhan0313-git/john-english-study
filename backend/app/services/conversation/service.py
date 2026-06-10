@@ -17,6 +17,7 @@ from app.services.conversation.prompts import (
     build_setup_prompt,
     build_summary_messages,
     build_system_prompt,
+    strip_chinese_hint_suffix,
 )
 from app.services.scenario.service import ScenarioService
 from app.services.vocabulary.srs import record_answer
@@ -81,7 +82,10 @@ class ConversationService:
             level=level,
             role_ai=session_data["role_ai"],
             role_user=session_data["role_user"],
-            scene_brief=dump_json_field(session_data["scene_brief"]),
+            scene_brief=dump_json_field({
+                **session_data["scene_brief"],
+                "show_chinese_hint": show_chinese_hint,
+            }),
             target_words=dump_json_field(session_data["target_words"]),
             mode="text",
             status="active",
@@ -205,9 +209,14 @@ class ConversationService:
                 ),
             },
         ]
-        return await self._chat_with_mock(messages)
+        return await self._chat_with_mock(messages, show_chinese_hint=show_chinese_hint)
 
-    async def _chat_with_mock(self, messages: list[dict[str, str]]) -> str:
+    async def _chat_with_mock(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        show_chinese_hint: bool = True,
+    ) -> str:
         if hasattr(self.ai, "chat_stream"):
             chunks: list[str] = []
             async for token in self.ai.chat_stream(messages):
@@ -218,15 +227,20 @@ class ConversationService:
         try:
             return await self.ai.chat_text(messages)
         except (AIProviderError, Exception):
-            return self._mock_reply(messages)
+            return self._mock_reply(messages, show_chinese_hint=show_chinese_hint)
 
-    def _mock_reply(self, messages: list[dict[str, str]]) -> str:
+    def _mock_reply(self, messages: list[dict[str, str]], *, show_chinese_hint: bool = True) -> str:
         user_msgs = [m["content"] for m in messages if m["role"] == "user"]
         last = user_msgs[-1] if user_msgs else ""
         if "Start the role-play" in last:
+            if show_chinese_hint:
+                return (
+                    "Good morning! Welcome to the airport check-in desk. "
+                    "May I help you with your reservation today? (您好，请问需要办理什么？)"
+                )
             return (
                 "Good morning! Welcome to the airport check-in desk. "
-                "May I help you with your reservation today? (您好，请问需要办理什么？)"
+                "May I help you with your reservation today?"
             )
         if any("\u4e00" <= c <= "\u9fff" for c in last):
             return (
@@ -237,6 +251,21 @@ class ConversationService:
             "That's helpful, thank you. Could you tell me more about your travel plans? "
             "We should confirm your schedule and luggage details."
         )
+
+    @staticmethod
+    def get_show_chinese_hint(session: ConversationSession) -> bool:
+        brief = parse_json_field(session.scene_brief, {})
+        return bool(brief.get("show_chinese_hint", True))
+
+    def persist_show_chinese_hint(self, session: ConversationSession, show_chinese_hint: bool) -> None:
+        brief = parse_json_field(session.scene_brief, {})
+        brief["show_chinese_hint"] = show_chinese_hint
+        session.scene_brief = dump_json_field(brief)
+
+    def update_show_chinese_hint(self, session: ConversationSession, show_chinese_hint: bool) -> None:
+        self.persist_show_chinese_hint(session, show_chinese_hint)
+        self.db.commit()
+        self.db.refresh(session)
 
     def get_session(self, session_id: int, user_id: int | None = None) -> ConversationSession | None:
         q = (
@@ -303,7 +332,10 @@ class ConversationService:
         messages: list[dict[str, str]] = [{"role": "system", "content": system}]
         for msg in sorted(session.messages, key=lambda m: m.id):
             if msg.role in ("user", "assistant"):
-                messages.append({"role": msg.role, "content": msg.content})
+                content = msg.content
+                if msg.role == "assistant" and not show_chinese_hint:
+                    content = strip_chinese_hint_suffix(content)
+                messages.append({"role": msg.role, "content": content})
         return messages
 
     def save_user_message(
@@ -340,6 +372,9 @@ class ConversationService:
         if session.status != "active":
             raise ValueError("Conversation has ended")
 
+        self.persist_show_chinese_hint(session, show_chinese_hint)
+        self.db.flush()
+
         self.save_user_message(session, user_content, meta=user_meta)
         self.db.refresh(session)
         chat_messages = self.build_chat_messages(session, show_chinese_hint)
@@ -351,7 +386,7 @@ class ConversationService:
 
         assistant_content = "".join(full_parts).strip()
         if not assistant_content:
-            assistant_content = self._mock_reply(chat_messages)
+            assistant_content = self._mock_reply(chat_messages, show_chinese_hint=show_chinese_hint)
 
         assistant_msg = ConversationMessage(
             session_id=session.id,

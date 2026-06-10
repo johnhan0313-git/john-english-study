@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Loader2, Phone, Send, Sparkles, Square } from "lucide-react";
 import { api, ConversationMessage } from "@/lib/api";
+import { getConversationChineseHint } from "@/lib/conversation-settings";
 import { cn } from "@/lib/utils";
 import { Alert, Badge, Button, Card, Spinner } from "@/components/ui";
 
@@ -18,6 +19,7 @@ export default function ChatSessionPage() {
   const [streaming, setStreaming] = useState(false);
   const [streamContent, setStreamContent] = useState("");
   const [showChineseHint, setShowChineseHint] = useState(true);
+  const [hintSaving, setHintSaving] = useState(false);
   const [summary, setSummary] = useState<Awaited<ReturnType<typeof api.endConversation>> | null>(null);
   const [ending, setEnding] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +33,26 @@ export default function ChatSessionPage() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [data?.messages, streamContent, ending]);
+
+  useEffect(() => {
+    if (!data) return;
+    setShowChineseHint(getConversationChineseHint(data.scene_brief));
+  }, [data]);
+
+  const handleChineseHintChange = async (checked: boolean) => {
+    setShowChineseHint(checked);
+    setHintSaving(true);
+    setError(null);
+    try {
+      const updated = await api.updateConversationSettings(id, { show_chinese_hint: checked });
+      queryClient.setQueryData(["conversation", id], updated);
+    } catch (e) {
+      setShowChineseHint(!checked);
+      setError(e instanceof Error ? e.message : "更新设置失败");
+    } finally {
+      setHintSaving(false);
+    }
+  };
 
   const handleSend = async () => {
     const text = input.trim();
@@ -93,50 +115,62 @@ export default function ChatSessionPage() {
   return (
     <div className="flex h-[calc(100vh-8rem)] flex-col gap-4">
       <Card className="shrink-0 space-y-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-3">
           <div>
             <h1 className="text-lg font-bold text-slate-900">{data.title}</h1>
             <p className="text-sm text-slate-500">
               你扮演 {data.role_user} · 对方 {data.role_ai} · {data.turn_count} 轮
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {data.status === "active" && (
-              <>
-                <Link href={`/chat/${id}/call`}>
-                  <Button variant="outline" size="sm" disabled={ending || streaming}>
-                    <Phone className="mr-1.5 h-4 w-4" />
-                    电话模式
-                  </Button>
-                </Link>
-                <Link href={`/chat/${id}/immersive`}>
-                  <Button variant="outline" size="sm" disabled={ending || streaming}>
-                    <Sparkles className="mr-1.5 h-4 w-4" />
-                    沉浸模式
-                  </Button>
-                </Link>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={ending || streaming}
-                  onClick={() => void handleEnd()}
-                >
-                  {ending ? (
-                    <>
-                      <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                      生成总结中...
-                    </>
-                  ) : (
-                    <>
-                      <Square className="mr-1.5 h-4 w-4" />
-                      结束对话
-                    </>
+
+          {data.status === "active" && (
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex overflow-hidden rounded-xl border border-surface-border/80 bg-slate-50/50">
+                <Link
+                  href={`/chat/${id}/call`}
+                  className={cn(
+                    "flex flex-1 items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-white hover:text-brand-700",
+                    (ending || streaming) && "pointer-events-none opacity-50",
                   )}
-                </Button>
-              </>
-            )}
-          </div>
+                >
+                  <Phone className="h-4 w-4 shrink-0" />
+                  电话模式
+                </Link>
+                <div className="w-px bg-surface-border/60" />
+                <Link
+                  href={`/chat/${id}/immersive`}
+                  className={cn(
+                    "flex flex-1 items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-white hover:text-brand-700",
+                    (ending || streaming) && "pointer-events-none opacity-50",
+                  )}
+                >
+                  <Sparkles className="h-4 w-4 shrink-0" />
+                  沉浸模式
+                </Link>
+              </div>
+
+              <button
+                type="button"
+                disabled={ending || streaming}
+                onClick={() => void handleEnd()}
+                className="inline-flex items-center justify-center gap-1.5 self-end text-sm font-medium text-red-600 transition hover:text-red-700 disabled:opacity-50 sm:self-auto"
+              >
+                {ending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    生成总结中...
+                  </>
+                ) : (
+                  <>
+                    <Square className="h-4 w-4" />
+                    结束对话
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
+
         <div className="flex flex-wrap gap-1.5">
           {data.target_words.map((word) => (
             <Badge key={word} variant={usedSet.has(word.toLowerCase()) ? "success" : "outline"}>
@@ -156,7 +190,7 @@ export default function ChatSessionPage() {
           >
             <div
               className={cn(
-                "max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
+                "max-w-[85%] rounded-2xl px-4 py-3 reading-text",
                 msg.role === "user"
                   ? "bg-hero-gradient text-white"
                   : "border border-surface-border bg-white text-slate-800",
@@ -211,14 +245,23 @@ export default function ChatSessionPage() {
 
       {data.status === "active" && !ending && (
         <Card className="shrink-0 space-y-3">
-          <label className="flex items-center gap-2 text-xs text-slate-500">
-            <input
-              type="checkbox"
-              checked={showChineseHint}
-              onChange={(e) => setShowChineseHint(e.target.checked)}
-            />
-            中文提示
-          </label>
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-surface-border/60 bg-slate-50/70 px-3 py-2.5">
+            <div className="min-w-0 text-left">
+              <p className="text-sm font-medium text-slate-700">AI 附带中文释义</p>
+              <p className="text-xs text-slate-500">开启后英文回复末尾会加括号中文，仅影响后续消息</p>
+            </div>
+            <label className="relative inline-flex shrink-0 cursor-pointer items-center">
+              <input
+                type="checkbox"
+                className="peer sr-only"
+                checked={showChineseHint}
+                disabled={hintSaving || streaming}
+                onChange={(e) => void handleChineseHintChange(e.target.checked)}
+              />
+              <span className="h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-brand-500 peer-disabled:opacity-50" />
+              <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition peer-checked:translate-x-5" />
+            </label>
+          </div>
           <div className="flex gap-2">
             <input
               className="input-field flex-1"

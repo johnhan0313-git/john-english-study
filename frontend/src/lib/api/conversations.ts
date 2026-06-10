@@ -19,6 +19,12 @@ export const conversationsApi = {
 
   getConversation: (id: number) => request<ConversationDetail>(`/conversations/${id}`),
 
+  updateConversationSettings: (id: number, body: { show_chinese_hint: boolean }) =>
+    request<ConversationDetail>(`/conversations/${id}/settings`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+
   endConversation: (id: number) =>
     request<ConversationSummary>(`/conversations/${id}/end`, {
       method: "POST",
@@ -80,9 +86,11 @@ export const conversationsApi = {
     }
   },
 
-  async sendVoiceTurn(sessionId: number, audioBlob: Blob, showChineseHint = true) {
+  async sendVoiceTurn(sessionId: number, audioBlob: Blob, showChineseHint?: boolean) {
     const form = new FormData();
-    form.append("show_chinese_hint", String(showChineseHint));
+    if (showChineseHint !== undefined) {
+      form.append("show_chinese_hint", String(showChineseHint));
+    }
     form.append("audio", audioBlob, "recording.webm");
     const res = await fetch(`${API_BASE}/conversations/${sessionId}/turns/voice`, {
       method: "POST",

@@ -3,6 +3,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
+import { ApiError, fetchAuthenticatedAudioBlobUrl } from "@/lib/api/client";
 import { useLipsyncAudio } from "@/hooks/use-lipsync-audio";
 
 interface UseVoiceTurnOptions {
@@ -10,6 +11,7 @@ interface UseVoiceTurnOptions {
   enabled?: boolean;
   autoPlayOpening?: boolean;
   initialStarted?: boolean;
+  showChineseHint?: boolean;
 }
 
 export function useVoiceTurn({
@@ -17,9 +19,11 @@ export function useVoiceTurn({
   enabled = true,
   autoPlayOpening = true,
   initialStarted = false,
+  showChineseHint = true,
 }: UseVoiceTurnOptions) {
   const queryClient = useQueryClient();
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const blobUrlRef = useRef<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const openingPlayedRef = useRef(false);
@@ -34,6 +38,13 @@ export function useVoiceTurn({
 
   const { connect, stopAnalysis, mouthOpen, viseme } = useLipsyncAudio();
 
+  const revokeBlobUrl = useCallback(() => {
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
+  }, []);
+
   const ensureAudio = useCallback(() => {
     if (!audioRef.current) {
       const audio = new Audio();
@@ -44,29 +55,47 @@ export function useVoiceTurn({
   }, []);
 
   const playAudio = useCallback(
-    (url: string) => {
+    async (url: string) => {
       const audio = ensureAudio();
       stopAnalysis();
+      revokeBlobUrl();
       setPlaying(true);
       setError(null);
-      audio.onended = () => {
+
+      try {
+        const playUrl = await fetchAuthenticatedAudioBlobUrl(url);
+        blobUrlRef.current = playUrl;
+
+        audio.onended = () => {
+          setPlaying(false);
+          stopAnalysis();
+          revokeBlobUrl();
+        };
+        audio.onerror = () => {
+          setPlaying(false);
+          stopAnalysis();
+          revokeBlobUrl();
+          setError("语音播放失败");
+        };
+        audio.onplay = () => connect(audio);
+        audio.src = playUrl;
+        await audio.play();
+      } catch (e) {
         setPlaying(false);
         stopAnalysis();
-      };
-      audio.onerror = () => {
-        setPlaying(false);
-        stopAnalysis();
-        setError("语音加载失败，请检查后端是否已启动");
-      };
-      audio.onplay = () => connect(audio);
-      audio.src = url;
-      void audio.play().catch(() => {
-        setPlaying(false);
-        stopAnalysis();
-        setError("无法播放语音，请允许浏览器自动播放");
-      });
+        revokeBlobUrl();
+        if (e instanceof ApiError) {
+          if (e.status === 503) {
+            setError("语音合成未配置或暂时不可用");
+          } else {
+            setError(e.message || "语音加载失败");
+          }
+        } else {
+          setError("无法播放语音，请允许浏览器自动播放");
+        }
+      }
     },
-    [connect, ensureAudio, stopAnalysis],
+    [connect, ensureAudio, revokeBlobUrl, stopAnalysis],
   );
 
   const playOpening = useCallback(
@@ -125,7 +154,7 @@ export function useVoiceTurn({
       const blob = new Blob(chunksRef.current, { type: "audio/webm" });
       setProcessing(true);
       try {
-        const result = await api.sendVoiceTurn(sessionId, blob);
+        const result = await api.sendVoiceTurn(sessionId, blob, showChineseHint);
         setSubtitle(`${result.transcript}\n\n— ${result.content}`);
         await queryClient.invalidateQueries({ queryKey: ["conversation", sessionId] });
         queryClient.invalidateQueries({ queryKey: ["conversations"] });
@@ -139,7 +168,7 @@ export function useVoiceTurn({
     recorder.start();
     mediaRecorderRef.current = recorder;
     setRecording(true);
-  }, [enabled, playAudio, playing, processing, queryClient, sessionId]);
+  }, [enabled, playAudio, playing, processing, queryClient, sessionId, showChineseHint]);
 
   const stopRecording = useCallback(() => {
     mediaRecorderRef.current?.stop();
@@ -156,8 +185,9 @@ export function useVoiceTurn({
     () => () => {
       stopAnalysis();
       audioRef.current?.pause();
+      revokeBlobUrl();
     },
-    [stopAnalysis],
+    [revokeBlobUrl, stopAnalysis],
   );
 
   return {

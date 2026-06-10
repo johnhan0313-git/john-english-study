@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -14,6 +14,7 @@ from app.schemas.conversation import (
     ConversationDetail,
     ConversationListResponse,
     ConversationMessageResponse,
+    ConversationSettingsRequest,
     ConversationSummaryResponse,
     EndConversationRequest,
     SendMessageRequest,
@@ -87,6 +88,20 @@ def get_conversation(
 ):
     service = _conversation_service(db)
     session = _get_user_session(service, session_id, user.id)
+    return ConversationDetail(**service.session_to_detail(session))
+
+
+@router.patch("/{session_id}/settings", response_model=ConversationDetail)
+def update_conversation_settings(
+    session_id: int,
+    body: ConversationSettingsRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    service = _conversation_service(db)
+    session = _get_user_session(service, session_id, user.id)
+    service.update_show_chinese_hint(session, body.show_chinese_hint)
+    session = service.get_session(session_id, user.id)
     return ConversationDetail(**service.session_to_detail(session))
 
 
@@ -191,7 +206,6 @@ async def get_message_audio(
 @router.post("/{session_id}/turns/voice", response_model=VoiceTurnResponse)
 async def voice_turn(
     session_id: int,
-    show_chinese_hint: bool = Form(True),
     audio: UploadFile = File(...),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -203,6 +217,7 @@ async def voice_turn(
 
     service = _conversation_service(db)
     session = _get_user_session(service, session_id, user.id)
+    show_chinese_hint = ConversationService.get_show_chinese_hint(session)
 
     audio_bytes = await audio.read()
     transcript = await stt.speech_to_text(audio_bytes, audio.filename or "recording.webm")

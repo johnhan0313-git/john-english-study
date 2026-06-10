@@ -62,4 +62,43 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
   return res as unknown as T;
 }
 
+export function apiPathFromUrl(url: string): string {
+  if (url.startsWith(API_BASE)) {
+    const path = url.slice(API_BASE.length);
+    return path.startsWith("/") ? path : `/${path}`;
+  }
+  if (url.startsWith("/")) return url;
+  try {
+    const parsed = new URL(url);
+    const base = new URL(API_BASE);
+    if (parsed.origin === base.origin && parsed.pathname.startsWith(base.pathname)) {
+      const prefix = base.pathname.endsWith("/") ? base.pathname.slice(0, -1) : base.pathname;
+      const path = parsed.pathname.slice(prefix.length);
+      return `${path.startsWith("/") ? path : `/${path}`}${parsed.search}`;
+    }
+  } catch {
+    // ignore malformed url
+  }
+  return url;
+}
+
+export async function fetchAuthenticatedAudioBlobUrl(url: string): Promise<string> {
+  const path = apiPathFromUrl(url);
+  const res = await authFetch(path);
+  if (!res.ok) {
+    const text = await res.text();
+    let detail = text;
+    try {
+      const parsed = JSON.parse(text) as { detail?: string };
+      if (typeof parsed.detail === "string") detail = parsed.detail;
+    } catch {
+      // plain text
+    }
+    throw new ApiError(detail || "语音加载失败", res.status);
+  }
+  const blob = await res.blob();
+  if (!blob.size) throw new ApiError("语音文件为空", res.status);
+  return URL.createObjectURL(blob);
+}
+
 export { API_BASE };

@@ -207,7 +207,7 @@ export default function ScenarioDetailPage() {
               <div className="flex items-center gap-2 text-sm text-slate-500 mb-4">
                 <BookOpen className="h-4 w-4" /> 阅读模式 · 点击高亮词查看释义
               </div>
-              <div className="leading-relaxed text-slate-800">
+              <div className="reading-text text-slate-800">
                 {highlightPassage(scenario.content.passage, scenario.words, highlightOptions)}
               </div>
               {selectedWord && (
@@ -219,7 +219,7 @@ export default function ScenarioDetailPage() {
                 <div className="mt-6 space-y-3 border-t pt-4">
                   <h3 className="font-medium">对话</h3>
                   {scenario.dialogue.map((d, i) => (
-                    <div key={i} className="rounded-lg bg-slate-50 p-3">
+                    <div key={i} className="rounded-lg bg-slate-50 p-3 reading-text">
                       <span className="font-semibold text-brand-700">{d.speaker}:</span>{" "}
                       {highlightPassage(d.text, scenario.words, highlightOptions)}
                     </div>
