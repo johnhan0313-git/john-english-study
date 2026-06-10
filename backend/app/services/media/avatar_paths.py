@@ -43,4 +43,4 @@ def remove_avatar_files(user_id: int, settings: Settings | None = None) -> None:
 
 def avatar_api_url(user_id: int, *, version: int | None = None) -> str:
     suffix = f"?v={version}" if version is not None else ""
-    return f"/api/profile/avatar/{user_id}{suffix}"
+    return f"/profile/avatar/{user_id}{suffix}"

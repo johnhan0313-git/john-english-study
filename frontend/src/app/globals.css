@@ -25,6 +25,11 @@
     @apply sticky top-0 z-50 border-b border-surface-border/80 bg-white/95 shadow-sm;
     height: var(--header-height);
     contain: layout style;
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .mobile-bottom-nav {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   .glass-card {

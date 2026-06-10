@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/navbar";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { Providers } from "@/components/providers";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -15,13 +16,22 @@ export const metadata: Metadata = {
   description: "成人英语场景学习平台，兼顾听说读写",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="zh-CN">
       <body className={`${jakarta.variable} font-sans app-shell`}>
         <Providers>
           <Navbar />
-          <main className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6">{children}</main>
+          <main className="mx-auto max-w-6xl px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-6 sm:px-6 md:pb-16">
+            {children}
+          </main>
+          <MobileBottomNav />
         </Providers>
       </body>
     </html>
