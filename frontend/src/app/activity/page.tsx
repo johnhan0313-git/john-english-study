@@ -1,0 +1,373 @@
+"use client";
+
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useMemo, useState } from "react";
+import { Clock, Layers, MessageCircle, Plus, Sparkles } from "lucide-react";
+import { api } from "@/lib/api";
+import type { ConversationBrief, ScenarioBrief } from "@/lib/api/types";
+import { RequireAuth } from "@/components/auth/require-auth";
+import {
+  ActivityTimeline,
+  ContinueLearningSection,
+  ConversationCard,
+  DateGroupSection,
+  FilterChips,
+  LearningEmptyGuide,
+  LearningSidebar,
+  LearningStatsBar,
+  ScenarioGridCard,
+} from "@/components/learning";
+import { groupByDate } from "@/lib/learning/date-groups";
+import {
+  EMPTY_CONVERSATION_FILTERS,
+  EMPTY_SCENARIO_FILTERS,
+  filterConversations,
+  filterScenarios,
+  scenarioFiltersToSearch,
+  uniqueThemes,
+} from "@/lib/learning/filters";
+import { Button, EmptyState, PageHeader, Spinner, Tabs } from "@/components/ui";
+
+const PAGE_SIZE = 20;
+
+type ActivityTab = "scenarios" | "conversations" | "timeline";
+
+const TAB_OPTIONS = [
+  { id: "scenarios" as const, label: "场景", icon: Layers },
+  { id: "conversations" as const, label: "对话", icon: MessageCircle },
+  { id: "timeline" as const, label: "全部动态", icon: Clock },
+];
+
+function ScenariosTabContent({
+  filters,
+  onFiltersChange,
+}: {
+  filters: typeof EMPTY_SCENARIO_FILTERS;
+  onFiltersChange: (filters: typeof EMPTY_SCENARIO_FILTERS) => void;
+}) {
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
+    queryKey: ["scenarios", "infinite"],
+    queryFn: ({ pageParam = 0 }) => api.listScenariosPage(pageParam, PAGE_SIZE),
+    getNextPageParam: (lastPage, pages) => {
+      const loaded = pages.reduce((sum, p) => sum + p.items.length, 0);
+      return loaded < lastPage.total ? loaded : undefined;
+    },
+    initialPageParam: 0,
+  });
+
+  const items = useMemo(
+    () => (data?.pages.flatMap((p) => p.items) ?? []) as ScenarioBrief[],
+    [data],
+  );
+  const filtered = useMemo(() => filterScenarios(items, filters), [items, filters]);
+  const groups = useMemo(() => groupByDate(filtered, (s) => s.created_at), [filtered]);
+  const themes = useMemo(() => uniqueThemes(items), [items]);
+
+  const chipOptions = useMemo(
+    () => [
+      { id: "cet4", label: "CET4" },
+      { id: "cet6", label: "CET6" },
+      { id: "daily", label: "每日" },
+      ...themes.map((t) => ({ id: `theme:${t}`, label: t })),
+    ],
+    [themes],
+  );
+
+  const selectedChips = useMemo(() => {
+    const chips = [...filters.levels];
+    if (filters.dailyOnly) chips.push("daily");
+    for (const t of filters.themes) chips.push(`theme:${t}`);
+    return chips;
+  }, [filters]);
+
+  const handleChipChange = (selected: string[]) => {
+    onFiltersChange({
+      levels: selected.filter((s) => s === "cet4" || s === "cet6"),
+      themes: selected.filter((s) => s.startsWith("theme:")).map((s) => s.slice(6)),
+      dailyOnly: selected.includes("daily"),
+    });
+  };
+
+  if (isLoading) return <Spinner label="加载场景..." />;
+
+  if (!items.length) {
+    return (
+      <div className="space-y-6">
+        <EmptyState
+          title="暂无场景"
+          description="去首页获取今日场景，或生成一个自定义场景"
+          action={
+            <Link href="/generate">
+              <Button>
+                <Sparkles className="mr-2 h-4 w-4" />
+                生成场景
+              </Button>
+            </Link>
+          }
+        />
+        <LearningEmptyGuide variant="scenarios" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <FilterChips options={chipOptions} selected={selectedChips} onChange={handleChipChange} />
+      {filtered.length === 0 ? (
+        <EmptyState title="无匹配场景" description="试试调整筛选条件" />
+      ) : (
+        <div className="space-y-8">
+          {groups.map((group) => (
+            <DateGroupSection key={group.key} label={group.label} count={group.items.length}>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+                {group.items.map((s) => (
+                  <ScenarioGridCard key={s.id} scenario={s} />
+                ))}
+              </div>
+            </DateGroupSection>
+          ))}
+        </div>
+      )}
+      {hasNextPage && (
+        <div className="flex justify-center pt-2">
+          <Button variant="outline" onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
+            {isFetchingNextPage ? "加载中..." : "加载更多"}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ConversationsTabContent({
+  filters,
+  onFiltersChange,
+}: {
+  filters: typeof EMPTY_CONVERSATION_FILTERS;
+  onFiltersChange: (filters: typeof EMPTY_CONVERSATION_FILTERS) => void;
+}) {
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
+    queryKey: ["conversations", "infinite"],
+    queryFn: ({ pageParam = 1 }) => api.listConversationsPage(pageParam, PAGE_SIZE),
+    getNextPageParam: (lastPage, pages) => {
+      const loaded = pages.reduce((sum, p) => sum + p.items.length, 0);
+      return loaded < lastPage.total ? pages.length + 1 : undefined;
+    },
+    initialPageParam: 1,
+  });
+
+  const items = useMemo(
+    () => (data?.pages.flatMap((p) => p.items) ?? []) as ConversationBrief[],
+    [data],
+  );
+  const active = useMemo(() => items.filter((c) => c.status === "active"), [items]);
+  const rest = useMemo(() => items.filter((c) => c.status !== "active"), [items]);
+  const filteredActive = useMemo(() => filterConversations(active, filters), [active, filters]);
+  const filteredRest = useMemo(() => filterConversations(rest, filters), [rest, filters]);
+  const filtered = useMemo(() => [...filteredActive, ...filteredRest], [filteredActive, filteredRest]);
+
+  const statusOptions = [
+    { id: "active", label: "进行中" },
+    { id: "ended", label: "已结束" },
+  ];
+  const levelOptions = [
+    { id: "cet4", label: "CET4" },
+    { id: "cet6", label: "CET6" },
+  ];
+
+  if (isLoading) return <Spinner label="加载对话..." />;
+
+  if (!items.length) {
+    return (
+      <div className="space-y-6">
+        <EmptyState
+          title="还没有对话记录"
+          description="创建一个新对话，开始 1v1 场景角色扮演练习"
+          action={
+            <Link href="/chat/new">
+              <Button>开始新对话</Button>
+            </Link>
+          }
+        />
+        <LearningEmptyGuide variant="conversations" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <FilterChips
+          options={statusOptions}
+          selected={filters.statuses}
+          onChange={(statuses) => onFiltersChange({ ...filters, statuses })}
+        />
+        <FilterChips
+          options={levelOptions}
+          selected={filters.levels}
+          onChange={(levels) => onFiltersChange({ ...filters, levels })}
+        />
+      </div>
+
+      {filteredActive.length > 0 && (
+        <section className="space-y-3">
+          <h3 className="text-sm font-bold text-brand-700">进行中</h3>
+          <div className="grid gap-3 md:grid-cols-2">
+            {filteredActive.map((c) => (
+              <ConversationCard key={c.id} conversation={c} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {filteredRest.length > 0 && (
+        <div className="space-y-8">
+          {groupByDate(filteredRest, (c) => c.created_at).map((group) => (
+            <DateGroupSection key={group.key} label={group.label} count={group.items.length}>
+              <div className="grid gap-3 md:grid-cols-2">
+                {group.items.map((c) => (
+                  <ConversationCard key={c.id} conversation={c} />
+                ))}
+              </div>
+            </DateGroupSection>
+          ))}
+        </div>
+      )}
+
+      {filtered.length === 0 && <EmptyState title="无匹配对话" description="试试调整筛选条件" />}
+
+      {hasNextPage && (
+        <div className="flex justify-center pt-2">
+          <Button variant="outline" onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
+            {isFetchingNextPage ? "加载中..." : "加载更多"}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TimelineTabContent() {
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
+    queryKey: ["activity-timeline"],
+    queryFn: ({ pageParam = 0 }) => api.getActivityTimeline(pageParam, PAGE_SIZE),
+    getNextPageParam: (lastPage, pages) => {
+      const loaded = pages.reduce((sum, p) => sum + p.items.length, 0);
+      return loaded < lastPage.total ? loaded : undefined;
+    },
+    initialPageParam: 0,
+  });
+
+  const items = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data]);
+
+  if (isLoading) return <Spinner label="加载动态..." />;
+
+  return (
+    <div className="space-y-4">
+      <ActivityTimeline items={items} />
+      {hasNextPage && (
+        <div className="flex justify-center pt-2">
+          <Button variant="outline" onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
+            {isFetchingNextPage ? "加载中..." : "加载更多"}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ActivityHubContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const activeTab: ActivityTab =
+    tabParam === "conversations" || tabParam === "timeline" ? tabParam : "scenarios";
+
+  const [scenarioFilters, setScenarioFilters] = useState(EMPTY_SCENARIO_FILTERS);
+  const [conversationFilters, setConversationFilters] = useState(EMPTY_CONVERSATION_FILTERS);
+
+  const { data: overview, isLoading: overviewLoading } = useQuery({
+    queryKey: ["activity-overview"],
+    queryFn: () => api.getActivityOverview(),
+  });
+
+  const setTab = useCallback(
+    (tab: ActivityTab) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("tab", tab);
+      router.replace(`/activity?${params.toString()}`, { scroll: false });
+    },
+    [router, searchParams],
+  );
+
+  const syncScenarioFilters = useCallback(
+    (filters: typeof EMPTY_SCENARIO_FILTERS) => {
+      setScenarioFilters(filters);
+      const params = scenarioFiltersToSearch(filters);
+      params.set("tab", "scenarios");
+      router.replace(`/activity?${params.toString()}`, { scroll: false });
+    },
+    [router],
+  );
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        badge="学习记录"
+        title="学习记录"
+        description="回顾历史场景与对话，或 AI 生成新的阅读与练习材料"
+        action={
+          <div className="flex flex-wrap gap-2">
+            <Link href="/generate">
+              <Button variant="outline">
+                <Sparkles className="mr-2 h-4 w-4" />
+                生成场景
+              </Button>
+            </Link>
+            <Link href="/chat/new">
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                开始新对话
+              </Button>
+            </Link>
+          </div>
+        }
+      />
+
+      {overviewLoading ? (
+        <Spinner label="加载统计..." />
+      ) : (
+        <LearningStatsBar overview={overview} />
+      )}
+
+      <ContinueLearningSection overview={overview} />
+
+      <LearningSidebar overview={overview} mobile />
+
+      <Tabs tabs={TAB_OPTIONS} active={activeTab} onChange={(id) => setTab(id as ActivityTab)} />
+
+      <div className="lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-6">
+        <LearningSidebar overview={overview} />
+        <div>
+          {activeTab === "scenarios" && (
+            <ScenariosTabContent filters={scenarioFilters} onFiltersChange={syncScenarioFilters} />
+          )}
+          {activeTab === "conversations" && (
+            <ConversationsTabContent filters={conversationFilters} onFiltersChange={setConversationFilters} />
+          )}
+          {activeTab === "timeline" && <TimelineTabContent />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function ActivityPage() {
+  return (
+    <RequireAuth>
+      <ActivityHubContent />
+    </RequireAuth>
+  );
+}

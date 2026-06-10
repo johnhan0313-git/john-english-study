@@ -73,11 +73,10 @@ def list_conversations(
     service = _conversation_service(db)
     skip = (page - 1) * page_size
     items, total = service.list_sessions(user.id, skip=skip, limit=page_size)
-    briefs = []
-    for item in items:
-        loaded = service.get_session(item.id, user.id)
-        briefs.append(ConversationBrief(**service.session_to_brief(loaded or item)))
-    return ConversationListResponse(items=briefs, total=total)
+    return ConversationListResponse(
+        items=[ConversationBrief(**service.session_to_brief(item)) for item in items],
+        total=total,
+    )
 
 
 @router.get("/{session_id}", response_model=ConversationDetail)

@@ -73,7 +73,7 @@ def list_scenarios(
     service = ScenarioService(db)
     items, total = service.list_scenarios(user.id, skip, limit)
     return ScenarioListResponse(
-        items=[ScenarioBrief(**service.scenario_to_brief(s)) for s in items],
+        items=[ScenarioBrief(**b) for b in service.scenarios_to_briefs(user.id, items)],
         total=total,
     )
 

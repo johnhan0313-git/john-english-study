@@ -280,7 +280,13 @@ class ConversationService:
     def list_sessions(self, user_id: int, skip: int = 0, limit: int = 20) -> tuple[list[ConversationSession], int]:
         q = self.db.query(ConversationSession).filter(ConversationSession.user_id == user_id)
         total = q.count()
-        items = q.order_by(ConversationSession.created_at.desc()).offset(skip).limit(limit).all()
+        items = (
+            q.options(joinedload(ConversationSession.messages))
+            .order_by(ConversationSession.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
         return items, total
 
     def session_to_brief(self, session: ConversationSession) -> dict:
@@ -300,6 +306,8 @@ class ConversationService:
             "words_used": parse_json_field(session.words_used, []),
             "last_message": last,
             "created_at": session.created_at,
+            "scenario_id": session.scenario_id,
+            "ended_at": session.ended_at,
         }
 
     def session_to_detail(self, session: ConversationSession) -> dict:

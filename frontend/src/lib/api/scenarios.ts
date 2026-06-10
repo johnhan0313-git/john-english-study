@@ -17,7 +17,8 @@ export const scenariosApi = {
   getDailyScenarios: () =>
     request<{ date: string; items: ScenarioBrief[]; generated: boolean }>("/scenarios/daily"),
 
-  listScenarios: () => request<{ items: ScenarioBrief[]; total: number }>("/scenarios"),
+  listScenarios: (skip = 0, limit = 20) =>
+    request<{ items: ScenarioBrief[]; total: number }>(`/scenarios?skip=${skip}&limit=${limit}`),
 
   getScenario: (id: number) => request<ScenarioDetail>(`/scenarios/${id}`),
 

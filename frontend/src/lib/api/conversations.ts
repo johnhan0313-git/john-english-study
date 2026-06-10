@@ -14,8 +14,8 @@ export const conversationsApi = {
       body: JSON.stringify(body),
     }),
 
-  listConversations: (page = 1) =>
-    request<ConversationListResponse>(`/conversations?page=${page}`),
+  listConversations: (page = 1, pageSize = 20) =>
+    request<ConversationListResponse>(`/conversations?page=${page}&page_size=${pageSize}`),
 
   getConversation: (id: number) => request<ConversationDetail>(`/conversations/${id}`),
 

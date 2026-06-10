@@ -138,7 +138,7 @@ export default function HomePage() {
             title="还没有今日场景"
             description="点击下方按钮，AI 会根据你的学习进度生成专属场景"
             action={
-              <Link href="/scenarios">
+              <Link href="/activity?tab=scenarios">
                 <Button>去场景页</Button>
               </Link>
             }

@@ -6,8 +6,7 @@ import { getAccessToken } from "@/lib/auth/token";
 export const NAV_ROUTES = [
   "/",
   "/words",
-  "/scenarios",
-  "/chat",
+  "/activity",
   "/chat/new",
   "/generate",
   "/reference/phonetics",
@@ -20,6 +19,21 @@ type AppRouter = { prefetch: (href: string) => void };
 
 function isAuthenticated() {
   return !!getAccessToken();
+}
+
+function prefetchActivity(qc: QueryClient) {
+  void qc.prefetchQuery({
+    queryKey: ["activity-overview"],
+    queryFn: () => api.getActivityOverview(),
+  });
+  void qc.prefetchQuery({
+    queryKey: ["scenarios", "infinite"],
+    queryFn: () => api.listScenariosPage(0, 20),
+  });
+  void qc.prefetchQuery({
+    queryKey: ["conversations", "infinite"],
+    queryFn: () => api.listConversationsPage(1, 20),
+  });
 }
 
 export function prefetchRouteData(qc: QueryClient, href: string) {
@@ -48,24 +62,16 @@ export function prefetchRouteData(qc: QueryClient, href: string) {
         queryFn: () => api.getWords({ page: 1, page_size: 30 }),
       });
       break;
-    case "/scenarios":
+    case "/activity":
       if (authed) {
-        void qc.prefetchQuery({
-          queryKey: ["scenarios"],
-          queryFn: () => api.listScenarios(),
-        });
+        prefetchActivity(qc);
       }
-      void qc.prefetchQuery({
-        queryKey: ["groups"],
-        queryFn: () => api.getWordGroups(),
-      });
       break;
-    case "/chat":
     case "/chat/new":
       if (authed) {
         void qc.prefetchQuery({
-          queryKey: ["conversations"],
-          queryFn: () => api.listConversations(),
+          queryKey: ["conversations", "infinite"],
+          queryFn: () => api.listConversationsPage(1, 20),
         });
       }
       void qc.prefetchQuery({
@@ -125,8 +131,8 @@ export function prefetchAllRoutes(qc: QueryClient, router: AppRouter) {
 export function prefetchNavTarget(qc: QueryClient, router: AppRouter, href: string) {
   router.prefetch(href);
   prefetchRouteData(qc, href);
-  if (href.startsWith("/chat")) {
-    prefetchRouteData(qc, "/chat");
+  if (href.startsWith("/chat") || href.startsWith("/activity") || href.startsWith("/scenarios")) {
+    prefetchRouteData(qc, "/activity");
   }
   if (href.startsWith("/reference")) {
     prefetchRouteData(qc, "/reference/phonetics");

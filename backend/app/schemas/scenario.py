@@ -41,6 +41,11 @@ class ScenarioBrief(BaseModel):
     daily_kind: str | None = None
     word_count: int = 0
     created_at: datetime
+    summary_preview: str | None = None
+    is_completed: bool = False
+    best_score: float | None = None
+    conversation_count: int = 0
+    exercise_count: int = 0
 
 
 class ScenarioDetail(ScenarioBrief):

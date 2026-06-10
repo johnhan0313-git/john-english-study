@@ -1,3 +1,4 @@
+import { activityApi } from "./activity";
 import { request } from "./client";
 import { conversationsApi } from "./conversations";
 import { progressApi } from "./progress";
@@ -15,4 +16,5 @@ export const api = {
   ...progressApi,
   ...referenceApi,
   ...conversationsApi,
+  ...activityApi,
 };

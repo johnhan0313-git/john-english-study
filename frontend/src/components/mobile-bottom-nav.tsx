@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BookOpen, Home, Layers, Library, MessageCircle } from "lucide-react";
+import { BookOpen, Home, Layers, Library } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { prefetchNavTarget } from "@/lib/route-prefetch";
@@ -11,15 +11,19 @@ import { useQueryClient } from "@tanstack/react-query";
 const tabs = [
   { href: "/", label: "首页", icon: Home },
   { href: "/words", label: "词库", icon: BookOpen },
-  { href: "/chat", label: "对话", icon: MessageCircle },
-  { href: "/scenarios", label: "场景", icon: Layers },
+  { href: "/activity", label: "学习", icon: Layers },
   { href: "/reference/phonetics", label: "参考", icon: Library },
 ] as const;
 
 function isNavActive(pathname: string, href: string) {
   if (href === "/reference/phonetics") return pathname.startsWith("/reference");
-  if (href === "/chat") return pathname.startsWith("/chat");
-  if (href === "/scenarios") return pathname.startsWith("/scenarios");
+  if (href === "/activity") {
+    return (
+      pathname.startsWith("/activity") ||
+      pathname.startsWith("/scenarios") ||
+      (pathname.startsWith("/chat") && !pathname.includes("/immersive"))
+    );
+  }
   return pathname === href;
 }
 

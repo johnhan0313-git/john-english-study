@@ -35,10 +35,11 @@ class ConversationBrief(BaseModel):
     words_used: list[str]
     last_message: str | None = None
     created_at: datetime
+    scenario_id: int | None = None
+    ended_at: datetime | None = None
 
 
 class ConversationDetail(ConversationBrief):
-    scenario_id: int | None = None
     scene_brief: dict = Field(default_factory=dict)
     summary: str | None = None
     messages: list[ConversationMessageResponse] = Field(default_factory=list)

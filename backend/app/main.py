@@ -7,7 +7,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import auth, common, conversations, exercises, profile, progress, reference, scenario_complete, scenarios, words
+from app.api import activity, auth, common, conversations, exercises, profile, progress, reference, scenario_complete, scenarios, words
 from app.config import get_settings
 from app.database import SessionLocal, init_db
 from app.logging_config import configure_logging
@@ -106,6 +106,7 @@ def create_app() -> FastAPI:
     app.include_router(progress.router, prefix="/api")
     app.include_router(reference.router, prefix="/api")
     app.include_router(conversations.router, prefix="/api")
+    app.include_router(activity.router, prefix="/api")
     return app
 
 

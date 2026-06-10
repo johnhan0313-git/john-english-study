@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { BookOpen, Home, Layers, Library, MessageCircle, GraduationCap } from "lucide-react";
+import { BookOpen, GraduationCap, Home, Layers, Library } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AuthNavActions } from "@/components/auth/user-menu";
 import { prefetchAllRoutes, prefetchNavTarget } from "@/lib/route-prefetch";
@@ -12,10 +12,17 @@ import { prefetchAllRoutes, prefetchNavTarget } from "@/lib/route-prefetch";
 const nav = [
   { href: "/", label: "首页", icon: Home },
   { href: "/words", label: "词库", icon: BookOpen },
-  { href: "/scenarios", label: "场景", icon: Layers },
-  { href: "/chat", label: "对话", icon: MessageCircle },
+  { href: "/activity", label: "学习", icon: Layers },
   { href: "/reference/phonetics", label: "参考", icon: Library },
 ];
+
+function isLearningActive(pathname: string) {
+  return (
+    pathname.startsWith("/activity") ||
+    pathname.startsWith("/scenarios") ||
+    (pathname.startsWith("/chat") && !pathname.includes("/immersive"))
+  );
+}
 
 export function Navbar() {
   const pathname = usePathname();
@@ -44,13 +51,12 @@ export function Navbar() {
         <div className="flex min-w-0 items-center gap-2">
           <nav className="hidden items-center gap-0.5 overflow-x-auto rounded-2xl border border-surface-border/80 bg-white p-1 shadow-sm md:flex [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {nav.map(({ href, label, icon: Icon }) => {
-            const active = href === "/reference/phonetics"
-              ? pathname.startsWith("/reference")
-              : href === "/chat"
-                ? pathname.startsWith("/chat")
-                : href === "/scenarios"
-                  ? pathname.startsWith("/scenarios")
-                  : pathname === href;
+              const active =
+                href === "/reference/phonetics"
+                  ? pathname.startsWith("/reference")
+                  : href === "/activity"
+                    ? isLearningActive(pathname)
+                    : pathname === href;
               return (
                 <Link
                   key={href}
