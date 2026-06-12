@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from app.auth.dependencies import get_current_user, get_current_user_optional
@@ -9,10 +10,18 @@ from app.models.progress import UserWordProgress
 from app.models.scenario import ScenarioWord
 from app.models.user import User
 from app.models.word import Word, WordGroup, WordGroupMember, WordTag
-from app.schemas.word import WordBrief, WordDetail, WordGroupResponse, WordListResponse, WordStatsResponse
+from app.schemas.word import (
+    WordBrief,
+    WordDetail,
+    WordGroupResponse,
+    WordLettersResponse,
+    WordListResponse,
+    WordStatsResponse,
+)
 from app.services.vocabulary.definition_lookup import enrich_definitions
 from app.services.vocabulary.exam_tags import count_words_for_exam_level
-from app.services.vocabulary.levels import ALL_EXAM_LEVELS, exam_level_filter, is_exam_tag, resolve_exam_levels
+from app.services.vocabulary.levels import ALL_EXAM_LEVELS, is_exam_tag, resolve_exam_levels
+from app.services.vocabulary.word_query import apply_letter_filter, collect_index_letters, words_base_query
 from app.utils.json_helpers import parse_json_field
 from app.utils.time import utc_now
 
@@ -26,21 +35,13 @@ def list_words(
     level: str | None = None,
     theme: str | None = None,
     search: str | None = None,
+    letter: str | None = None,
     db: Session = Depends(get_db),
     user: User | None = Depends(get_current_user_optional),
 ):
-    query = db.query(Word)
-    if level:
-        if level in ALL_EXAM_LEVELS:
-            query = query.filter(exam_level_filter(db, level))
-        else:
-            query = query.filter(Word.level == level)
-    if search:
-        query = query.filter(Word.lemma.ilike(f"%{search}%"))
-    if theme:
-        query = query.join(WordTag, WordTag.word_id == Word.id).filter(WordTag.tag == theme)
+    query = apply_letter_filter(words_base_query(db, level=level, theme=theme, search=search), letter)
     total = query.count()
-    words = query.order_by(Word.lemma).offset((page - 1) * page_size).limit(page_size).all()
+    words = query.order_by(func.lower(Word.lemma)).offset((page - 1) * page_size).limit(page_size).all()
 
     progress_map: dict[int, int] = {}
     exam_tags_map: dict[int, list[str]] = {}
@@ -135,6 +136,18 @@ def list_groups(db: Session = Depends(get_db)):
             )
         )
     return result
+
+
+@router.get("/letters", response_model=WordLettersResponse)
+def list_word_letters(
+    level: str | None = None,
+    theme: str | None = None,
+    search: str | None = None,
+    db: Session = Depends(get_db),
+):
+    query = words_base_query(db, level=level, theme=theme, search=search)
+    lemmas = [row[0] for row in query.with_entities(Word.lemma).all()]
+    return WordLettersResponse(letters=collect_index_letters(lemmas))
 
 
 @router.get("/{word_id}", response_model=WordDetail)

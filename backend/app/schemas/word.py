@@ -32,6 +32,10 @@ class WordListResponse(BaseModel):
     page_size: int
 
 
+class WordLettersResponse(BaseModel):
+    letters: list[str]
+
+
 class WordStatsResponse(BaseModel):
     total: int
     cet4_count: int

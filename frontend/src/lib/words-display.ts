@@ -1,38 +1,17 @@
 import type { WordBrief } from "@/lib/api/types";
 
-export type WordsViewMode = "grid" | "list" | "table" | "flashcard" | "index";
+export type WordsViewMode = "grid" | "list";
 
 export const WORDS_VIEW_MODES: {
   id: WordsViewMode;
   label: string;
   hint: string;
-  group: "browse" | "study";
 }[] = [
-  { id: "grid", label: "卡片", hint: "浏览选词", group: "browse" },
-  { id: "list", label: "列表", hint: "紧凑速览", group: "browse" },
-  { id: "table", label: "表格", hint: "对比排序", group: "browse" },
-  { id: "flashcard", label: "闪卡", hint: "背诵复习", group: "study" },
-  { id: "index", label: "索引", hint: "字母定位", group: "study" },
+  { id: "grid", label: "卡片", hint: "浏览选词" },
+  { id: "list", label: "列表", hint: "紧凑速览" },
 ];
 
-const STORAGE_KEY = "words-view-mode";
-
-export function loadWordsViewMode(): WordsViewMode {
-  if (typeof window === "undefined") return "grid";
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved && WORDS_VIEW_MODES.some((m) => m.id === saved)) {
-    return saved as WordsViewMode;
-  }
-  return "grid";
-}
-
-export function saveWordsViewMode(mode: WordsViewMode) {
-  localStorage.setItem(STORAGE_KEY, mode);
-}
-
-export function pageSizeForView(mode: WordsViewMode): number {
-  if (mode === "index") return 100;
-  if (mode === "flashcard") return 50;
+export function pageSizeForView(_mode: WordsViewMode): number {
   return 30;
 }
 

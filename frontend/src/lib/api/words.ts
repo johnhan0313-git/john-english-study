@@ -13,4 +13,9 @@ export const wordsApi = {
     ),
 
   getWordGroups: () => request<WordGroup[]>("/words/groups"),
+
+  getWordLetters: (params: Record<string, string>) => {
+    const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v));
+    return request<{ letters: string[] }>(`/words/letters?${qs}`);
+  },
 };

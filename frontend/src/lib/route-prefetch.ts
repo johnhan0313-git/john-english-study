@@ -71,7 +71,11 @@ export function prefetchRouteData(qc: QueryClient, href: string) {
         queryFn: () => api.getWordGroups(),
       });
       void qc.prefetchQuery({
-        queryKey: ["words", 1, "", "", ""],
+        queryKey: ["word-letters", "", "", ""],
+        queryFn: () => api.getWordLetters({}),
+      });
+      void qc.prefetchQuery({
+        queryKey: ["words", 1, 30, "", "", "", "", "guest"],
         queryFn: () => api.getWords({ page: 1, page_size: 30 }),
       });
       break;
