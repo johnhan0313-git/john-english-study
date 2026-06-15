@@ -5,6 +5,7 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
+from app.data_paths import get_data_dir
 from app.models.word import Word, WordTag
 from app.services.vocabulary.definition_lookup import enrich_definitions
 from app.services.vocabulary.definitions import normalize_definitions
@@ -12,14 +13,15 @@ from app.services.vocabulary.exam_tags import count_words_for_exam_level
 from app.services.vocabulary.levels import PETS_INHERIT_FROM_CET, PETS_LEVELS
 from app.utils.json_helpers import dump_json_field, parse_json_field
 
-DATA_DIR = Path(__file__).resolve().parents[3] / "data"
-PETS_DATA_FILE = DATA_DIR / "pets_words.json"
+def _pets_data_file() -> Path:
+    return get_data_dir() / "pets_words.json"
 
 
 def _load_pets_data() -> dict:
-    if not PETS_DATA_FILE.exists():
+    path = _pets_data_file()
+    if not path.exists():
         return {"inherit_from_cet": PETS_INHERIT_FROM_CET, "levels": {}}
-    return json.loads(PETS_DATA_FILE.read_text(encoding="utf-8"))
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def _ensure_tag(db: Session, word_id: int, tag: str) -> bool:

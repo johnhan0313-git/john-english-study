@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     testing: bool = False
     database_url: str = "sqlite:///./data/app.db"
     media_dir: Path = Path("./data/media")
+    data_dir: Path = Path("./data")
     use_migrations: bool = False
     cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
 

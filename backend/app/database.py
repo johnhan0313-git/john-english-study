@@ -144,6 +144,7 @@ def init_db() -> None:
     settings = get_settings()
     if settings.storage_backend == "local":
         settings.media_dir.mkdir(parents=True, exist_ok=True)
+    settings.data_dir.mkdir(parents=True, exist_ok=True)
     if settings.database_url.startswith("sqlite"):
         db_path = settings.database_url.replace("sqlite:///", "")
         if db_path and not db_path.startswith(":"):

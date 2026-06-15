@@ -7,7 +7,14 @@ import sys
 from app.config import get_settings
 from app.database import SessionLocal, init_db
 from app.logging_config import configure_logging
+from app.services.vocabulary.ensure_data import ensure_data_files
 from app.services.vocabulary.import_words import import_words
+
+
+def cmd_ensure_data() -> int:
+    result = ensure_data_files()
+    print(f"Data files: {result}")
+    return 0
 
 
 def cmd_seed() -> int:
@@ -45,10 +52,13 @@ def main(argv: list[str] | None = None) -> int:
     configure_logging(debug=get_settings().debug)
     parser = argparse.ArgumentParser(prog="python -m app.cli")
     sub = parser.add_subparsers(dest="command", required=True)
+    sub.add_parser("ensure-data", help="Ensure backend/data files exist (downloads dict_lookup if missing)")
     sub.add_parser("seed", help="Import vocabulary and reference data")
     sub.add_parser("daily-scenarios", help="Run daily scenario generation once")
     args = parser.parse_args(argv)
 
+    if args.command == "ensure-data":
+        return cmd_ensure_data()
     if args.command == "seed":
         return cmd_seed()
     if args.command == "daily-scenarios":

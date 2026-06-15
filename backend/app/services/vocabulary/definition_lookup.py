@@ -6,13 +6,17 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
+from app.data_paths import get_data_dir
 from app.models.word import Word
 from app.services.vocabulary.definitions import normalize_definitions
 from app.utils.json_helpers import dump_json_field, parse_json_field
 
-DATA_DIR = Path(__file__).resolve().parents[3] / "data"
-DICT_LOOKUP_FILE = DATA_DIR / "dict_lookup.json"
-OVERRIDES_FILE = DATA_DIR / "dict_lookup_overrides.json"
+def _dict_lookup_file() -> Path:
+    return get_data_dir() / "dict_lookup.json"
+
+
+def _overrides_file() -> Path:
+    return get_data_dir() / "dict_lookup_overrides.json"
 
 # 美式拼写 -> 英式（词库中更常见）
 SPELLING_ALIASES: dict[str, str] = {
@@ -70,14 +74,18 @@ def _fallback_lemma_keys(lemma: str) -> list[str]:
     return deduped
 
 
+def clear_lookup_cache() -> None:
+    _load_lookup.cache_clear()
+
+
 @lru_cache(maxsize=1)
 def _load_lookup() -> dict[str, dict]:
     merged: dict[str, dict] = {}
-    if DICT_LOOKUP_FILE.exists():
-        data = json.loads(DICT_LOOKUP_FILE.read_text(encoding="utf-8"))
+    if _dict_lookup_file().exists():
+        data = json.loads(_dict_lookup_file().read_text(encoding="utf-8"))
         merged.update(data.get("entries", {}))
-    if OVERRIDES_FILE.exists():
-        data = json.loads(OVERRIDES_FILE.read_text(encoding="utf-8"))
+    if _overrides_file().exists():
+        data = json.loads(_overrides_file().read_text(encoding="utf-8"))
         merged.update(data.get("entries", {}))
     return merged
 

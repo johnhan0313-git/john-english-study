@@ -7,6 +7,7 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
+from app.data_paths import get_data_dir
 from app.models.word import Word, WordGroup, WordGroupMember, WordTag
 from app.services.vocabulary.definition_lookup import enrich_definitions, fill_missing_definitions, lookup_definition
 from app.services.vocabulary.definitions import normalize_definitions
@@ -14,11 +15,9 @@ from app.services.vocabulary.exam_tags import sync_all_exam_tags
 from app.services.vocabulary.import_pets import import_pets_words
 from app.utils.json_helpers import dump_json_field, parse_json_field
 
-DATA_DIR = Path(__file__).resolve().parents[3] / "data"
-
 
 def _load_word_groups() -> list[dict]:
-    path = DATA_DIR / "word_groups.json"
+    path = get_data_dir() / "word_groups.json"
     if path.exists():
         return json.loads(path.read_text(encoding="utf-8"))
     return []
@@ -632,8 +631,9 @@ def repair_placeholder_definitions(db: Session) -> int:
 
 
 def export_seed_json() -> None:
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    output = DATA_DIR / "cet_words.json"
+    data_dir = get_data_dir()
+    data_dir.mkdir(parents=True, exist_ok=True)
+    output = data_dir / "cet_words.json"
     output.write_text(json.dumps(SEED_WORDS, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
