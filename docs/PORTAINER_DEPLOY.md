@@ -25,3 +25,30 @@
 | `DATABASE_URL` | `postgresql+psycopg://english-study:english-study-123@postgres:5432/english-study` |
 | `S3_ENDPOINT_URL` | `http://john-minio:9000` |
 | `DATA_DIR` | `/app/data` |
+
+## Cloudflare Tunnel（es.cool-app.me）
+
+`~/.cloudflared/config.yml` 示例：
+
+```yaml
+ingress:
+  - hostname: es.cool-app.me
+    path: ^/api(/.*)?$
+    service: http://localhost:8000
+  - hostname: es.cool-app.me
+    service: http://localhost:3000
+  - service: http_status:404
+```
+
+**注意**：`path` 是 **Go 正则**，不是 glob。`/api*` 会误匹配 `/_next/static/chunks/app/*.js`（路径里的 `/app` 满足 `/ap` + `i*`=0），导致静态资源被转发到 FastAPI 并返回 `{"detail":"Not Found"}`。
+
+修改后重启 tunnel 并验证：
+
+```bash
+cloudflared tunnel --config ~/.cloudflared/config.yml ingress rule \
+  "https://es.cool-app.me/_next/static/chunks/app/page.js"   # 应匹配 frontend:3000
+
+sudo systemctl restart cloudflared
+```
+
+在 Cloudflare 控制台 **Caching → Purge Everything** 清掉之前缓存的 404。
