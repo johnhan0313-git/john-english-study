@@ -69,12 +69,21 @@ export function apiPathFromUrl(url: string): string {
   }
   if (url.startsWith("/")) return url;
   try {
-    const parsed = new URL(url);
-    const base = new URL(API_BASE);
-    if (parsed.origin === base.origin && parsed.pathname.startsWith(base.pathname)) {
-      const prefix = base.pathname.endsWith("/") ? base.pathname.slice(0, -1) : base.pathname;
-      const path = parsed.pathname.slice(prefix.length);
-      return `${path.startsWith("/") ? path : `/${path}`}${parsed.search}`;
+    if (API_BASE.startsWith("/")) {
+      const parsed = new URL(url, typeof window !== "undefined" ? window.location.origin : "http://localhost");
+      const prefix = API_BASE.endsWith("/") ? API_BASE.slice(0, -1) : API_BASE;
+      if (parsed.pathname.startsWith(prefix)) {
+        const path = parsed.pathname.slice(prefix.length);
+        return `${path.startsWith("/") ? path : `/${path}`}${parsed.search}`;
+      }
+    } else {
+      const parsed = new URL(url);
+      const base = new URL(API_BASE);
+      if (parsed.origin === base.origin && parsed.pathname.startsWith(base.pathname)) {
+        const prefix = base.pathname.endsWith("/") ? base.pathname.slice(0, -1) : base.pathname;
+        const path = parsed.pathname.slice(prefix.length);
+        return `${path.startsWith("/") ? path : `/${path}`}${parsed.search}`;
+      }
     }
   } catch {
     // ignore malformed url
