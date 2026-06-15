@@ -15,8 +15,32 @@
 1. Stacks → Add stack → **Git repository**
 2. URL：`https://github.com/johnhan0313-git/john-english-study.git`
 3. Compose path：`docker-compose.prod.yml`
-4. 覆盖 `JWT_SECRET`、`CORS_ORIGINS`、frontend `NEXT_PUBLIC_API_URL`
+4. 覆盖 `JWT_SECRET`、`CORS_ORIGINS`、frontend `NEXT_PUBLIC_API_URL`、**SMTP_***（见下）
 5. Deploy
+
+## 邮件验证码（SMTP）
+
+生产容器**未配置 SMTP 时**，`/api/auth/email/send-code` 仍会返回成功，但**不会发邮件**（验证码只写后端日志，且 `dev_code` 为 null）。
+
+在 Portainer Stack **Environment variables** 中添加（163 邮箱示例）：
+
+| 变量 | 值 |
+|------|-----|
+| `SMTP_HOST` | `smtp.163.com` |
+| `SMTP_PORT` | `465` |
+| `SMTP_USER` | 你的发信邮箱 |
+| `SMTP_PASSWORD` | 163 授权码（非登录密码） |
+| `SMTP_FROM` | 与 `SMTP_USER` 相同 |
+| `SMTP_USE_TLS` | `false` |
+| `SMTP_USE_SSL` | `true` |
+
+保存后 **Update the stack** 重启 backend。验证：
+
+```bash
+docker exec john-english-study-backend-1 python -c \
+  "from app.config import get_settings; s=get_settings(); print(s.smtp_configured)"
+# 应输出 True
+```
 
 ## 连接地址（共享 Docker 网络）
 

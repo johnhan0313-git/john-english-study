@@ -22,6 +22,16 @@ services:
       SEED_ON_STARTUP: "true"
       JWT_SECRET: change-me-in-production
       DATA_DIR: /app/data
+      # 邮件验证码（Portainer Stack 环境变量中填入真实值，见 docs/PORTAINER_DEPLOY.md）
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-false}
+      SMTP_USE_SSL: ${SMTP_USE_SSL:-true}
+      EMAIL_CODE_EXPIRE_MINUTES: ${EMAIL_CODE_EXPIRE_MINUTES:-10}
+      EMAIL_CODE_COOLDOWN_SECONDS: ${EMAIL_CODE_COOLDOWN_SECONDS:-60}
     volumes:
       - english_study_data:/app/data
     restart: unless-stopped
