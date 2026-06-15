@@ -1,15 +1,18 @@
 from __future__ import annotations
 
-from pathlib import Path
 
-from app.config import Settings, get_settings
-
-
-def conversation_message_audio_path(session_id: int, message_id: int, settings: Settings | None = None) -> Path:
-    cfg = settings or get_settings()
-    return cfg.media_dir / "conversations" / f"conversation_{session_id}_{message_id}.mp3"
+def conversation_message_audio_key(session_id: int, message_id: int) -> str:
+    return f"conversations/conversation_{session_id}_{message_id}.mp3"
 
 
-def scenario_audio_path(scenario_id: int, settings: Settings | None = None) -> Path:
-    cfg = settings or get_settings()
-    return cfg.media_dir / "scenarios" / f"scenario_{scenario_id}.mp3"
+def scenario_audio_key(scenario_id: int) -> str:
+    return f"scenarios/scenario_{scenario_id}.mp3"
+
+
+def normalize_stored_audio_key(stored_path: str | None, default_key: str) -> str:
+    if not stored_path:
+        return default_key
+    normalized = stored_path.replace("\\", "/")
+    if normalized.startswith(("/", "./")) or ":/" in normalized:
+        return default_key
+    return normalized.lstrip("/")

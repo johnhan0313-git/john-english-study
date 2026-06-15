@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from pathlib import Path
 
 from app.models.reference import PhoneticSymbol
 from app.utils.json_helpers import parse_json_field
@@ -90,13 +89,12 @@ def build_phonetic_speech_text(phonetic: PhoneticSymbol, word: str | None = None
     return phonetic.name_en.replace("/", " ").strip() or phonetic.symbol
 
 
-def phonetic_audio_path(
-    media_dir: Path,
+def phonetic_audio_key(
     phonetic_id: int,
     *,
     kind: str = "examples",
     word: str | None = None,
-) -> Path:
+) -> str:
     if kind == "symbol":
         filename = f"phonetic_{phonetic_id}_symbol_{SYMBOL_AUDIO_VERSION}.mp3"
     elif word:
@@ -104,7 +102,7 @@ def phonetic_audio_path(
         filename = f"phonetic_{phonetic_id}_{safe}.mp3"
     else:
         filename = f"phonetic_{phonetic_id}_examples.mp3"
-    return media_dir / "phonetics" / filename
+    return f"phonetics/{filename}"
 
 
 def resolve_phonetic_audio(

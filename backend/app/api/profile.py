@@ -3,7 +3,6 @@ from __future__ import annotations
 import time
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
-from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
@@ -23,10 +22,12 @@ from app.schemas.profile import (
 from app.services.media.avatar_paths import (
     ALLOWED_AVATAR_CONTENT_TYPES,
     avatar_api_url,
-    avatar_path,
-    find_avatar_path,
+    avatar_key,
+    find_avatar_key,
     remove_avatar_files,
 )
+from app.services.storage.factory import get_storage
+from app.services.storage.responses import storage_stream_response
 
 router = APIRouter(prefix="/profile", tags=["profile"])
 
@@ -143,8 +144,8 @@ async def upload_avatar(
         raise HTTPException(status_code=400, detail="上传文件为空")
 
     remove_avatar_files(user.id, settings)
-    path = avatar_path(user.id, ext, settings)
-    path.write_bytes(data)
+    key = avatar_key(user.id, ext)
+    get_storage(settings).put_bytes(key, data, content_type)
 
     user.avatar_url = avatar_api_url(user.id, version=int(time.time()))
     db.commit()
@@ -154,13 +155,9 @@ async def upload_avatar(
 
 @router.get("/avatar/{user_id}")
 def get_avatar(user_id: int, settings: Settings = Depends(get_settings)):
-    path = find_avatar_path(user_id, settings)
-    if not path:
+    found = find_avatar_key(user_id, settings)
+    if not found:
         raise HTTPException(status_code=404, detail="Avatar not found")
 
-    media_type = {
-        ".jpg": "image/jpeg",
-        ".png": "image/png",
-        ".webp": "image/webp",
-    }.get(path.suffix.lower(), "application/octet-stream")
-    return FileResponse(path, media_type=media_type)
+    key, media_type = found
+    return storage_stream_response(key, media_type=media_type, filename=f"avatar_{user_id}")

@@ -8,6 +8,7 @@ os.environ["AUTH_EXPOSE_CODES"] = "true"
 os.environ["SMTP_HOST"] = ""
 os.environ["SMTP_FROM"] = ""
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+os.environ["STORAGE_BACKEND"] = "local"
 os.environ["AI_LLM_API_KEY"] = ""
 os.environ["AI_STT_API_KEY"] = ""
 os.environ["AI_TTS_API_KEY"] = ""
@@ -20,6 +21,7 @@ from fastapi.testclient import TestClient
 from app.config import get_settings
 from app.database import SessionLocal, init_db, reset_engine_for_tests
 from app.main import app
+from app.services.storage.factory import reset_storage_for_tests
 from app.services.vocabulary.import_words import import_words
 
 
@@ -27,6 +29,7 @@ from app.services.vocabulary.import_words import import_words
 def _fresh_test_database():
     get_settings.cache_clear()
     reset_engine_for_tests()
+    reset_storage_for_tests()
     init_db()
     db = SessionLocal()
     try:
@@ -35,6 +38,7 @@ def _fresh_test_database():
         db.close()
     yield
     reset_engine_for_tests()
+    reset_storage_for_tests()
     get_settings.cache_clear()
 
 

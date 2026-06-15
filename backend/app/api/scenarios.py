@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
@@ -16,6 +15,7 @@ from app.schemas.scenario import (
     ScenarioListResponse,
 )
 from app.services.media.tts_facade import ensure_scenario_audio
+from app.services.storage.responses import storage_stream_response
 from app.services.scenario.service import ScenarioService
 from app.utils.time import local_today
 
@@ -102,14 +102,18 @@ async def get_scenario_audio(scenario_id: int, db: Session = Depends(get_db)):
     if dialogue_lines:
         text += " " + " ".join(f"{d['speaker']}: {d['text']}" for d in dialogue_lines)
 
-    audio_path = await ensure_scenario_audio(
+    audio_key = await ensure_scenario_audio(
         scenario_id,
         text,
         settings,
         stored_path=scenario.audio_path,
     )
-    if scenario.audio_path != str(audio_path):
-        scenario.audio_path = str(audio_path)
+    if scenario.audio_path != audio_key:
+        scenario.audio_path = audio_key
         db.commit()
 
-    return FileResponse(audio_path, media_type="audio/mpeg", filename=f"scenario_{scenario_id}.mp3")
+    return storage_stream_response(
+        audio_key,
+        media_type="audio/mpeg",
+        filename=f"scenario_{scenario_id}.mp3",
+    )

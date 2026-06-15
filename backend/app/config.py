@@ -37,6 +37,15 @@ class Settings(BaseSettings):
     use_migrations: bool = False
     cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
 
+    # Object storage (local filesystem or S3-compatible MinIO)
+    storage_backend: str = "local"  # local | s3
+    s3_endpoint_url: str = ""
+    s3_access_key: str = ""
+    s3_secret_key: str = ""
+    s3_bucket: str = "english-study-bucket"
+    s3_region: str = "us-east-1"
+    s3_use_ssl: bool = False
+
     ai_llm_base_url: str = "https://api.openai.com/v1"
     ai_llm_api_key: str = ""
     ai_llm_model: str = "gpt-4o-mini"

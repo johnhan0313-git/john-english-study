@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
@@ -18,7 +17,9 @@ from app.schemas.reference import (
     PhoneticListResponse,
 )
 from app.services.ai.openai_provider import AIProviderError
-from app.services.ai.tts_service import generate_speech
+from app.services.ai.tts_service import generate_speech_bytes
+from app.services.storage.factory import get_storage
+from app.services.storage.responses import storage_stream_response
 from app.services.reference.import_reference import (
     GRAMMAR_CATEGORY_ZH,
     PHONETIC_CATEGORY_ZH,
@@ -32,7 +33,7 @@ from app.services.reference.phonetic_audio import (
     PHONETIC_TTS_VOICE,
     build_phonetic_speech_text,
     build_phonetic_symbol_speech_text,
-    phonetic_audio_path,
+    phonetic_audio_key,
     resolve_phonetic_audio,
 )
 
@@ -110,25 +111,26 @@ async def get_phonetic_audio(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     settings = get_settings()
-    audio_path = phonetic_audio_path(
-        settings.media_dir,
+    audio_key = phonetic_audio_key(
         phonetic_id,
         kind=audio_kind,
         word=resolved_word,
     )
+    storage = get_storage(settings)
 
-    if not audio_path.exists():
+    if not storage.exists(audio_key):
         try:
             if audio_kind == "symbol":
                 speech_text = build_phonetic_symbol_speech_text(phonetic)
             else:
                 speech_text = build_phonetic_speech_text(phonetic, resolved_word)
-            await generate_speech(speech_text, audio_path, settings, voice=PHONETIC_TTS_VOICE)
+            audio = await generate_speech_bytes(speech_text, settings, voice=PHONETIC_TTS_VOICE)
+            storage.put_bytes(audio_key, audio, "audio/mpeg")
         except AIProviderError as exc:
             raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     filename = f"phonetic_{phonetic_id}.mp3"
-    return FileResponse(audio_path, media_type="audio/mpeg", filename=filename)
+    return storage_stream_response(audio_key, media_type="audio/mpeg", filename=filename)
 
 
 @router.get("/grammar", response_model=GrammarListResponse)

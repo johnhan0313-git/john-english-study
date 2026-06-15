@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 from app.config import Settings, get_settings
-from app.services.ai.tts_service import generate_speech
-from app.services.media.audio_paths import conversation_message_audio_path, scenario_audio_path
+from app.services.ai.tts_service import generate_speech_bytes
+from app.services.media.audio_paths import (
+    conversation_message_audio_key,
+    normalize_stored_audio_key,
+    scenario_audio_key,
+)
+from app.services.storage.factory import get_storage
 
 
 async def ensure_conversation_message_audio(
@@ -12,13 +15,14 @@ async def ensure_conversation_message_audio(
     message_id: int,
     text: str,
     settings: Settings | None = None,
-) -> Path:
+) -> str:
     cfg = settings or get_settings()
-    audio_path = conversation_message_audio_path(session_id, message_id, cfg)
-    if not audio_path.exists():
-        audio_path.parent.mkdir(parents=True, exist_ok=True)
-        await generate_speech(text[:500], audio_path, cfg)
-    return audio_path
+    key = conversation_message_audio_key(session_id, message_id)
+    storage = get_storage(cfg)
+    if not storage.exists(key):
+        audio = await generate_speech_bytes(text[:500], cfg)
+        storage.put_bytes(key, audio, "audio/mpeg")
+    return key
 
 
 async def ensure_scenario_audio(
@@ -26,14 +30,13 @@ async def ensure_scenario_audio(
     text: str,
     settings: Settings | None = None,
     stored_path: str | None = None,
-) -> Path:
+) -> str:
     cfg = settings or get_settings()
-    if stored_path:
-        path = Path(stored_path)
-        if path.exists():
-            return path
-    audio_path = scenario_audio_path(scenario_id, cfg)
-    if not audio_path.exists():
-        audio_path.parent.mkdir(parents=True, exist_ok=True)
-        await generate_speech(text, audio_path, cfg)
-    return audio_path
+    default_key = scenario_audio_key(scenario_id)
+    key = normalize_stored_audio_key(stored_path, default_key)
+    storage = get_storage(cfg)
+    if not storage.exists(key):
+        audio = await generate_speech_bytes(text, cfg)
+        storage.put_bytes(key, audio, "audio/mpeg")
+        return default_key
+    return key

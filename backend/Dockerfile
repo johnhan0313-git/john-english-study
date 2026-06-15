@@ -8,12 +8,11 @@ COPY pyproject.toml .
 RUN uv pip install --system .
 
 COPY app ./app
-
-RUN mkdir -p /app/data/media
-
-ENV DATABASE_URL=sqlite:///./data/app.db
-ENV MEDIA_DIR=/app/data/media
+COPY alembic ./alembic
+COPY alembic.ini .
+COPY docker-entrypoint.sh .
+RUN chmod +x docker-entrypoint.sh
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT ["./docker-entrypoint.sh"]

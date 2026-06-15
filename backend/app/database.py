@@ -29,6 +29,10 @@ def _sqlite_on_connect(dbapi_connection, _connection_record) -> None:
     cursor.close()
 
 
+def _is_postgresql(url: str) -> bool:
+    return url.startswith("postgresql")
+
+
 def ensure_engine() -> Engine:
     global _engine, _SessionLocal
     settings = get_settings()
@@ -48,6 +52,10 @@ def ensure_engine() -> Engine:
         connect_args["timeout"] = 30
         if url.endswith(":memory:") or url.rstrip("/").endswith(":memory:"):
             engine_kwargs["poolclass"] = StaticPool
+    elif _is_postgresql(url):
+        engine_kwargs["pool_pre_ping"] = True
+        engine_kwargs["pool_size"] = 5
+        engine_kwargs["max_overflow"] = 10
 
     _engine = create_engine(url, connect_args=connect_args, **engine_kwargs)
     if url.startswith("sqlite"):
@@ -134,10 +142,12 @@ def _needs_auth_migration(engine: Engine) -> bool:
 
 def init_db() -> None:
     settings = get_settings()
-    settings.media_dir.mkdir(parents=True, exist_ok=True)
-    db_path = settings.database_url.replace("sqlite:///", "")
-    if db_path and not db_path.startswith(":"):
-        Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+    if settings.storage_backend == "local":
+        settings.media_dir.mkdir(parents=True, exist_ok=True)
+    if settings.database_url.startswith("sqlite"):
+        db_path = settings.database_url.replace("sqlite:///", "")
+        if db_path and not db_path.startswith(":"):
+            Path(db_path).parent.mkdir(parents=True, exist_ok=True)
 
     from app import models  # noqa: F401
 

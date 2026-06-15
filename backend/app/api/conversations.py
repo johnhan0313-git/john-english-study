@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
@@ -25,6 +25,7 @@ from app.services.ai.openai_provider import AIProviderError, get_stt_provider
 from app.services.conversation.service import ConversationService
 from app.services.conversation.sse import encode_sse_error, stream_conversation_sse
 from app.services.media.tts_facade import ensure_conversation_message_audio
+from app.services.storage.responses import storage_stream_response
 from app.utils.json_helpers import parse_json_field
 
 router = APIRouter(prefix="/conversations", tags=["conversations"])
@@ -190,7 +191,7 @@ async def get_message_audio(
 
     settings = get_settings()
     try:
-        audio_path = await ensure_conversation_message_audio(
+        audio_key = await ensure_conversation_message_audio(
             session_id,
             message_id,
             message.content,
@@ -199,7 +200,11 @@ async def get_message_audio(
     except AIProviderError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
-    return FileResponse(audio_path, media_type="audio/mpeg", filename=audio_path.name)
+    return storage_stream_response(
+        audio_key,
+        media_type="audio/mpeg",
+        filename=f"conversation_{session_id}_{message_id}.mp3",
+    )
 
 
 @router.post("/{session_id}/turns/voice", response_model=VoiceTurnResponse)

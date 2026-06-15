@@ -137,4 +137,5 @@ python -m app.cli daily-scenarios   # 手动触发每日场景
 
 - 多用户：JWT 骨架已就绪，见 `/api/auth/*`
 - PostgreSQL：见 [docs/POSTGRESQL_MIGRATION.md](docs/POSTGRESQL_MIGRATION.md)
+- 生产部署（PostgreSQL + MinIO + Portainer）：见 [docs/PORTAINER_DEPLOY.md](docs/PORTAINER_DEPLOY.md)，Stack 文件 [docker-compose.prod.yml](docker-compose.prod.yml)
 - 前端 TypeScript 类型可从 `/openapi.json` 生成（暂未引入 codegen 依赖）
