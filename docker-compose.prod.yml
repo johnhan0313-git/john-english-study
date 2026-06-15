@@ -17,7 +17,7 @@ services:
       S3_BUCKET: english-study-bucket
       S3_REGION: us-east-1
       S3_USE_SSL: "false"
-      CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+      CORS_ORIGINS: https://es.cool-app.me
       ENABLE_SCHEDULER: "true"
       SEED_ON_STARTUP: "true"
       JWT_SECRET: change-me-in-production
@@ -30,7 +30,7 @@ services:
     build:
       context: ./frontend
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:8000/api
+        NEXT_PUBLIC_API_URL: https://es.cool-app.me/api
     ports:
       - "3000:3000"
     depends_on:
