@@ -17,7 +17,7 @@ services:
       S3_BUCKET: english-study-bucket
       S3_REGION: us-east-1
       S3_USE_SSL: "false"
-      CORS_ORIGINS: https://es.cool-app.me,http://es.cool-app.me
+      CORS_ORIGINS: https://se.cool-app.me,http://se.cool-app.me
       ENABLE_SCHEDULER: "true"
       SEED_ON_STARTUP: "true"
       JWT_SECRET: change-me-in-production
