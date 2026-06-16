@@ -2,17 +2,20 @@ import type { WordBrief } from "@/lib/api/types";
 import { WordDefinitionText } from "@/components/word-definition-text";
 import { Card } from "@/components/ui";
 import { cn } from "@/lib/utils";
-import { ExamLevelBadges, FamiliarityBars, FamiliarityDot } from "../word-shared";
+import type { AudioPlayer } from "@/hooks/use-audio-player";
+import { ExamLevelBadges, FamiliarityBars, FamiliarityDot, WordSpeakButton } from "../word-shared";
 import { WordsLetterHeader, type WordsLetterGroup } from "../words-alphabet-layout";
 
 function WordGridCard({
   word,
   selected,
   onToggle,
+  player,
 }: {
   word: WordBrief;
   selected: number[];
   onToggle: (id: number) => void;
+  player: AudioPlayer;
 }) {
   return (
     <Card
@@ -24,6 +27,7 @@ function WordGridCard({
         <div className="flex min-w-0 items-center gap-2">
           <FamiliarityDot familiarity={word.familiarity} />
           <span className="truncate text-lg font-bold text-slate-900">{word.lemma}</span>
+          <WordSpeakButton word={word} player={player} />
         </div>
         <ExamLevelBadges word={word} compact />
       </div>
@@ -43,10 +47,12 @@ export function WordsGridView({
   groups,
   selected,
   onToggle,
+  player,
 }: {
   groups: WordsLetterGroup[];
   selected: number[];
   onToggle: (id: number) => void;
+  player: AudioPlayer;
 }) {
   return (
     <>
@@ -55,7 +61,7 @@ export function WordsGridView({
           <WordsLetterHeader letter={letter} count={words.length} />
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {words.map((w) => (
-              <WordGridCard key={w.id} word={w} selected={selected} onToggle={onToggle} />
+              <WordGridCard key={w.id} word={w} selected={selected} onToggle={onToggle} player={player} />
             ))}
           </div>
         </section>

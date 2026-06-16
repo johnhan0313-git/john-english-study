@@ -6,6 +6,7 @@ from app.services.media.audio_paths import (
     conversation_message_audio_key,
     normalize_stored_audio_key,
     scenario_audio_key,
+    word_audio_key,
 )
 from app.services.storage.factory import get_storage
 
@@ -39,4 +40,18 @@ async def ensure_scenario_audio(
         audio = await generate_speech_bytes(text, cfg)
         storage.put_bytes(key, audio, "audio/mpeg")
         return default_key
+    return key
+
+
+async def ensure_word_audio(
+    word_id: int,
+    lemma: str,
+    settings: Settings | None = None,
+) -> str:
+    cfg = settings or get_settings()
+    key = word_audio_key(word_id)
+    storage = get_storage(cfg)
+    if not storage.exists(key):
+        audio = await generate_speech_bytes(lemma, cfg)
+        storage.put_bytes(key, audio, "audio/mpeg")
     return key

@@ -1,5 +1,8 @@
 import type { WordBrief } from "@/lib/api/types";
+import { api } from "@/lib/api";
+import { AudioPlayButton } from "@/components/audio-play-button";
 import { Badge } from "@/components/ui";
+import type { AudioPlayer } from "@/hooks/use-audio-player";
 import {
   examLevelsForWord,
   familiarityDotClass,
@@ -61,6 +64,24 @@ export function WordSelectCheckbox({
       onClick={(e) => e.stopPropagation()}
       className="h-4 w-4 shrink-0 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
       aria-label="选择单词"
+    />
+  );
+}
+
+export function WordSpeakButton({
+  word,
+  player,
+}: {
+  word: WordBrief;
+  player: AudioPlayer;
+}) {
+  return (
+    <AudioPlayButton
+      audioKey={`word-${word.id}`}
+      url={api.getWordAudioUrl(word.id)}
+      player={player}
+      label={`播放 ${word.lemma}`}
+      onClick={(e) => e.stopPropagation()}
     />
   );
 }

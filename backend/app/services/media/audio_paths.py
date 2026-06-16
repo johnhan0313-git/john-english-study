@@ -9,6 +9,10 @@ def scenario_audio_key(scenario_id: int) -> str:
     return f"scenarios/scenario_{scenario_id}.mp3"
 
 
+def word_audio_key(word_id: int) -> str:
+    return f"words/word_{word_id}.mp3"
+
+
 def normalize_stored_audio_key(stored_path: str | None, default_key: str) -> str:
     if not stored_path:
         return default_key

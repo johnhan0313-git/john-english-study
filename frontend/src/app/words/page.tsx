@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Search, Sparkles } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
+import { useAudioPlayer } from "@/hooks/use-audio-player";
 import {
   pageSizeForView,
   type WordsViewMode,
@@ -47,6 +48,7 @@ export default function WordsPage() {
   const [letter, setLetter] = useState("");
   const [selected, setSelected] = useState<number[]>([]);
   const [viewMode, setViewMode] = useState<WordsViewMode>("grid");
+  const player = useAudioPlayer();
 
   const pageSize = pageSizeForView(viewMode);
 
@@ -103,7 +105,7 @@ export default function WordsPage() {
   const availableLetters = letterIndex?.letters ?? [];
 
   const renderView = (groups: Parameters<typeof WordsGridView>[0]["groups"]) => {
-    const props = { groups, selected, onToggle: toggleSelect };
+    const props = { groups, selected, onToggle: toggleSelect, player };
     return viewMode === "list" ? <WordsListView {...props} /> : <WordsGridView {...props} />;
   };
 

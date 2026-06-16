@@ -1,3 +1,5 @@
+import { API_BASE } from "@/lib/env";
+
 import { request } from "./client";
 import type { WordGroup, WordListResponse } from "./types";
 
@@ -18,4 +20,6 @@ export const wordsApi = {
     const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v));
     return request<{ letters: string[] }>(`/words/letters?${qs}`);
   },
+
+  getWordAudioUrl: (wordId: number) => `${API_BASE}/words/${wordId}/audio`,
 };

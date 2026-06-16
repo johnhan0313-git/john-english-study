@@ -1,6 +1,11 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+
+from app.config import get_settings
+from app.services.ai.openai_provider import AIProviderError
+from app.services.media.tts_facade import ensure_word_audio
+from app.services.storage.responses import storage_stream_response
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
@@ -148,6 +153,25 @@ def list_word_letters(
     query = words_base_query(db, level=level, theme=theme, search=search)
     lemmas = [row[0] for row in query.with_entities(Word.lemma).all()]
     return WordLettersResponse(letters=collect_index_letters(lemmas))
+
+
+@router.get("/{word_id}/audio")
+async def get_word_audio(word_id: int, db: Session = Depends(get_db)):
+    word = db.query(Word).filter(Word.id == word_id).first()
+    if not word:
+        raise HTTPException(status_code=404, detail="Word not found")
+
+    settings = get_settings()
+    try:
+        audio_key = await ensure_word_audio(word_id, word.lemma, settings)
+    except AIProviderError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    return storage_stream_response(
+        audio_key,
+        media_type="audio/mpeg",
+        filename=f"word_{word_id}.mp3",
+    )
 
 
 @router.get("/{word_id}", response_model=WordDetail)
