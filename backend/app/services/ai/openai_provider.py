@@ -28,11 +28,18 @@ def extract_json(text: str) -> dict[str, Any]:
 
 
 class OpenAICompatibleProvider:
-    def __init__(self, config: AIEndpointConfig):
+    def __init__(self, config: AIEndpointConfig, *, http_proxy: str | None = None):
         self.config = config
         self.base_url = config.base_url.rstrip("/")
         self.api_key = config.api_key
         self.model = config.model
+        self.http_proxy = http_proxy
+
+    def _http_client(self) -> httpx.AsyncClient:
+        kwargs: dict[str, object] = {"timeout": 120.0}
+        if self.http_proxy:
+            kwargs["proxy"] = self.http_proxy
+        return httpx.AsyncClient(**kwargs)
 
     def _headers(self) -> dict[str, str]:
         if not self.api_key:
@@ -61,7 +68,7 @@ class OpenAICompatibleProvider:
             "messages": [system_msg, *messages],
             "temperature": 0.7,
         }
-        async with httpx.AsyncClient(timeout=120.0) as client:
+        async with self._http_client() as client:
             payload_with_json = {**base_payload, "response_format": {"type": "json_object"}}
             resp = await client.post(
                 f"{self.base_url}/chat/completions",
@@ -82,7 +89,7 @@ class OpenAICompatibleProvider:
 
     async def chat_text(self, messages: list[dict[str, str]]) -> str:
         payload = {"model": self.model, "messages": messages, "temperature": 0.5}
-        async with httpx.AsyncClient(timeout=120.0) as client:
+        async with self._http_client() as client:
             resp = await client.post(f"{self.base_url}/chat/completions", headers=self._headers(), json=payload)
             if resp.status_code != 200:
                 raise AIProviderError(f"LLM request failed: {resp.status_code} {resp.text}")
@@ -92,7 +99,7 @@ class OpenAICompatibleProvider:
         payload = {"model": self.model, "messages": messages, "temperature": 0.5, "stream": True}
         yielded = False
         try:
-            async with httpx.AsyncClient(timeout=120.0) as client:
+            async with self._http_client() as client:
                 async with client.stream(
                     "POST",
                     f"{self.base_url}/chat/completions",
@@ -128,7 +135,7 @@ class OpenAICompatibleProvider:
     async def text_to_speech(self, text: str, voice: str | None = None) -> bytes:
         voice_name = voice or self.config.voice or "alloy"
         payload = {"model": self.model, "input": text[:4096], "voice": voice_name}
-        async with httpx.AsyncClient(timeout=120.0) as client:
+        async with self._http_client() as client:
             resp = await client.post(
                 f"{self.base_url}/audio/speech",
                 headers={**self._headers(), "Accept": "audio/mpeg"},
@@ -139,12 +146,23 @@ class OpenAICompatibleProvider:
             return resp.content
 
     async def speech_to_text(self, audio: bytes, filename: str = "audio.webm") -> str:
-        async with httpx.AsyncClient(timeout=120.0) as client:
+        mime = "application/octet-stream"
+        lower = filename.lower()
+        if lower.endswith(".webm"):
+            mime = "audio/webm"
+        elif lower.endswith(".wav"):
+            mime = "audio/wav"
+        elif lower.endswith(".mp3"):
+            mime = "audio/mpeg"
+        elif lower.endswith(".m4a"):
+            mime = "audio/mp4"
+
+        async with self._http_client() as client:
             resp = await client.post(
                 f"{self.base_url}/audio/transcriptions",
                 headers={"Authorization": f"Bearer {self.api_key}"},
                 data={"model": self.model},
-                files={"file": (filename, audio, "application/octet-stream")},
+                files={"file": (filename, audio, mime)},
             )
             if resp.status_code != 200:
                 raise AIProviderError(f"STT request failed: {resp.status_code} {resp.text}")
@@ -331,21 +349,27 @@ class MockAIProvider:
         return "They decided to plan the trip carefully."
 
 
-def _provider_from_config(config: AIEndpointConfig) -> OpenAICompatibleProvider | None:
+def _provider_from_config(
+    config: AIEndpointConfig,
+    *,
+    http_proxy: str | None = None,
+) -> OpenAICompatibleProvider | None:
     if config.is_configured:
-        return OpenAICompatibleProvider(config)
+        return OpenAICompatibleProvider(config, http_proxy=http_proxy)
     return None
 
 
 def get_llm_provider(settings: Settings) -> OpenAICompatibleProvider | MockAIProvider:
     if settings.testing:
         return MockAIProvider()
-    provider = _provider_from_config(settings.llm_config())
+    proxy = settings.ai_http_proxy.strip() or None
+    provider = _provider_from_config(settings.llm_config(), http_proxy=proxy)
     return provider or MockAIProvider()
 
 
 def get_stt_provider(settings: Settings) -> OpenAICompatibleProvider | None:
-    return _provider_from_config(settings.stt_config())
+    proxy = settings.ai_stt_http_proxy.strip() or settings.ai_http_proxy.strip() or None
+    return _provider_from_config(settings.stt_config(), http_proxy=proxy)
 
 
 def get_tts_provider(settings: Settings) -> OpenAICompatibleProvider | None:

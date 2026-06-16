@@ -46,6 +46,15 @@ services:
       AI_TTS_API_KEY: ${AI_TTS_API_KEY:-}
       AI_TTS_MODEL: ${AI_TTS_MODEL:-tts-1}
       AI_TTS_VOICE: ${AI_TTS_VOICE:-alloy}
+      # Groq STT 在 john-server 需走宿主机 mihomo（仅 STT 走代理，不影响 DeepSeek LLM）
+      AI_STT_HTTP_PROXY: ${AI_STT_HTTP_PROXY:-http://host.docker.internal:7890}
+      # 可选：全部 AI 请求走代理
+      AI_HTTP_PROXY: ${AI_HTTP_PROXY:-}
+      HTTP_PROXY: ${HTTP_PROXY:-http://host.docker.internal:7890}
+      HTTPS_PROXY: ${HTTPS_PROXY:-http://host.docker.internal:7890}
+      NO_PROXY: ${NO_PROXY:-localhost,127.0.0.1,john-postgresql,john-minio,192.168.0.0/16,10.0.0.0/8,172.16.0.0/12}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - english_study_data:/app/data
     restart: unless-stopped

@@ -11,6 +11,7 @@ REMOTE_DIR="${REMOTE_DIR:-/home/john-han/apps/john-english-study}"
 ENV_FILE="${ENV_FILE:-.env.prod}"
 
 echo "→ rsync to ${REMOTE}:${REMOTE_DIR}"
+ssh "${REMOTE}" "mkdir -p '${REMOTE_DIR}'"
 rsync -avz --delete \
   --exclude .git \
   --exclude node_modules \
@@ -18,6 +19,7 @@ rsync -avz --delete \
   --exclude backend/.venv \
   --exclude backend/__pycache__ \
   --exclude backend/.env \
+  --exclude .env.prod \
   --exclude '**/__pycache__' \
   --exclude '.cursor' \
   "${ROOT}/" "${REMOTE}:${REMOTE_DIR}/"

@@ -61,6 +61,10 @@ class Settings(BaseSettings):
     ai_tts_voice: str = "alloy"
     use_edge_tts: bool = True
 
+    # 海外 AI API HTTP 代理（john-server 访问 Groq STT 等需要）
+    ai_http_proxy: str = ""
+    ai_stt_http_proxy: str = ""
+
     # JWT (optional, for future multi-user)
     jwt_secret: str = "change-me-in-production"
     jwt_algorithm: str = "HS256"

@@ -224,15 +224,27 @@ async def voice_turn(
     show_chinese_hint = ConversationService.get_show_chinese_hint(session)
 
     audio_bytes = await audio.read()
-    transcript = await stt.speech_to_text(audio_bytes, audio.filename or "recording.webm")
+    if not audio_bytes:
+        raise HTTPException(status_code=400, detail="Empty audio upload")
+
+    try:
+        transcript = await stt.speech_to_text(audio_bytes, audio.filename or "recording.webm")
+    except AIProviderError as exc:
+        raise HTTPException(status_code=503, detail=f"语音转写失败: {exc}") from exc
+
     if not transcript.strip():
         raise HTTPException(status_code=400, detail="Could not transcribe audio")
 
-    assistant = await service.send_message(session, transcript.strip(), show_chinese_hint=show_chinese_hint)
-    db.refresh(session)
-    user_messages = [m for m in session.messages if m.role == "user"]
-    user_msg = user_messages[-1] if user_messages else None
-    await ensure_conversation_message_audio(session_id, assistant.id, assistant.content, settings)
+    try:
+        assistant = await service.send_message(session, transcript.strip(), show_chinese_hint=show_chinese_hint)
+        db.refresh(session)
+        user_messages = [m for m in session.messages if m.role == "user"]
+        user_msg = user_messages[-1] if user_messages else None
+        await ensure_conversation_message_audio(session_id, assistant.id, assistant.content, settings)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except AIProviderError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     used_words = parse_json_field(user_msg.meta, {}).get("used_words", []) if user_msg else []
 
