@@ -8,7 +8,7 @@ services:
       - john-postgres_default
       - john-minio_default
     environment:
-      DATABASE_URL: postgresql+psycopg://english-study:english-study-123@postgres:5432/english-study
+      DATABASE_URL: postgresql+psycopg://english-study:english-study-123@john-postgresql:5432/english-study
       USE_MIGRATIONS: "true"
       STORAGE_BACKEND: s3
       S3_ENDPOINT_URL: http://john-minio:9000

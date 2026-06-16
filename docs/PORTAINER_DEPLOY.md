@@ -94,7 +94,7 @@ docker exec john-english-study-backend-1 python -c \
 
 | 变量 | 值 |
 |------|-----|
-| `DATABASE_URL` | `postgresql+psycopg://english-study:english-study-123@postgres:5432/english-study` |
+| `DATABASE_URL` | `postgresql+psycopg://english-study:english-study-123@john-postgresql:5432/english-study` |
 | `S3_ENDPOINT_URL` | `http://john-minio:9000` |
 | `DATA_DIR` | `/app/data` |
 
