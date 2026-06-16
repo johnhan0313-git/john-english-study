@@ -16,10 +16,17 @@ from app.services.vocabulary.import_pets import import_pets_words
 from app.utils.json_helpers import dump_json_field, parse_json_field
 
 
+def _bundled_word_groups_path() -> Path:
+    return Path(__file__).resolve().parent.parent.parent / "seed" / "word_groups.json"
+
+
 def _load_word_groups() -> list[dict]:
     path = get_data_dir() / "word_groups.json"
-    if path.exists():
+    if path.is_file():
         return json.loads(path.read_text(encoding="utf-8"))
+    bundled = _bundled_word_groups_path()
+    if bundled.is_file():
+        return json.loads(bundled.read_text(encoding="utf-8"))
     return []
 
 
@@ -630,6 +637,61 @@ def repair_placeholder_definitions(db: Session) -> int:
     return updated
 
 
+def _ensure_word_tag(db: Session, word_id: int, tag: str) -> None:
+    exists = (
+        db.query(WordTag)
+        .filter(WordTag.word_id == word_id, WordTag.tag == tag)
+        .first()
+    )
+    if not exists:
+        db.add(WordTag(word_id=word_id, tag=tag))
+
+
+def sync_word_groups(db: Session) -> dict[str, int]:
+    """Upsert theme groups from word_groups.json (or bundled defaults)."""
+    groups_def = _load_word_groups()
+    if not groups_def:
+        return {"groups_created": 0, "members_added": 0, "groups_total": db.query(WordGroup).count()}
+
+    lemma_to_id = {word.lemma: word.id for word in db.query(Word).all()}
+    groups_created = 0
+    members_added = 0
+
+    for group_def in groups_def:
+        group = db.query(WordGroup).filter(WordGroup.slug == group_def["slug"]).first()
+        if not group:
+            group = WordGroup(
+                slug=group_def["slug"],
+                name_zh=group_def["name_zh"],
+                name_en=group_def["name_en"],
+                description=f"Theme: {group_def['name_en']}",
+            )
+            db.add(group)
+            db.flush()
+            groups_created += 1
+
+        existing_member_ids = {
+            member.word_id
+            for member in db.query(WordGroupMember).filter(WordGroupMember.group_id == group.id).all()
+        }
+        for lemma in group_def["words"]:
+            word_id = lemma_to_id.get(lemma)
+            if not word_id or word_id in existing_member_ids:
+                if word_id:
+                    _ensure_word_tag(db, word_id, group_def["slug"])
+                continue
+            db.add(WordGroupMember(group_id=group.id, word_id=word_id))
+            _ensure_word_tag(db, word_id, group_def["slug"])
+            members_added += 1
+
+    db.commit()
+    return {
+        "groups_created": groups_created,
+        "members_added": members_added,
+        "groups_total": db.query(WordGroup).count(),
+    }
+
+
 def export_seed_json() -> None:
     data_dir = get_data_dir()
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -642,15 +704,17 @@ def import_words(db: Session) -> dict[str, int | bool]:
     if existing > 0:
         repaired = repair_placeholder_definitions(db)
         filled = fill_missing_definitions(db)
+        groups = sync_word_groups(db)
         pets = import_pets_words(db)
         synced = sync_all_exam_tags(db)
         return {
             "words": db.query(Word).count(),
-            "groups": db.query(WordGroup).count(),
+            "groups": groups["groups_total"],
             "skipped": True,
             "repaired_definitions": repaired,
             "filled_definitions": filled,
             "synced_exam_tags": synced,
+            "word_groups": groups,
             "pets": pets,
         }
 
@@ -684,15 +748,17 @@ def import_words(db: Session) -> dict[str, int | bool]:
                 db.add(WordTag(word_id=word_id, tag=group_def["slug"]))
 
     db.commit()
+    groups = sync_word_groups(db)
     filled = fill_missing_definitions(db)
     pets = import_pets_words(db)
     synced = sync_all_exam_tags(db)
     return {
         "words": db.query(Word).count(),
-        "groups": db.query(WordGroup).count(),
+        "groups": groups["groups_total"],
         "skipped": False,
         "filled_definitions": filled,
         "synced_exam_tags": synced,
+        "word_groups": groups,
         "pets": pets,
     }
 

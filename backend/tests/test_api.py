@@ -67,6 +67,16 @@ def test_word_stats(client):
     assert resp.json()["total"] > 0
 
 
+def test_word_groups(client):
+    resp = client.get("/api/words/groups")
+    assert resp.status_code == 200
+    groups = resp.json()
+    assert len(groups) >= 8
+    slugs = {group["slug"] for group in groups}
+    assert {"travel", "campus", "business", "daily"}.issubset(slugs)
+    assert all(group["word_count"] > 0 for group in groups)
+
+
 def test_normalize_answer():
     assert normalize_answer("  Plan  ") == "plan"
 
