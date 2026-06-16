@@ -1,0 +1,2470 @@
+{
+  "name": "PETS 全国公共英语等级考试词库",
+  "description": "PETS-1/2 为独立基础词表；PETS-3/4/5 与 CET 词库交叉标注",
+  "inherit_from_cet": {
+    "pets3": [
+      "cet4",
+      "both"
+    ],
+    "pets4": [
+      "both"
+    ],
+    "pets5": [
+      "cet6",
+      "both"
+    ]
+  },
+  "levels": {
+    "pets1": [
+      {
+        "lemma": "hello",
+        "pos": "int.",
+        "definition": "你好"
+      },
+      {
+        "lemma": "goodbye",
+        "pos": "int.",
+        "definition": "再见"
+      },
+      {
+        "lemma": "please",
+        "pos": "int.",
+        "definition": "请"
+      },
+      {
+        "lemma": "thanks",
+        "pos": "int.",
+        "definition": "谢谢"
+      },
+      {
+        "lemma": "sorry",
+        "pos": "int.",
+        "definition": "对不起"
+      },
+      {
+        "lemma": "yes",
+        "pos": "adv.",
+        "definition": "是"
+      },
+      {
+        "lemma": "no",
+        "pos": "adv.",
+        "definition": "不"
+      },
+      {
+        "lemma": "name",
+        "pos": "n.",
+        "definition": "名字"
+      },
+      {
+        "lemma": "boy",
+        "pos": "n.",
+        "definition": "男孩"
+      },
+      {
+        "lemma": "girl",
+        "pos": "n.",
+        "definition": "女孩"
+      },
+      {
+        "lemma": "man",
+        "pos": "n.",
+        "definition": "男人"
+      },
+      {
+        "lemma": "woman",
+        "pos": "n.",
+        "definition": "女人"
+      },
+      {
+        "lemma": "child",
+        "pos": "n.",
+        "definition": "孩子"
+      },
+      {
+        "lemma": "baby",
+        "pos": "n.",
+        "definition": "婴儿"
+      },
+      {
+        "lemma": "family",
+        "pos": "n.",
+        "definition": "家庭"
+      },
+      {
+        "lemma": "father",
+        "pos": "n.",
+        "definition": "父亲"
+      },
+      {
+        "lemma": "mother",
+        "pos": "n.",
+        "definition": "母亲"
+      },
+      {
+        "lemma": "brother",
+        "pos": "n.",
+        "definition": "兄弟"
+      },
+      {
+        "lemma": "sister",
+        "pos": "n.",
+        "definition": "姐妹"
+      },
+      {
+        "lemma": "friend",
+        "pos": "n.",
+        "definition": "朋友"
+      },
+      {
+        "lemma": "teacher",
+        "pos": "n.",
+        "definition": "教师"
+      },
+      {
+        "lemma": "student",
+        "pos": "n.",
+        "definition": "学生"
+      },
+      {
+        "lemma": "school",
+        "pos": "n.",
+        "definition": "学校"
+      },
+      {
+        "lemma": "class",
+        "pos": "n.",
+        "definition": "班级"
+      },
+      {
+        "lemma": "book",
+        "pos": "n.",
+        "definition": "书"
+      },
+      {
+        "lemma": "pen",
+        "pos": "n.",
+        "definition": "钢笔"
+      },
+      {
+        "lemma": "desk",
+        "pos": "n.",
+        "definition": "书桌"
+      },
+      {
+        "lemma": "chair",
+        "pos": "n.",
+        "definition": "椅子"
+      },
+      {
+        "lemma": "door",
+        "pos": "n.",
+        "definition": "门"
+      },
+      {
+        "lemma": "window",
+        "pos": "n.",
+        "definition": "窗户"
+      },
+      {
+        "lemma": "room",
+        "pos": "n.",
+        "definition": "房间"
+      },
+      {
+        "lemma": "house",
+        "pos": "n.",
+        "definition": "房子"
+      },
+      {
+        "lemma": "home",
+        "pos": "n.",
+        "definition": "家"
+      },
+      {
+        "lemma": "food",
+        "pos": "n.",
+        "definition": "食物"
+      },
+      {
+        "lemma": "water",
+        "pos": "n.",
+        "definition": "水"
+      },
+      {
+        "lemma": "milk",
+        "pos": "n.",
+        "definition": "牛奶"
+      },
+      {
+        "lemma": "bread",
+        "pos": "n.",
+        "definition": "面包"
+      },
+      {
+        "lemma": "rice",
+        "pos": "n.",
+        "definition": "米饭"
+      },
+      {
+        "lemma": "meat",
+        "pos": "n.",
+        "definition": "肉"
+      },
+      {
+        "lemma": "fish",
+        "pos": "n.",
+        "definition": "鱼"
+      },
+      {
+        "lemma": "fruit",
+        "pos": "n.",
+        "definition": "水果"
+      },
+      {
+        "lemma": "apple",
+        "pos": "n.",
+        "definition": "苹果"
+      },
+      {
+        "lemma": "orange",
+        "pos": "n.",
+        "definition": "橙子"
+      },
+      {
+        "lemma": "banana",
+        "pos": "n.",
+        "definition": "香蕉"
+      },
+      {
+        "lemma": "egg",
+        "pos": "n.",
+        "definition": "鸡蛋"
+      },
+      {
+        "lemma": "tea",
+        "pos": "n.",
+        "definition": "茶"
+      },
+      {
+        "lemma": "coffee",
+        "pos": "n.",
+        "definition": "咖啡"
+      },
+      {
+        "lemma": "day",
+        "pos": "n.",
+        "definition": "白天"
+      },
+      {
+        "lemma": "night",
+        "pos": "n.",
+        "definition": "夜晚"
+      },
+      {
+        "lemma": "morning",
+        "pos": "n.",
+        "definition": "早晨"
+      },
+      {
+        "lemma": "today",
+        "pos": "n.",
+        "definition": "今天"
+      },
+      {
+        "lemma": "tomorrow",
+        "pos": "n.",
+        "definition": "明天"
+      },
+      {
+        "lemma": "week",
+        "pos": "n.",
+        "definition": "星期"
+      },
+      {
+        "lemma": "month",
+        "pos": "n.",
+        "definition": "月"
+      },
+      {
+        "lemma": "year",
+        "pos": "n.",
+        "definition": "年"
+      },
+      {
+        "lemma": "time",
+        "pos": "n.",
+        "definition": "时间"
+      },
+      {
+        "lemma": "hour",
+        "pos": "n.",
+        "definition": "小时"
+      },
+      {
+        "lemma": "minute",
+        "pos": "n.",
+        "definition": "分钟"
+      },
+      {
+        "lemma": "one",
+        "pos": "num.",
+        "definition": "一"
+      },
+      {
+        "lemma": "two",
+        "pos": "num.",
+        "definition": "二"
+      },
+      {
+        "lemma": "three",
+        "pos": "num.",
+        "definition": "三"
+      },
+      {
+        "lemma": "four",
+        "pos": "num.",
+        "definition": "四"
+      },
+      {
+        "lemma": "five",
+        "pos": "num.",
+        "definition": "五"
+      },
+      {
+        "lemma": "six",
+        "pos": "num.",
+        "definition": "六"
+      },
+      {
+        "lemma": "seven",
+        "pos": "num.",
+        "definition": "七"
+      },
+      {
+        "lemma": "eight",
+        "pos": "num.",
+        "definition": "八"
+      },
+      {
+        "lemma": "nine",
+        "pos": "num.",
+        "definition": "九"
+      },
+      {
+        "lemma": "ten",
+        "pos": "num.",
+        "definition": "十"
+      },
+      {
+        "lemma": "red",
+        "pos": "adj.",
+        "definition": "红色"
+      },
+      {
+        "lemma": "blue",
+        "pos": "adj.",
+        "definition": "蓝色"
+      },
+      {
+        "lemma": "green",
+        "pos": "adj.",
+        "definition": "绿色"
+      },
+      {
+        "lemma": "yellow",
+        "pos": "adj.",
+        "definition": "黄色"
+      },
+      {
+        "lemma": "black",
+        "pos": "adj.",
+        "definition": "黑色"
+      },
+      {
+        "lemma": "white",
+        "pos": "adj.",
+        "definition": "白色"
+      },
+      {
+        "lemma": "big",
+        "pos": "adj.",
+        "definition": "大的"
+      },
+      {
+        "lemma": "small",
+        "pos": "adj.",
+        "definition": "小的"
+      },
+      {
+        "lemma": "good",
+        "pos": "adj.",
+        "definition": "好的"
+      },
+      {
+        "lemma": "bad",
+        "pos": "adj.",
+        "definition": "坏的"
+      },
+      {
+        "lemma": "new",
+        "pos": "adj.",
+        "definition": "新的"
+      },
+      {
+        "lemma": "old",
+        "pos": "adj.",
+        "definition": "旧的；老的"
+      },
+      {
+        "lemma": "hot",
+        "pos": "adj.",
+        "definition": "热的"
+      },
+      {
+        "lemma": "cold",
+        "pos": "adj.",
+        "definition": "冷的"
+      },
+      {
+        "lemma": "happy",
+        "pos": "adj.",
+        "definition": "快乐的"
+      },
+      {
+        "lemma": "sad",
+        "pos": "adj.",
+        "definition": "悲伤的"
+      },
+      {
+        "lemma": "go",
+        "pos": "v.",
+        "definition": "去"
+      },
+      {
+        "lemma": "come",
+        "pos": "v.",
+        "definition": "来"
+      },
+      {
+        "lemma": "see",
+        "pos": "v.",
+        "definition": "看见"
+      },
+      {
+        "lemma": "look",
+        "pos": "v.",
+        "definition": "看"
+      },
+      {
+        "lemma": "listen",
+        "pos": "v.",
+        "definition": "听"
+      },
+      {
+        "lemma": "speak",
+        "pos": "v.",
+        "definition": "说"
+      },
+      {
+        "lemma": "read",
+        "pos": "v.",
+        "definition": "读"
+      },
+      {
+        "lemma": "write",
+        "pos": "v.",
+        "definition": "写"
+      },
+      {
+        "lemma": "eat",
+        "pos": "v.",
+        "definition": "吃"
+      },
+      {
+        "lemma": "drink",
+        "pos": "v.",
+        "definition": "喝"
+      },
+      {
+        "lemma": "sleep",
+        "pos": "v.",
+        "definition": "睡觉"
+      },
+      {
+        "lemma": "walk",
+        "pos": "v.",
+        "definition": "走"
+      },
+      {
+        "lemma": "run",
+        "pos": "v.",
+        "definition": "跑"
+      },
+      {
+        "lemma": "sit",
+        "pos": "v.",
+        "definition": "坐"
+      },
+      {
+        "lemma": "stand",
+        "pos": "v.",
+        "definition": "站"
+      },
+      {
+        "lemma": "open",
+        "pos": "v.",
+        "definition": "打开"
+      },
+      {
+        "lemma": "close",
+        "pos": "v.",
+        "definition": "关闭"
+      },
+      {
+        "lemma": "buy",
+        "pos": "v.",
+        "definition": "买"
+      },
+      {
+        "lemma": "work",
+        "pos": "v.",
+        "definition": "工作"
+      },
+      {
+        "lemma": "play",
+        "pos": "v.",
+        "definition": "玩"
+      },
+      {
+        "lemma": "help",
+        "pos": "v.",
+        "definition": "帮助"
+      },
+      {
+        "lemma": "like",
+        "pos": "v.",
+        "definition": "喜欢"
+      },
+      {
+        "lemma": "love",
+        "pos": "v.",
+        "definition": "爱"
+      },
+      {
+        "lemma": "want",
+        "pos": "v.",
+        "definition": "想要"
+      },
+      {
+        "lemma": "need",
+        "pos": "v.",
+        "definition": "需要"
+      },
+      {
+        "lemma": "know",
+        "pos": "v.",
+        "definition": "知道"
+      },
+      {
+        "lemma": "think",
+        "pos": "v.",
+        "definition": "想"
+      },
+      {
+        "lemma": "live",
+        "pos": "v.",
+        "definition": "生活；居住"
+      },
+      {
+        "lemma": "meet",
+        "pos": "v.",
+        "definition": "遇见"
+      },
+      {
+        "lemma": "call",
+        "pos": "v.",
+        "definition": "打电话"
+      },
+      {
+        "lemma": "ask",
+        "pos": "v.",
+        "definition": "问"
+      },
+      {
+        "lemma": "answer",
+        "pos": "v.",
+        "definition": "回答"
+      },
+      {
+        "lemma": "learn",
+        "pos": "v.",
+        "definition": "学习"
+      },
+      {
+        "lemma": "study",
+        "pos": "v.",
+        "definition": "学习"
+      },
+      {
+        "lemma": "watch",
+        "pos": "v.",
+        "definition": "观看"
+      },
+      {
+        "lemma": "wait",
+        "pos": "v.",
+        "definition": "等待"
+      },
+      {
+        "lemma": "stop",
+        "pos": "v.",
+        "definition": "停止"
+      },
+      {
+        "lemma": "start",
+        "pos": "v.",
+        "definition": "开始"
+      },
+      {
+        "lemma": "city",
+        "pos": "n.",
+        "definition": "城市"
+      },
+      {
+        "lemma": "country",
+        "pos": "n.",
+        "definition": "国家；乡村"
+      },
+      {
+        "lemma": "street",
+        "pos": "n.",
+        "definition": "街道"
+      },
+      {
+        "lemma": "shop",
+        "pos": "n.",
+        "definition": "商店"
+      },
+      {
+        "lemma": "market",
+        "pos": "n.",
+        "definition": "市场"
+      },
+      {
+        "lemma": "money",
+        "pos": "n.",
+        "definition": "钱"
+      },
+      {
+        "lemma": "price",
+        "pos": "n.",
+        "definition": "价格"
+      },
+      {
+        "lemma": "weather",
+        "pos": "n.",
+        "definition": "天气"
+      },
+      {
+        "lemma": "sun",
+        "pos": "n.",
+        "definition": "太阳"
+      },
+      {
+        "lemma": "rain",
+        "pos": "n.",
+        "definition": "雨"
+      },
+      {
+        "lemma": "snow",
+        "pos": "n.",
+        "definition": "雪"
+      },
+      {
+        "lemma": "wind",
+        "pos": "n.",
+        "definition": "风"
+      },
+      {
+        "lemma": "dog",
+        "pos": "n.",
+        "definition": "狗"
+      },
+      {
+        "lemma": "cat",
+        "pos": "n.",
+        "definition": "猫"
+      },
+      {
+        "lemma": "bird",
+        "pos": "n.",
+        "definition": "鸟"
+      },
+      {
+        "lemma": "horse",
+        "pos": "n.",
+        "definition": "马"
+      },
+      {
+        "lemma": "phone",
+        "pos": "n.",
+        "definition": "电话"
+      },
+      {
+        "lemma": "computer",
+        "pos": "n.",
+        "definition": "电脑"
+      },
+      {
+        "lemma": "picture",
+        "pos": "n.",
+        "definition": "图片"
+      },
+      {
+        "lemma": "music",
+        "pos": "n.",
+        "definition": "音乐"
+      },
+      {
+        "lemma": "sport",
+        "pos": "n.",
+        "definition": "运动"
+      },
+      {
+        "lemma": "game",
+        "pos": "n.",
+        "definition": "游戏"
+      },
+      {
+        "lemma": "holiday",
+        "pos": "n.",
+        "definition": "假日"
+      },
+      {
+        "lemma": "party",
+        "pos": "n.",
+        "definition": "聚会"
+      },
+      {
+        "lemma": "gift",
+        "pos": "n.",
+        "definition": "礼物"
+      },
+      {
+        "lemma": "letter",
+        "pos": "n.",
+        "definition": "信"
+      },
+      {
+        "lemma": "map",
+        "pos": "n.",
+        "definition": "地图"
+      },
+      {
+        "lemma": "bus",
+        "pos": "n.",
+        "definition": "公共汽车"
+      },
+      {
+        "lemma": "car",
+        "pos": "n.",
+        "definition": "汽车"
+      },
+      {
+        "lemma": "bike",
+        "pos": "n.",
+        "definition": "自行车"
+      },
+      {
+        "lemma": "train",
+        "pos": "n.",
+        "definition": "火车"
+      },
+      {
+        "lemma": "plane",
+        "pos": "n.",
+        "definition": "飞机"
+      },
+      {
+        "lemma": "boat",
+        "pos": "n.",
+        "definition": "船"
+      },
+      {
+        "lemma": "hotel",
+        "pos": "n.",
+        "definition": "旅馆"
+      },
+      {
+        "lemma": "restaurant",
+        "pos": "n.",
+        "definition": "餐馆"
+      },
+      {
+        "lemma": "hospital",
+        "pos": "n.",
+        "definition": "医院"
+      },
+      {
+        "lemma": "bank",
+        "pos": "n.",
+        "definition": "银行"
+      },
+      {
+        "lemma": "post",
+        "pos": "n.",
+        "definition": "邮政"
+      },
+      {
+        "lemma": "left",
+        "pos": "adj.",
+        "definition": "左边"
+      },
+      {
+        "lemma": "right",
+        "pos": "adj.",
+        "definition": "右边；正确的"
+      },
+      {
+        "lemma": "up",
+        "pos": "adv.",
+        "definition": "向上"
+      },
+      {
+        "lemma": "down",
+        "pos": "adv.",
+        "definition": "向下"
+      },
+      {
+        "lemma": "here",
+        "pos": "adv.",
+        "definition": "这里"
+      },
+      {
+        "lemma": "there",
+        "pos": "adv.",
+        "definition": "那里"
+      }
+    ],
+    "pets2": [
+      {
+        "lemma": "airport",
+        "pos": "n.",
+        "definition": "机场"
+      },
+      {
+        "lemma": "passport",
+        "pos": "n.",
+        "definition": "护照"
+      },
+      {
+        "lemma": "ticket",
+        "pos": "n.",
+        "definition": "票"
+      },
+      {
+        "lemma": "luggage",
+        "pos": "n.",
+        "definition": "行李"
+      },
+      {
+        "lemma": "station",
+        "pos": "n.",
+        "definition": "车站"
+      },
+      {
+        "lemma": "subway",
+        "pos": "n.",
+        "definition": "地铁"
+      },
+      {
+        "lemma": "taxi",
+        "pos": "n.",
+        "definition": "出租车"
+      },
+      {
+        "lemma": "driver",
+        "pos": "n.",
+        "definition": "司机"
+      },
+      {
+        "lemma": "passenger",
+        "pos": "n.",
+        "definition": "乘客"
+      },
+      {
+        "lemma": "journey",
+        "pos": "n.",
+        "definition": "旅程"
+      },
+      {
+        "lemma": "trip",
+        "pos": "n.",
+        "definition": "旅行"
+      },
+      {
+        "lemma": "visit",
+        "pos": "v.",
+        "definition": "参观"
+      },
+      {
+        "lemma": "travel",
+        "pos": "v.",
+        "definition": "旅行"
+      },
+      {
+        "lemma": "pack",
+        "pos": "v.",
+        "definition": "打包"
+      },
+      {
+        "lemma": "address",
+        "pos": "n.",
+        "definition": "地址"
+      },
+      {
+        "lemma": "email",
+        "pos": "n.",
+        "definition": "电子邮件"
+      },
+      {
+        "lemma": "message",
+        "pos": "n.",
+        "definition": "消息"
+      },
+      {
+        "lemma": "internet",
+        "pos": "n.",
+        "definition": "互联网"
+      },
+      {
+        "lemma": "website",
+        "pos": "n.",
+        "definition": "网站"
+      },
+      {
+        "lemma": "password",
+        "pos": "n.",
+        "definition": "密码"
+      },
+      {
+        "lemma": "office",
+        "pos": "n.",
+        "definition": "办公室"
+      },
+      {
+        "lemma": "company",
+        "pos": "n.",
+        "definition": "公司"
+      },
+      {
+        "lemma": "manager",
+        "pos": "n.",
+        "definition": "经理"
+      },
+      {
+        "lemma": "meeting",
+        "pos": "n.",
+        "definition": "会议"
+      },
+      {
+        "lemma": "customer",
+        "pos": "n.",
+        "definition": "顾客"
+      },
+      {
+        "lemma": "service",
+        "pos": "n.",
+        "definition": "服务"
+      },
+      {
+        "lemma": "product",
+        "pos": "n.",
+        "definition": "产品"
+      },
+      {
+        "lemma": "order",
+        "pos": "n.",
+        "definition": "订单"
+      },
+      {
+        "lemma": "pay",
+        "pos": "v.",
+        "definition": "支付"
+      },
+      {
+        "lemma": "cost",
+        "pos": "n.",
+        "definition": "费用"
+      },
+      {
+        "lemma": "cheap",
+        "pos": "adj.",
+        "definition": "便宜的"
+      },
+      {
+        "lemma": "expensive",
+        "pos": "adj.",
+        "definition": "昂贵的"
+      },
+      {
+        "lemma": "breakfast",
+        "pos": "n.",
+        "definition": "早餐"
+      },
+      {
+        "lemma": "lunch",
+        "pos": "n.",
+        "definition": "午餐"
+      },
+      {
+        "lemma": "dinner",
+        "pos": "n.",
+        "definition": "晚餐"
+      },
+      {
+        "lemma": "menu",
+        "pos": "n.",
+        "definition": "菜单"
+      },
+      {
+        "lemma": "kitchen",
+        "pos": "n.",
+        "definition": "厨房"
+      },
+      {
+        "lemma": "cook",
+        "pos": "v.",
+        "definition": "烹饪"
+      },
+      {
+        "lemma": "recipe",
+        "pos": "n.",
+        "definition": "食谱"
+      },
+      {
+        "lemma": "vegetable",
+        "pos": "n.",
+        "definition": "蔬菜"
+      },
+      {
+        "lemma": "salad",
+        "pos": "n.",
+        "definition": "沙拉"
+      },
+      {
+        "lemma": "soup",
+        "pos": "n.",
+        "definition": "汤"
+      },
+      {
+        "lemma": "doctor",
+        "pos": "n.",
+        "definition": "医生"
+      },
+      {
+        "lemma": "nurse",
+        "pos": "n.",
+        "definition": "护士"
+      },
+      {
+        "lemma": "patient",
+        "pos": "n.",
+        "definition": "病人"
+      },
+      {
+        "lemma": "medicine",
+        "pos": "n.",
+        "definition": "药物"
+      },
+      {
+        "lemma": "health",
+        "pos": "n.",
+        "definition": "健康"
+      },
+      {
+        "lemma": "ill",
+        "pos": "adj.",
+        "definition": "生病的"
+      },
+      {
+        "lemma": "fever",
+        "pos": "n.",
+        "definition": "发烧"
+      },
+      {
+        "lemma": "pain",
+        "pos": "n.",
+        "definition": "疼痛"
+      },
+      {
+        "lemma": "exercise",
+        "pos": "n.",
+        "definition": "锻炼"
+      },
+      {
+        "lemma": "strong",
+        "pos": "adj.",
+        "definition": "强壮的"
+      },
+      {
+        "lemma": "weak",
+        "pos": "adj.",
+        "definition": "虚弱的"
+      },
+      {
+        "lemma": "clothes",
+        "pos": "n.",
+        "definition": "衣服"
+      },
+      {
+        "lemma": "shirt",
+        "pos": "n.",
+        "definition": "衬衫"
+      },
+      {
+        "lemma": "coat",
+        "pos": "n.",
+        "definition": "外套"
+      },
+      {
+        "lemma": "shoes",
+        "pos": "n.",
+        "definition": "鞋子"
+      },
+      {
+        "lemma": "hat",
+        "pos": "n.",
+        "definition": "帽子"
+      },
+      {
+        "lemma": "color",
+        "pos": "n.",
+        "definition": "颜色"
+      },
+      {
+        "lemma": "size",
+        "pos": "n.",
+        "definition": "尺寸"
+      },
+      {
+        "lemma": "wear",
+        "pos": "v.",
+        "definition": "穿"
+      },
+      {
+        "lemma": "season",
+        "pos": "n.",
+        "definition": "季节"
+      },
+      {
+        "lemma": "spring",
+        "pos": "n.",
+        "definition": "春天"
+      },
+      {
+        "lemma": "summer",
+        "pos": "n.",
+        "definition": "夏天"
+      },
+      {
+        "lemma": "autumn",
+        "pos": "n.",
+        "definition": "秋天"
+      },
+      {
+        "lemma": "winter",
+        "pos": "n.",
+        "definition": "冬天"
+      },
+      {
+        "lemma": "warm",
+        "pos": "adj.",
+        "definition": "温暖的"
+      },
+      {
+        "lemma": "cool",
+        "pos": "adj.",
+        "definition": "凉爽的"
+      },
+      {
+        "lemma": "cloud",
+        "pos": "n.",
+        "definition": "云"
+      },
+      {
+        "lemma": "cloudy",
+        "pos": "adj.",
+        "definition": "多云的"
+      },
+      {
+        "lemma": "sunny",
+        "pos": "adj.",
+        "definition": "晴朗的"
+      },
+      {
+        "lemma": "birthday",
+        "pos": "n.",
+        "definition": "生日"
+      },
+      {
+        "lemma": "celebrate",
+        "pos": "v.",
+        "definition": "庆祝"
+      },
+      {
+        "lemma": "invite",
+        "pos": "v.",
+        "definition": "邀请"
+      },
+      {
+        "lemma": "guest",
+        "pos": "n.",
+        "definition": "客人"
+      },
+      {
+        "lemma": "neighbor",
+        "pos": "n.",
+        "definition": "邻居"
+      },
+      {
+        "lemma": "hobby",
+        "pos": "n.",
+        "definition": "爱好"
+      },
+      {
+        "lemma": "movie",
+        "pos": "n.",
+        "definition": "电影"
+      },
+      {
+        "lemma": "cinema",
+        "pos": "n.",
+        "definition": "电影院"
+      },
+      {
+        "lemma": "museum",
+        "pos": "n.",
+        "definition": "博物馆"
+      },
+      {
+        "lemma": "library",
+        "pos": "n.",
+        "definition": "图书馆"
+      },
+      {
+        "lemma": "park",
+        "pos": "n.",
+        "definition": "公园"
+      },
+      {
+        "lemma": "beach",
+        "pos": "n.",
+        "definition": "海滩"
+      },
+      {
+        "lemma": "mountain",
+        "pos": "n.",
+        "definition": "山"
+      },
+      {
+        "lemma": "river",
+        "pos": "n.",
+        "definition": "河"
+      },
+      {
+        "lemma": "lake",
+        "pos": "n.",
+        "definition": "湖"
+      },
+      {
+        "lemma": "forest",
+        "pos": "n.",
+        "definition": "森林"
+      },
+      {
+        "lemma": "garden",
+        "pos": "n.",
+        "definition": "花园"
+      },
+      {
+        "lemma": "farm",
+        "pos": "n.",
+        "definition": "农场"
+      },
+      {
+        "lemma": "village",
+        "pos": "n.",
+        "definition": "村庄"
+      },
+      {
+        "lemma": "building",
+        "pos": "n.",
+        "definition": "建筑物"
+      },
+      {
+        "lemma": "floor",
+        "pos": "n.",
+        "definition": "楼层"
+      },
+      {
+        "lemma": "stairs",
+        "pos": "n.",
+        "definition": "楼梯"
+      },
+      {
+        "lemma": "lift",
+        "pos": "n.",
+        "definition": "电梯"
+      },
+      {
+        "lemma": "toilet",
+        "pos": "n.",
+        "definition": "厕所"
+      },
+      {
+        "lemma": "bathroom",
+        "pos": "n.",
+        "definition": "浴室"
+      },
+      {
+        "lemma": "bedroom",
+        "pos": "n.",
+        "definition": "卧室"
+      },
+      {
+        "lemma": "living",
+        "pos": "adj.",
+        "definition": "起居的"
+      },
+      {
+        "lemma": "sofa",
+        "pos": "n.",
+        "definition": "沙发"
+      },
+      {
+        "lemma": "television",
+        "pos": "n.",
+        "definition": "电视"
+      },
+      {
+        "lemma": "radio",
+        "pos": "n.",
+        "definition": "收音机"
+      },
+      {
+        "lemma": "newspaper",
+        "pos": "n.",
+        "definition": "报纸"
+      },
+      {
+        "lemma": "magazine",
+        "pos": "n.",
+        "definition": "杂志"
+      },
+      {
+        "lemma": "story",
+        "pos": "n.",
+        "definition": "故事"
+      },
+      {
+        "lemma": "news",
+        "pos": "n.",
+        "definition": "新闻"
+      },
+      {
+        "lemma": "language",
+        "pos": "n.",
+        "definition": "语言"
+      },
+      {
+        "lemma": "English",
+        "pos": "n.",
+        "definition": "英语"
+      },
+      {
+        "lemma": "Chinese",
+        "pos": "n.",
+        "definition": "中文"
+      },
+      {
+        "lemma": "foreign",
+        "pos": "adj.",
+        "definition": "外国的"
+      },
+      {
+        "lemma": "translate",
+        "pos": "v.",
+        "definition": "翻译"
+      },
+      {
+        "lemma": "meaning",
+        "pos": "n.",
+        "definition": "意思"
+      },
+      {
+        "lemma": "sentence",
+        "pos": "n.",
+        "definition": "句子"
+      },
+      {
+        "lemma": "grammar",
+        "pos": "n.",
+        "definition": "语法"
+      },
+      {
+        "lemma": "spelling",
+        "pos": "n.",
+        "definition": "拼写"
+      },
+      {
+        "lemma": "mistake",
+        "pos": "n.",
+        "definition": "错误"
+      },
+      {
+        "lemma": "correct",
+        "pos": "adj.",
+        "definition": "正确的"
+      },
+      {
+        "lemma": "practice",
+        "pos": "n.",
+        "definition": "练习"
+      },
+      {
+        "lemma": "exam",
+        "pos": "n.",
+        "definition": "考试"
+      },
+      {
+        "lemma": "test",
+        "pos": "n.",
+        "definition": "测试"
+      },
+      {
+        "lemma": "score",
+        "pos": "n.",
+        "definition": "分数"
+      },
+      {
+        "lemma": "pass",
+        "pos": "v.",
+        "definition": "通过"
+      },
+      {
+        "lemma": "fail",
+        "pos": "v.",
+        "definition": "失败"
+      },
+      {
+        "lemma": "homework",
+        "pos": "n.",
+        "definition": "家庭作业"
+      },
+      {
+        "lemma": "subject",
+        "pos": "n.",
+        "definition": "科目"
+      },
+      {
+        "lemma": "math",
+        "pos": "n.",
+        "definition": "数学"
+      },
+      {
+        "lemma": "history",
+        "pos": "n.",
+        "definition": "历史"
+      },
+      {
+        "lemma": "science",
+        "pos": "n.",
+        "definition": "科学"
+      },
+      {
+        "lemma": "art",
+        "pos": "n.",
+        "definition": "艺术"
+      },
+      {
+        "lemma": "team",
+        "pos": "n.",
+        "definition": "团队"
+      },
+      {
+        "lemma": "member",
+        "pos": "n.",
+        "definition": "成员"
+      },
+      {
+        "lemma": "leader",
+        "pos": "n.",
+        "definition": "领导"
+      },
+      {
+        "lemma": "plan",
+        "pos": "n.",
+        "definition": "计划"
+      },
+      {
+        "lemma": "idea",
+        "pos": "n.",
+        "definition": "想法"
+      },
+      {
+        "lemma": "problem",
+        "pos": "n.",
+        "definition": "问题"
+      },
+      {
+        "lemma": "solution",
+        "pos": "n.",
+        "definition": "解决方案"
+      },
+      {
+        "lemma": "choose",
+        "pos": "v.",
+        "definition": "选择"
+      },
+      {
+        "lemma": "decide",
+        "pos": "v.",
+        "definition": "决定"
+      },
+      {
+        "lemma": "agree",
+        "pos": "v.",
+        "definition": "同意"
+      },
+      {
+        "lemma": "disagree",
+        "pos": "v.",
+        "definition": "不同意"
+      },
+      {
+        "lemma": "explain",
+        "pos": "v.",
+        "definition": "解释"
+      },
+      {
+        "lemma": "describe",
+        "pos": "v.",
+        "definition": "描述"
+      },
+      {
+        "lemma": "remember",
+        "pos": "v.",
+        "definition": "记得"
+      },
+      {
+        "lemma": "forget",
+        "pos": "v.",
+        "definition": "忘记"
+      },
+      {
+        "lemma": "understand",
+        "pos": "v.",
+        "definition": "理解"
+      },
+      {
+        "lemma": "believe",
+        "pos": "v.",
+        "definition": "相信"
+      },
+      {
+        "lemma": "hope",
+        "pos": "v.",
+        "definition": "希望"
+      },
+      {
+        "lemma": "wish",
+        "pos": "v.",
+        "definition": "祝愿"
+      },
+      {
+        "lemma": "feel",
+        "pos": "v.",
+        "definition": "感觉"
+      },
+      {
+        "lemma": "smile",
+        "pos": "v.",
+        "definition": "微笑"
+      },
+      {
+        "lemma": "laugh",
+        "pos": "v.",
+        "definition": "笑"
+      },
+      {
+        "lemma": "cry",
+        "pos": "v.",
+        "definition": "哭"
+      },
+      {
+        "lemma": "angry",
+        "pos": "adj.",
+        "definition": "生气的"
+      },
+      {
+        "lemma": "tired",
+        "pos": "adj.",
+        "definition": "累的"
+      },
+      {
+        "lemma": "busy",
+        "pos": "adj.",
+        "definition": "忙的"
+      },
+      {
+        "lemma": "free",
+        "pos": "adj.",
+        "definition": "空闲的"
+      },
+      {
+        "lemma": "ready",
+        "pos": "adj.",
+        "definition": "准备好的"
+      },
+      {
+        "lemma": "early",
+        "pos": "adj.",
+        "definition": "早的"
+      },
+      {
+        "lemma": "late",
+        "pos": "adj.",
+        "definition": "晚的"
+      },
+      {
+        "lemma": "quick",
+        "pos": "adj.",
+        "definition": "快的"
+      },
+      {
+        "lemma": "slow",
+        "pos": "adj.",
+        "definition": "慢的"
+      },
+      {
+        "lemma": "easy",
+        "pos": "adj.",
+        "definition": "容易的"
+      },
+      {
+        "lemma": "hard",
+        "pos": "adj.",
+        "definition": "困难的"
+      },
+      {
+        "lemma": "important",
+        "pos": "adj.",
+        "definition": "重要的"
+      },
+      {
+        "lemma": "interesting",
+        "pos": "adj.",
+        "definition": "有趣的"
+      },
+      {
+        "lemma": "boring",
+        "pos": "adj.",
+        "definition": "无聊的"
+      },
+      {
+        "lemma": "beautiful",
+        "pos": "adj.",
+        "definition": "美丽的"
+      },
+      {
+        "lemma": "ugly",
+        "pos": "adj.",
+        "definition": "丑的"
+      },
+      {
+        "lemma": "clean",
+        "pos": "adj.",
+        "definition": "干净的"
+      },
+      {
+        "lemma": "dirty",
+        "pos": "adj.",
+        "definition": "脏的"
+      },
+      {
+        "lemma": "safe",
+        "pos": "adj.",
+        "definition": "安全的"
+      },
+      {
+        "lemma": "dangerous",
+        "pos": "adj.",
+        "definition": "危险的"
+      }
+    ],
+    "pets4": [
+      {
+        "lemma": "ambition",
+        "pos": "n.",
+        "definition": "雄心"
+      },
+      {
+        "lemma": "analyse",
+        "pos": "v.",
+        "definition": "分析"
+      },
+      {
+        "lemma": "anniversary",
+        "pos": "n.",
+        "definition": "周年纪念日"
+      },
+      {
+        "lemma": "appliance",
+        "pos": "n.",
+        "definition": "电器"
+      },
+      {
+        "lemma": "arbitrary",
+        "pos": "adj.",
+        "definition": "任意的"
+      },
+      {
+        "lemma": "architect",
+        "pos": "n.",
+        "definition": "建筑师"
+      },
+      {
+        "lemma": "assumption",
+        "pos": "n.",
+        "definition": "假设"
+      },
+      {
+        "lemma": "authentic",
+        "pos": "adj.",
+        "definition": "真实的"
+      },
+      {
+        "lemma": "bureaucracy",
+        "pos": "n.",
+        "definition": "官僚体制"
+      },
+      {
+        "lemma": "candidate",
+        "pos": "n.",
+        "definition": "候选人"
+      },
+      {
+        "lemma": "capability",
+        "pos": "n.",
+        "definition": "能力"
+      },
+      {
+        "lemma": "circulation",
+        "pos": "n.",
+        "definition": "流通"
+      },
+      {
+        "lemma": "civilization",
+        "pos": "n.",
+        "definition": "文明"
+      },
+      {
+        "lemma": "collaborate",
+        "pos": "v.",
+        "definition": "合作"
+      },
+      {
+        "lemma": "commodity",
+        "pos": "n.",
+        "definition": "商品"
+      },
+      {
+        "lemma": "compensate",
+        "pos": "v.",
+        "definition": "补偿"
+      },
+      {
+        "lemma": "compliance",
+        "pos": "n.",
+        "definition": "合规"
+      },
+      {
+        "lemma": "consecutive",
+        "pos": "adj.",
+        "definition": "连续的"
+      },
+      {
+        "lemma": "consolidate",
+        "pos": "v.",
+        "definition": "巩固"
+      },
+      {
+        "lemma": "consultant",
+        "pos": "n.",
+        "definition": "顾问"
+      },
+      {
+        "lemma": "contradiction",
+        "pos": "n.",
+        "definition": "矛盾"
+      },
+      {
+        "lemma": "controversial",
+        "pos": "adj.",
+        "definition": "有争议的"
+      },
+      {
+        "lemma": "correspondence",
+        "pos": "n.",
+        "definition": "通信"
+      },
+      {
+        "lemma": "criterion",
+        "pos": "n.",
+        "definition": "标准"
+      },
+      {
+        "lemma": "cumulative",
+        "pos": "adj.",
+        "definition": "累积的"
+      },
+      {
+        "lemma": "deduction",
+        "pos": "n.",
+        "definition": "推论"
+      },
+      {
+        "lemma": "deficiency",
+        "pos": "n.",
+        "definition": "不足"
+      },
+      {
+        "lemma": "deliberate",
+        "pos": "adj.",
+        "definition": "故意的"
+      },
+      {
+        "lemma": "demographic",
+        "pos": "adj.",
+        "definition": "人口的"
+      },
+      {
+        "lemma": "deteriorate",
+        "pos": "v.",
+        "definition": "恶化"
+      },
+      {
+        "lemma": "diplomatic",
+        "pos": "adj.",
+        "definition": "外交的"
+      },
+      {
+        "lemma": "discretion",
+        "pos": "n.",
+        "definition": "谨慎"
+      },
+      {
+        "lemma": "discrimination",
+        "pos": "n.",
+        "definition": "歧视"
+      },
+      {
+        "lemma": "disposition",
+        "pos": "n.",
+        "definition": "性情"
+      },
+      {
+        "lemma": "distinction",
+        "pos": "n.",
+        "definition": "区别"
+      },
+      {
+        "lemma": "dominant",
+        "pos": "adj.",
+        "definition": "主导的"
+      },
+      {
+        "lemma": "economics",
+        "pos": "n.",
+        "definition": "经济学"
+      },
+      {
+        "lemma": "eligible",
+        "pos": "adj.",
+        "definition": "有资格的"
+      },
+      {
+        "lemma": "embassy",
+        "pos": "n.",
+        "definition": "大使馆"
+      },
+      {
+        "lemma": "empirical",
+        "pos": "adj.",
+        "definition": "实证的"
+      },
+      {
+        "lemma": "enforcement",
+        "pos": "n.",
+        "definition": "执行"
+      },
+      {
+        "lemma": "entrepreneur",
+        "pos": "n.",
+        "definition": "企业家"
+      },
+      {
+        "lemma": "equilibrium",
+        "pos": "n.",
+        "definition": "平衡"
+      },
+      {
+        "lemma": "evolution",
+        "pos": "n.",
+        "definition": "进化"
+      },
+      {
+        "lemma": "explicit",
+        "pos": "adj.",
+        "definition": "明确的"
+      },
+      {
+        "lemma": "exploitation",
+        "pos": "n.",
+        "definition": "剥削"
+      },
+      {
+        "lemma": "facilitate",
+        "pos": "v.",
+        "definition": "促进"
+      },
+      {
+        "lemma": "feasible",
+        "pos": "adj.",
+        "definition": "可行的"
+      },
+      {
+        "lemma": "fluctuation",
+        "pos": "n.",
+        "definition": "波动"
+      },
+      {
+        "lemma": "formulation",
+        "pos": "n.",
+        "definition": "表述"
+      },
+      {
+        "lemma": "fragment",
+        "pos": "n.",
+        "definition": "碎片"
+      },
+      {
+        "lemma": "frustration",
+        "pos": "n.",
+        "definition": "挫折"
+      },
+      {
+        "lemma": "hypothesis",
+        "pos": "n.",
+        "definition": "假设"
+      },
+      {
+        "lemma": "implementation",
+        "pos": "n.",
+        "definition": "实施"
+      },
+      {
+        "lemma": "incentive",
+        "pos": "n.",
+        "definition": "激励"
+      },
+      {
+        "lemma": "incidence",
+        "pos": "n.",
+        "definition": "发生率"
+      },
+      {
+        "lemma": "indigenous",
+        "pos": "adj.",
+        "definition": "本土的"
+      },
+      {
+        "lemma": "infrastructure",
+        "pos": "n.",
+        "definition": "基础设施"
+      },
+      {
+        "lemma": "innovation",
+        "pos": "n.",
+        "definition": "创新"
+      },
+      {
+        "lemma": "integrity",
+        "pos": "n.",
+        "definition": "正直"
+      },
+      {
+        "lemma": "intervention",
+        "pos": "n.",
+        "definition": "干预"
+      },
+      {
+        "lemma": "justification",
+        "pos": "n.",
+        "definition": "理由"
+      },
+      {
+        "lemma": "legislation",
+        "pos": "n.",
+        "definition": "立法"
+      },
+      {
+        "lemma": "liability",
+        "pos": "n.",
+        "definition": "责任"
+      },
+      {
+        "lemma": "likelihood",
+        "pos": "n.",
+        "definition": "可能性"
+      },
+      {
+        "lemma": "magnitude",
+        "pos": "n.",
+        "definition": "规模"
+      },
+      {
+        "lemma": "mandatory",
+        "pos": "adj.",
+        "definition": "强制的"
+      },
+      {
+        "lemma": "manipulation",
+        "pos": "n.",
+        "definition": "操纵"
+      },
+      {
+        "lemma": "methodology",
+        "pos": "n.",
+        "definition": "方法论"
+      },
+      {
+        "lemma": "migration",
+        "pos": "n.",
+        "definition": "迁移"
+      },
+      {
+        "lemma": "minimal",
+        "pos": "adj.",
+        "definition": "最小的"
+      },
+      {
+        "lemma": "misunderstanding",
+        "pos": "n.",
+        "definition": "误解"
+      },
+      {
+        "lemma": "moderate",
+        "pos": "adj.",
+        "definition": "适度的"
+      },
+      {
+        "lemma": "monetary",
+        "pos": "adj.",
+        "definition": "货币的"
+      },
+      {
+        "lemma": "motivation",
+        "pos": "n.",
+        "definition": "动机"
+      },
+      {
+        "lemma": "negotiation",
+        "pos": "n.",
+        "definition": "谈判"
+      },
+      {
+        "lemma": "nonetheless",
+        "pos": "adv.",
+        "definition": "尽管如此"
+      },
+      {
+        "lemma": "notwithstanding",
+        "pos": "prep.",
+        "definition": "尽管"
+      },
+      {
+        "lemma": "objective",
+        "pos": "n.",
+        "definition": "目标"
+      },
+      {
+        "lemma": "obligation",
+        "pos": "n.",
+        "definition": "义务"
+      },
+      {
+        "lemma": "occurrence",
+        "pos": "n.",
+        "definition": "发生"
+      },
+      {
+        "lemma": "orientation",
+        "pos": "n.",
+        "definition": "方向"
+      },
+      {
+        "lemma": "parliament",
+        "pos": "n.",
+        "definition": "议会"
+      },
+      {
+        "lemma": "phenomenon",
+        "pos": "n.",
+        "definition": "现象"
+      },
+      {
+        "lemma": "philosophy",
+        "pos": "n.",
+        "definition": "哲学"
+      },
+      {
+        "lemma": "portfolio",
+        "pos": "n.",
+        "definition": "投资组合"
+      },
+      {
+        "lemma": "precedent",
+        "pos": "n.",
+        "definition": "先例"
+      },
+      {
+        "lemma": "predominant",
+        "pos": "adj.",
+        "definition": "占主导的"
+      },
+      {
+        "lemma": "prescription",
+        "pos": "n.",
+        "definition": "处方"
+      },
+      {
+        "lemma": "preservation",
+        "pos": "n.",
+        "definition": "保存"
+      },
+      {
+        "lemma": "prevalence",
+        "pos": "n.",
+        "definition": "流行"
+      },
+      {
+        "lemma": "probability",
+        "pos": "n.",
+        "definition": "概率"
+      },
+      {
+        "lemma": "proficiency",
+        "pos": "n.",
+        "definition": "熟练"
+      },
+      {
+        "lemma": "projection",
+        "pos": "n.",
+        "definition": "预测"
+      },
+      {
+        "lemma": "proposition",
+        "pos": "n.",
+        "definition": "命题"
+      },
+      {
+        "lemma": "prosperity",
+        "pos": "n.",
+        "definition": "繁荣"
+      },
+      {
+        "lemma": "protocol",
+        "pos": "n.",
+        "definition": "协议"
+      },
+      {
+        "lemma": "qualification",
+        "pos": "n.",
+        "definition": "资格"
+      },
+      {
+        "lemma": "quantitative",
+        "pos": "adj.",
+        "definition": "定量的"
+      },
+      {
+        "lemma": "questionnaire",
+        "pos": "n.",
+        "definition": "问卷"
+      },
+      {
+        "lemma": "reconciliation",
+        "pos": "n.",
+        "definition": "和解"
+      },
+      {
+        "lemma": "regulation",
+        "pos": "n.",
+        "definition": "规章"
+      },
+      {
+        "lemma": "rehabilitation",
+        "pos": "n.",
+        "definition": "康复"
+      },
+      {
+        "lemma": "relevance",
+        "pos": "n.",
+        "definition": "相关性"
+      },
+      {
+        "lemma": "reluctance",
+        "pos": "n.",
+        "definition": "不情愿"
+      },
+      {
+        "lemma": "remedy",
+        "pos": "n.",
+        "definition": "补救"
+      },
+      {
+        "lemma": "reproduction",
+        "pos": "n.",
+        "definition": "繁殖"
+      },
+      {
+        "lemma": "reservation",
+        "pos": "n.",
+        "definition": "预订"
+      },
+      {
+        "lemma": "resilience",
+        "pos": "n.",
+        "definition": "韧性"
+      },
+      {
+        "lemma": "resolution",
+        "pos": "n.",
+        "definition": "决议"
+      },
+      {
+        "lemma": "restraint",
+        "pos": "n.",
+        "definition": "克制"
+      },
+      {
+        "lemma": "retrieval",
+        "pos": "n.",
+        "definition": "检索"
+      },
+      {
+        "lemma": "rhetoric",
+        "pos": "n.",
+        "definition": "修辞"
+      },
+      {
+        "lemma": "scenario",
+        "pos": "n.",
+        "definition": "情景"
+      },
+      {
+        "lemma": "skeptical",
+        "pos": "adj.",
+        "definition": "怀疑的"
+      },
+      {
+        "lemma": "sovereignty",
+        "pos": "n.",
+        "definition": "主权"
+      },
+      {
+        "lemma": "specification",
+        "pos": "n.",
+        "definition": "规格"
+      },
+      {
+        "lemma": "stabilize",
+        "pos": "v.",
+        "definition": "稳定"
+      },
+      {
+        "lemma": "statistics",
+        "pos": "n.",
+        "definition": "统计"
+      },
+      {
+        "lemma": "stimulus",
+        "pos": "n.",
+        "definition": "刺激"
+      },
+      {
+        "lemma": "submission",
+        "pos": "n.",
+        "definition": "提交"
+      },
+      {
+        "lemma": "subsidy",
+        "pos": "n.",
+        "definition": "补贴"
+      },
+      {
+        "lemma": "substantial",
+        "pos": "adj.",
+        "definition": "大量的"
+      },
+      {
+        "lemma": "sufficient",
+        "pos": "adj.",
+        "definition": "足够的"
+      },
+      {
+        "lemma": "supervision",
+        "pos": "n.",
+        "definition": "监督"
+      },
+      {
+        "lemma": "supplement",
+        "pos": "n.",
+        "definition": "补充"
+      },
+      {
+        "lemma": "surveillance",
+        "pos": "n.",
+        "definition": "监视"
+      },
+      {
+        "lemma": "suspension",
+        "pos": "n.",
+        "definition": "暂停"
+      },
+      {
+        "lemma": "sustainability",
+        "pos": "n.",
+        "definition": "可持续性"
+      },
+      {
+        "lemma": "symposium",
+        "pos": "n.",
+        "definition": "研讨会"
+      },
+      {
+        "lemma": "tactic",
+        "pos": "n.",
+        "definition": "策略"
+      },
+      {
+        "lemma": "technique",
+        "pos": "n.",
+        "definition": "技巧"
+      },
+      {
+        "lemma": "tolerance",
+        "pos": "n.",
+        "definition": "容忍"
+      },
+      {
+        "lemma": "transaction",
+        "pos": "n.",
+        "definition": "交易"
+      },
+      {
+        "lemma": "transition",
+        "pos": "n.",
+        "definition": "过渡"
+      },
+      {
+        "lemma": "transmission",
+        "pos": "n.",
+        "definition": "传输"
+      },
+      {
+        "lemma": "transparency",
+        "pos": "n.",
+        "definition": "透明"
+      },
+      {
+        "lemma": "treaty",
+        "pos": "n.",
+        "definition": "条约"
+      },
+      {
+        "lemma": "tribute",
+        "pos": "n.",
+        "definition": "致敬；贡品"
+      },
+      {
+        "lemma": "undergraduate",
+        "pos": "n.",
+        "definition": "本科生"
+      },
+      {
+        "lemma": "undertaking",
+        "pos": "n.",
+        "definition": "事业"
+      },
+      {
+        "lemma": "unification",
+        "pos": "n.",
+        "definition": "统一"
+      },
+      {
+        "lemma": "utilization",
+        "pos": "n.",
+        "definition": "利用"
+      },
+      {
+        "lemma": "validation",
+        "pos": "n.",
+        "definition": "验证"
+      },
+      {
+        "lemma": "variation",
+        "pos": "n.",
+        "definition": "变化"
+      },
+      {
+        "lemma": "verification",
+        "pos": "n.",
+        "definition": "核实"
+      },
+      {
+        "lemma": "violation",
+        "pos": "n.",
+        "definition": "违反"
+      },
+      {
+        "lemma": "visibility",
+        "pos": "n.",
+        "definition": "可见性"
+      },
+      {
+        "lemma": "vulnerability",
+        "pos": "n.",
+        "definition": "脆弱性"
+      },
+      {
+        "lemma": "warranty",
+        "pos": "n.",
+        "definition": "保修"
+      },
+      {
+        "lemma": "withdrawal",
+        "pos": "n.",
+        "definition": "撤回"
+      },
+      {
+        "lemma": "workforce",
+        "pos": "n.",
+        "definition": "劳动力"
+      }
+    ]
+  }
+}

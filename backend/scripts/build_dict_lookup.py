@@ -1,14 +1,16 @@
-"""Build data/dict_lookup.json from open vocabulary sources."""
+"""Fetch open vocabulary sources into dictionary_entries (PostgreSQL)."""
 
 from __future__ import annotations
 
-from app.data_paths import get_data_dir
-from app.services.vocabulary.dict_lookup_builder import build_dict_lookup
+import sys
+
+from app.cli import cmd_seed_dictionary
 
 
-def main() -> None:
-    build_dict_lookup(get_data_dir())
+def main() -> int:
+    force = "--force" in sys.argv
+    return cmd_seed_dictionary(force=force)
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

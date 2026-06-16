@@ -7,13 +7,18 @@ import sys
 from app.config import get_settings
 from app.database import SessionLocal, init_db
 from app.logging_config import configure_logging
-from app.services.vocabulary.ensure_data import ensure_data_files
 from app.services.vocabulary.import_words import import_words
+from app.services.vocabulary.seed_dictionary import seed_dictionary_entries
 
 
-def cmd_ensure_data() -> int:
-    result = ensure_data_files()
-    print(f"Data files: {result}")
+def cmd_seed_dictionary(force: bool = False) -> int:
+    init_db()
+    db = SessionLocal()
+    try:
+        result = seed_dictionary_entries(db, force=force)
+        print(f"Dictionary seed: {result}")
+    finally:
+        db.close()
     return 0
 
 
@@ -21,6 +26,7 @@ def cmd_seed() -> int:
     init_db()
     db = SessionLocal()
     try:
+        seed_dictionary_entries(db)
         result = import_words(db)
         from app.services.reference.import_reference import import_reference
 
@@ -52,13 +58,23 @@ def main(argv: list[str] | None = None) -> int:
     configure_logging(debug=get_settings().debug)
     parser = argparse.ArgumentParser(prog="python -m app.cli")
     sub = parser.add_subparsers(dest="command", required=True)
-    sub.add_parser("ensure-data", help="Ensure backend/data files exist (downloads dict_lookup if missing)")
-    sub.add_parser("seed", help="Import vocabulary and reference data")
+
+    dict_parser = sub.add_parser(
+        "seed-dictionary",
+        help="Import dictionary_entries from open vocabulary sources (skips if table non-empty)",
+    )
+    dict_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Re-fetch and upsert all dictionary entries",
+    )
+
+    sub.add_parser("seed", help="Import dictionary, vocabulary and reference data")
     sub.add_parser("daily-scenarios", help="Run daily scenario generation once")
     args = parser.parse_args(argv)
 
-    if args.command == "ensure-data":
-        return cmd_ensure_data()
+    if args.command == "seed-dictionary":
+        return cmd_seed_dictionary(force=args.force)
     if args.command == "seed":
         return cmd_seed()
     if args.command == "daily-scenarios":

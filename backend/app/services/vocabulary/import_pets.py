@@ -5,8 +5,8 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
-from app.data_paths import get_data_dir
 from app.models.word import Word, WordTag
+from app.seed_paths import seed_dir
 from app.services.vocabulary.definition_lookup import enrich_definitions
 from app.services.vocabulary.definitions import normalize_definitions
 from app.services.vocabulary.exam_tags import count_words_for_exam_level
@@ -14,7 +14,7 @@ from app.services.vocabulary.levels import PETS_INHERIT_FROM_CET, PETS_LEVELS
 from app.utils.json_helpers import dump_json_field, parse_json_field
 
 def _pets_data_file() -> Path:
-    return get_data_dir() / "pets_words.json"
+    return seed_dir() / "pets_words.json"
 
 
 def _load_pets_data() -> dict:

@@ -7,8 +7,8 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
-from app.data_paths import get_data_dir
 from app.models.word import Word, WordGroup, WordGroupMember, WordTag
+from app.seed_paths import seed_dir
 from app.services.vocabulary.definition_lookup import enrich_definitions, fill_missing_definitions, lookup_definition
 from app.services.vocabulary.definitions import normalize_definitions
 from app.services.vocabulary.exam_tags import sync_all_exam_tags
@@ -16,17 +16,10 @@ from app.services.vocabulary.import_pets import import_pets_words
 from app.utils.json_helpers import dump_json_field, parse_json_field
 
 
-def _bundled_word_groups_path() -> Path:
-    return Path(__file__).resolve().parent.parent.parent / "seed" / "word_groups.json"
-
-
 def _load_word_groups() -> list[dict]:
-    path = get_data_dir() / "word_groups.json"
+    path = seed_dir() / "word_groups.json"
     if path.is_file():
         return json.loads(path.read_text(encoding="utf-8"))
-    bundled = _bundled_word_groups_path()
-    if bundled.is_file():
-        return json.loads(bundled.read_text(encoding="utf-8"))
     return []
 
 
@@ -692,11 +685,15 @@ def sync_word_groups(db: Session) -> dict[str, int]:
     }
 
 
-def export_seed_json() -> None:
-    data_dir = get_data_dir()
-    data_dir.mkdir(parents=True, exist_ok=True)
-    output = data_dir / "cet_words.json"
-    output.write_text(json.dumps(SEED_WORDS, ensure_ascii=False, indent=2), encoding="utf-8")
+def export_seed_json(output: Path | None = None) -> Path | None:
+    payload = json.dumps(SEED_WORDS, ensure_ascii=False, indent=2)
+    if output is None:
+        import sys
+
+        sys.stdout.write(payload)
+        return None
+    output.write_text(payload, encoding="utf-8")
+    return output
 
 
 def import_words(db: Session) -> dict[str, int | bool]:

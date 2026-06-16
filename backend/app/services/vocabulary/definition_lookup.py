@@ -1,22 +1,14 @@
 from __future__ import annotations
 
-import json
 from functools import lru_cache
-from pathlib import Path
 
 from sqlalchemy.orm import Session
 
-from app.data_paths import get_data_dir
+from app.database import SessionLocal
+from app.models.dictionary import DictionaryEntry
 from app.models.word import Word
 from app.services.vocabulary.definitions import normalize_definitions
 from app.utils.json_helpers import dump_json_field, parse_json_field
-
-def _dict_lookup_file() -> Path:
-    return get_data_dir() / "dict_lookup.json"
-
-
-def _overrides_file() -> Path:
-    return get_data_dir() / "dict_lookup_overrides.json"
 
 # 美式拼写 -> 英式（词库中更常见）
 SPELLING_ALIASES: dict[str, str] = {
@@ -80,18 +72,28 @@ def clear_lookup_cache() -> None:
 
 @lru_cache(maxsize=1)
 def _load_lookup() -> dict[str, dict]:
-    merged: dict[str, dict] = {}
-    if _dict_lookup_file().exists():
-        data = json.loads(_dict_lookup_file().read_text(encoding="utf-8"))
-        merged.update(data.get("entries", {}))
-    if _overrides_file().exists():
-        data = json.loads(_overrides_file().read_text(encoding="utf-8"))
-        merged.update(data.get("entries", {}))
-    return merged
+    db = SessionLocal()
+    try:
+        merged: dict[str, dict] = {}
+        for entry in db.query(DictionaryEntry).filter(DictionaryEntry.source != "override"):
+            merged[entry.lemma] = {
+                "definition": entry.definition,
+                "pos": entry.pos,
+                "source": entry.source,
+            }
+        for entry in db.query(DictionaryEntry).filter(DictionaryEntry.source == "override"):
+            merged[entry.lemma] = {
+                "definition": entry.definition,
+                "pos": entry.pos,
+                "source": entry.source,
+            }
+        return merged
+    finally:
+        db.close()
 
 
 def lookup_definition(lemma: str) -> tuple[str | None, str | None]:
-    """Return (definition, pos_hint) from bundled dictionary."""
+    """Return (definition, pos_hint) from dictionary_entries."""
     entries = _load_lookup()
     search_keys = _lemma_keys(lemma) + _fallback_lemma_keys(lemma)
     for key in search_keys:

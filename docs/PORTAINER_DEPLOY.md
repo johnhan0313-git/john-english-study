@@ -50,13 +50,21 @@ environment:
 
 修改后 `docker compose up -d` 重启 Portainer。**mihomo 必须保持运行**，否则 Pull 仍会失败。内网服务（postgres、minio 等）在 `NO_PROXY` 里，不会误走代理。
 
-## 数据目录
+## 词库初始化
 
-`docker-compose.prod.yml` 已挂载 volume **`english_study_data` → `/app/data`**。
+容器启动时 `docker-entrypoint.sh` 会依次执行：
 
-- 首次启动：`docker-entrypoint.sh` 会执行 `python -m app.cli ensure-data`，自动下载生成 `dict_lookup.json`（需访问 GitHub，约 1–2 分钟）
-- 重建容器：volume 保留，无需重复下载
-- 详见 [backend/data/README.md](../backend/data/README.md)
+1. `alembic upgrade head`
+2. `python -m app.cli seed-dictionary`（`dictionary_entries` 表为空时从 GitHub 拉取，约 1–2 分钟）
+
+重建容器后数据仍在 PostgreSQL，**无需重复下载**。
+
+已有生产库首次升级后，可手动执行：
+
+```bash
+docker exec <backend-container> python -m app.cli seed-dictionary
+docker exec <backend-container> python -m app.cli seed
+```
 
 ## Portainer 部署步骤
 
@@ -96,7 +104,6 @@ docker exec john-english-study-backend-1 python -c \
 |------|-----|
 | `DATABASE_URL` | `postgresql+psycopg://english-study:english-study-123@john-postgresql:5432/english-study` |
 | `S3_ENDPOINT_URL` | `http://john-minio:9000` |
-| `DATA_DIR` | `/app/data` |
 
 ## Cloudflare Tunnel + nginx（se.cool-app.me）
 

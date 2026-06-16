@@ -29,9 +29,12 @@ from app.database import (
     reset_test_database,
 )
 from app.main import app
+from app.models.dictionary import DictionaryEntry
+from app.models.word import Word
 from app.services.storage.factory import get_storage, reset_storage_for_tests
 from app.services.storage.s3 import S3StorageBackend
 from app.services.vocabulary.import_words import import_words
+from app.services.vocabulary.seed_dictionary import seed_dictionary_entries
 
 
 def _clear_test_storage() -> None:
@@ -50,8 +53,8 @@ def _session_test_seed():
     prepare_test_database()
     db = SessionLocal()
     try:
-        from app.models.word import Word
-
+        if db.query(DictionaryEntry).count() == 0:
+            seed_dictionary_entries(db)
         if db.query(Word).count() == 0:
             import_words(db)
             db.commit()

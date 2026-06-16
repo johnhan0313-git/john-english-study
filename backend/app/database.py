@@ -102,6 +102,7 @@ def run_migrations() -> None:
 
 _TEST_SEED_TABLES = frozenset({
     "alembic_version",
+    "dictionary_entries",
     "words",
     "word_tags",
     "word_groups",
@@ -148,11 +149,9 @@ def _truncate_test_tables(engine: Engine) -> None:
 
 
 def prepare_test_database() -> None:
-    settings = get_settings()
-    settings.data_dir.mkdir(parents=True, exist_ok=True)
-
     from app import models  # noqa: F401
 
+    settings = get_settings()
     engine = get_engine()
     if _is_postgresql(settings.database_url):
         insp = inspect(engine)
@@ -217,7 +216,6 @@ def init_db() -> None:
     settings = get_settings()
     if settings.storage_backend == "local":
         settings.media_dir.mkdir(parents=True, exist_ok=True)
-    settings.data_dir.mkdir(parents=True, exist_ok=True)
     if settings.database_url.startswith("sqlite"):
         db_path = settings.database_url.replace("sqlite:///", "")
         if db_path and not db_path.startswith(":"):

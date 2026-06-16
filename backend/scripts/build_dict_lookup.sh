@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
-# Build backend/data/dict_lookup.json from KyleBing/english-vocabulary (educational use).
-# Run: ./scripts/build_dict_lookup.sh
+# Import dictionary_entries from KyleBing/english-vocabulary into PostgreSQL.
+# Run: ./scripts/build_dict_lookup.sh [--force]
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source .venv/bin/activate 2>/dev/null || true
-python scripts/build_dict_lookup.py
+if [[ "${1:-}" == "--force" ]]; then
+  python -m app.cli seed-dictionary --force
+else
+  python -m app.cli seed-dictionary
+fi

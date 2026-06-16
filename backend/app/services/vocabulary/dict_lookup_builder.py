@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import json
 import logging
-from pathlib import Path
 
 import httpx
 
@@ -18,7 +16,7 @@ SOURCES = [
 ]
 
 
-def build_dict_lookup(data_dir: Path) -> Path:
+def fetch_dict_lookup() -> dict[str, dict[str, str]]:
     lookup: dict[str, dict[str, str]] = {}
     with httpx.Client(timeout=120.0, follow_redirects=True) as client:
         for url, label in SOURCES:
@@ -36,22 +34,5 @@ def build_dict_lookup(data_dir: Path) -> Path:
                 if word not in lookup or len(trans) > len(lookup[word]["definition"]):
                     lookup[word] = {"definition": trans, "source": label}
 
-    data_dir.mkdir(parents=True, exist_ok=True)
-    output = data_dir / "dict_lookup.json"
-    payload = {
-        "meta": {
-            "source": "KyleBing/english-vocabulary",
-            "count": len(lookup),
-        },
-        "entries": lookup,
-    }
-    output.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    logger.info("Wrote %s (%s entries)", output, len(lookup))
-    return output
-
-
-def ensure_dict_lookup(data_dir: Path) -> Path | None:
-    output = data_dir / "dict_lookup.json"
-    if output.is_file() and output.stat().st_size > 0:
-        return output
-    return build_dict_lookup(data_dir)
+    logger.info("Fetched %s dictionary entries", len(lookup))
+    return lookup

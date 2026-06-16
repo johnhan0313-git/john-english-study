@@ -15,7 +15,7 @@ CMD="${1:-start}"
 
 case "$CMD" in
   start)
-    mkdir -p "$RUN_DIR" "$BACKEND_DIR/data"
+    mkdir -p "$RUN_DIR"
 
     if [[ ! -f "$BACKEND_DIR/.env" ]]; then
       cp "$BACKEND_DIR/.env.example" "$BACKEND_DIR/.env"

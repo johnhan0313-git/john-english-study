@@ -5,8 +5,6 @@ __pycache__/
 venv/
 *.egg-info/
 .pytest_cache/
-backend/data/*
-!backend/data/README.md
 
 # Node
 node_modules/

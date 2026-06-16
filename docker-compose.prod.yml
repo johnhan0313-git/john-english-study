@@ -21,7 +21,6 @@ services:
       ENABLE_SCHEDULER: "true"
       SEED_ON_STARTUP: "true"
       JWT_SECRET: change-me-in-production
-      DATA_DIR: /app/data
       # 邮件验证码（Portainer Stack 环境变量中填入真实值，见 docs/PORTAINER_DEPLOY.md）
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-465}
@@ -55,8 +54,6 @@ services:
       NO_PROXY: ${NO_PROXY:-localhost,127.0.0.1,john-postgresql,john-minio,192.168.0.0/16,10.0.0.0/8,172.16.0.0/12}
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    volumes:
-      - english_study_data:/app/data
     restart: unless-stopped
 
   frontend:
@@ -75,12 +72,3 @@ networks:
     external: true
   john-minio_default:
     external: true
-
-
-volumes:
-  english_study_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /home/john-han/mydocker/mntdata/english_study_data

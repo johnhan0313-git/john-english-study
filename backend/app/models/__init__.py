@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from app.models.conversation import ConversationMessage, ConversationSession
+from app.models.dictionary import DictionaryEntry
 from app.models.exercise import Exercise
 from app.models.progress import ScenarioAttempt, UserWordProgress
 from app.models.reference import GrammarPoint, PhoneticSymbol
@@ -13,6 +14,7 @@ __all__ = [
     "WordTag",
     "WordGroup",
     "WordGroupMember",
+    "DictionaryEntry",
     "Scenario",
     "ScenarioWord",
     "Exercise",

@@ -1,0 +1,178 @@
+[
+  {
+    "slug": "travel",
+    "name_zh": "旅行出行",
+    "name_en": "Travel",
+    "words": [
+      "airport",
+      "schedule",
+      "reservation",
+      "destination",
+      "luggage",
+      "boarding",
+      "delay",
+      "passport",
+      "customs",
+      "departure",
+      "arrival",
+      "ticket",
+      "visa",
+      "route",
+      "journey"
+    ]
+  },
+  {
+    "slug": "campus",
+    "name_zh": "校园生活",
+    "name_en": "Campus Life",
+    "words": [
+      "lecture",
+      "assignment",
+      "semester",
+      "scholarship",
+      "dormitory",
+      "enroll",
+      "graduate",
+      "major",
+      "tuition",
+      "campus",
+      "faculty",
+      "thesis",
+      "exam",
+      "library",
+      "research"
+    ]
+  },
+  {
+    "slug": "business",
+    "name_zh": "职场商务",
+    "name_en": "Business",
+    "words": [
+      "negotiate",
+      "contract",
+      "promotion",
+      "colleague",
+      "deadline",
+      "proposal",
+      "revenue",
+      "client",
+      "meeting",
+      "salary",
+      "interview",
+      "resume",
+      "efficient",
+      "strategy",
+      "budget"
+    ]
+  },
+  {
+    "slug": "health",
+    "name_zh": "健康医疗",
+    "name_en": "Health",
+    "words": [
+      "symptom",
+      "prescription",
+      "diagnosis",
+      "therapy",
+      "nutrition",
+      "exercise",
+      "immune",
+      "patient",
+      "surgeon",
+      "medicine",
+      "recovery",
+      "infection",
+      "treatment",
+      "hospital",
+      "diet"
+    ]
+  },
+  {
+    "slug": "technology",
+    "name_zh": "科技数码",
+    "name_en": "Technology",
+    "words": [
+      "software",
+      "hardware",
+      "network",
+      "database",
+      "algorithm",
+      "digital",
+      "innovation",
+      "device",
+      "application",
+      "platform",
+      "security",
+      "update",
+      "install",
+      "browser",
+      "cloud"
+    ]
+  },
+  {
+    "slug": "environment",
+    "name_zh": "环境自然",
+    "name_en": "Environment",
+    "words": [
+      "pollution",
+      "climate",
+      "recycle",
+      "sustainable",
+      "ecosystem",
+      "conservation",
+      "emission",
+      "renewable",
+      "wildlife",
+      "carbon",
+      "resource",
+      "habitat",
+      "organic",
+      "energy",
+      "waste"
+    ]
+  },
+  {
+    "slug": "culture",
+    "name_zh": "文化艺术",
+    "name_en": "Culture",
+    "words": [
+      "tradition",
+      "heritage",
+      "exhibition",
+      "literature",
+      "sculpture",
+      "performance",
+      "festival",
+      "museum",
+      "classic",
+      "creative",
+      "artistic",
+      "gallery",
+      "poetry",
+      "drama",
+      "media"
+    ]
+  },
+  {
+    "slug": "daily",
+    "name_zh": "日常生活",
+    "name_en": "Daily Life",
+    "words": [
+      "grocery",
+      "apartment",
+      "neighbor",
+      "furniture",
+      "household",
+      "routine",
+      "convenient",
+      "purchase",
+      "delivery",
+      "budget",
+      "repair",
+      "laundry",
+      "kitchen",
+      "garden",
+      "community"
+    ]
+  }
+]

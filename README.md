@@ -90,7 +90,7 @@ services:
 | `SKIP_STARTUP_SEED` | `true` 跳过启动 seed |
 | `ENABLE_SCHEDULER` | `false` 关闭内置每日场景调度 |
 
-词库中文释义来自 `backend/data/dict_lookup.json`（约 1.2 万词条，数据源 [KyleBing/english-vocabulary](https://github.com/KyleBing/english-vocabulary)）。更新释义可运行 `python scripts/build_dict_lookup.py` 后执行 `python -m app.cli seed`。
+词库中文释义存在 PostgreSQL `dictionary_entries` 表（约 1.2 万词条，数据源 [KyleBing/english-vocabulary](https://github.com/KyleBing/english-vocabulary)）。首次环境执行 `python -m app.cli seed-dictionary`，更新释义后执行 `python -m app.cli seed`。
 
 前端关键配置：
 

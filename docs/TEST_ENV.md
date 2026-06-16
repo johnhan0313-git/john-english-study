@@ -12,8 +12,8 @@
 │ run.sh          │           │ john-postgresql :5432    │
 │  frontend :3000 │           │   └─ english-study-test  │
 │  backend  :8000 │──Tailscale│ john-minio :19000        │
-│  ./data (词库)  │           │   └─ english-study-      │
-└─────────────────┘           │      bucket-test         │
+└─────────────────┘           │   └─ english-study-      │
+                              │      bucket-test         │
                               └──────────────────────────┘
 ```
 
@@ -22,7 +22,7 @@
 | PostgreSQL 库 | `english-study` | `english-study-test` |
 | MinIO bucket | `english-study-bucket` | `english-study-bucket-test` |
 | 媒体文件 | MinIO | MinIO（同上 bucket） |
-| 词库 JSON | 容器 `/app/data` | 本地 `backend/data` |
+| 词库释义 | PG `dictionary_entries` | 同上（测试库） |
 
 ## 前置条件
 
@@ -70,7 +70,7 @@ cp backend/.env.example backend/.env   # 首次；按需改 john-server 主机�
 
 ```bash
 cd backend && source .venv/bin/activate
-python -m app.cli ensure-data
+python -m app.cli seed-dictionary
 python -m app.cli seed
 ```
 
