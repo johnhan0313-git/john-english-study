@@ -5,7 +5,7 @@ services:
       - "8000:8000"
     networks:
       - default
-      - john-postgres_default
+      - john-postgresql_default
       - john-minio_default
     environment:
       DATABASE_URL: postgresql+psycopg://english-study:english-study-123@john-postgresql:5432/english-study
