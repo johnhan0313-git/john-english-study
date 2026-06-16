@@ -48,10 +48,16 @@ services:
     restart: unless-stopped
 
 networks:
-  john-postgres_default:
+  john-postgresql_default:
     external: true
   john-minio_default:
     external: true
 
+
 volumes:
   english_study_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/john-han/mydocker/mntdata/english_study_data
