@@ -154,6 +154,57 @@ class OpenAICompatibleProvider:
 class MockAIProvider:
     """For tests and offline development without API key."""
 
+    _THEME_META: dict[str, dict[str, str]] = {
+        "travel": {
+            "title": "A Day at the Airport",
+            "summary_zh": "莎拉在机场确认行程并办理登机手续。",
+            "fun_fact": "The word 'airport' combines 'air' and 'port', originally meaning a port for aircraft.",
+            "opener": "Sarah arrived early at the airport to review her travel plans.",
+        },
+        "campus": {
+            "title": "A Busy Semester on Campus",
+            "summary_zh": "大学生在校园里平衡课程、作业与图书馆学习。",
+            "fun_fact": "The word 'campus' comes from Latin, meaning an open field.",
+            "opener": "Tom spent the afternoon on campus preparing for his next lecture.",
+        },
+        "business": {
+            "title": "The Quarterly Business Review",
+            "summary_zh": "团队在会议上讨论合同、提案、预算与晋升安排。",
+            "fun_fact": "The word 'negotiate' comes from Latin negotiari, meaning to do business.",
+            "opener": "The team gathered in the conference room for an important client review.",
+        },
+        "health": {
+            "title": "A Visit to the Clinic",
+            "summary_zh": "患者向医生描述症状并讨论治疗方案。",
+            "fun_fact": "The word 'diagnosis' comes from Greek, meaning to distinguish or discern.",
+            "opener": "Emma visited the hospital after noticing several worrying symptoms.",
+        },
+        "technology": {
+            "title": "Launching the New Platform",
+            "summary_zh": "工程师讨论软件更新、网络安全与数据库迁移。",
+            "fun_fact": "The word 'algorithm' is derived from the name of Persian mathematician al-Khwarizmi.",
+            "opener": "The product team met to plan a major update to their digital platform.",
+        },
+        "environment": {
+            "title": "Protecting the Local Ecosystem",
+            "summary_zh": "志愿者讨论污染、气候与可持续能源保护。",
+            "fun_fact": "The word 'recycle' literally means to cycle again.",
+            "opener": "Local volunteers organized a campaign to protect wildlife and reduce waste.",
+        },
+        "culture": {
+            "title": "An Evening at the Museum",
+            "summary_zh": "参观者在博物馆欣赏文学、雕塑与传统展览。",
+            "fun_fact": "The word 'museum' comes from Greek, meaning a place dedicated to the Muses.",
+            "opener": "Visitors gathered at the museum for a special exhibition on classic literature.",
+        },
+        "daily": {
+            "title": "A Busy Day at Home",
+            "summary_zh": "日常生活中处理家务、购物与社区事务。",
+            "fun_fact": "The word 'routine' comes from French route, meaning a regular path.",
+            "opener": "Lisa started her morning with a simple household routine.",
+        },
+    }
+
     async def chat_json(
         self,
         messages: list[dict[str, str]],
@@ -163,27 +214,66 @@ class MockAIProvider:
     ) -> dict[str, Any]:
         if task == "exercise":
             return await self._mock_exercises()
-        return await self._mock_scenario()
+        return await self._mock_scenario(messages)
 
-    async def _mock_scenario(self) -> dict[str, Any]:
+    @classmethod
+    def _parse_scenario_request(cls, messages: list[dict[str, str]]) -> dict[str, Any]:
+        theme = "daily"
+        target_words: list[str] = []
+        scenario_type = "narrative"
+        for msg in messages:
+            if msg.get("role") != "user":
+                continue
+            for line in msg.get("content", "").splitlines():
+                stripped = line.strip()
+                if stripped.startswith("Theme:"):
+                    theme = stripped.split(":", 1)[1].strip().lower() or theme
+                elif stripped.startswith("Target words"):
+                    part = stripped.split(":", 1)[1].strip()
+                    target_words = [word.strip() for word in part.split(",") if word.strip()]
+                elif stripped.startswith("Type:"):
+                    scenario_type = stripped.split(":", 1)[1].split(".", 1)[0].strip().lower() or scenario_type
+        if not target_words:
+            target_words = ["plan", "practice", "learn", "improve", "focus"]
         return {
-            "title": "A Day at the Airport",
-            "theme": "travel",
-            "passage": (
-                "Sarah arrived at the airport early to check her schedule and confirm her reservation. "
-                "She needed to negotiate with the agent about her luggage allowance before boarding."
-            ),
-            "dialogue": [
-                {"speaker": "Sarah", "text": "Excuse me, could you help me with my reservation?"},
-                {"speaker": "Agent", "text": "Of course. Let me check your schedule and luggage details."},
-            ],
-            "word_usage": [
-                {"word": "schedule", "sentence": "She checked her schedule.", "meaning_zh": "日程"},
-                {"word": "reservation", "sentence": "Confirm her reservation.", "meaning_zh": "预订"},
-                {"word": "negotiate", "sentence": "Negotiate about luggage.", "meaning_zh": "协商"},
-            ],
-            "summary_zh": "莎拉在机场办理登机手续并协商行李额度。",
-            "fun_fact": "The word 'airport' combines 'air' and 'port', originally meaning a port for aircraft.",
+            "theme": theme,
+            "words": target_words,
+            "scenario_type": scenario_type,
+        }
+
+    @classmethod
+    def _build_mock_passage(cls, theme: str, words: list[str]) -> tuple[str, list[dict[str, str]]]:
+        meta = cls._THEME_META.get(theme, cls._THEME_META["daily"])
+        sentences = [meta["opener"]]
+        word_usage: list[dict[str, str]] = []
+        for word in words:
+            sentence = f"As the discussion continued, everyone focused on how {word} shaped the outcome."
+            sentences.append(sentence)
+            word_usage.append({"word": word, "sentence": sentence, "meaning_zh": word})
+        return " ".join(sentences), word_usage
+
+    async def _mock_scenario(self, messages: list[dict[str, str]]) -> dict[str, Any]:
+        req = self._parse_scenario_request(messages)
+        theme = req["theme"]
+        words = req["words"]
+        meta = self._THEME_META.get(theme, self._THEME_META["daily"])
+        passage, word_usage = self._build_mock_passage(theme, words)
+        dialogue = []
+        if req["scenario_type"] == "dialogue":
+            lead_word = words[0]
+            dialogue = [
+                {"speaker": "Alex", "text": f"Let's start by discussing {lead_word}."},
+                {"speaker": "Jordan", "text": f"Good idea. {lead_word} is central to our plan today."},
+                {"speaker": "Alex", "text": f"We should also cover {words[1] if len(words) > 1 else 'the next step'}."},
+            ]
+        return {
+            "title": meta["title"],
+            "theme": theme,
+            "passage": passage,
+            "dialogue": dialogue,
+            "word_usage": word_usage,
+            "summary_zh": meta["summary_zh"],
+            "fun_fact": meta["fun_fact"],
         }
 
     async def _mock_exercises(self) -> dict[str, Any]:

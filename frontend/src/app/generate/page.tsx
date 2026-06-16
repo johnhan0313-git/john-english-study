@@ -25,14 +25,13 @@ function GenerateForm() {
   });
 
   const mutation = useMutation({
-    mutationFn: () =>
-      api.generateScenario({
-        level,
-        theme: theme || undefined,
-        word_ids: initialWordIds.length ? initialWordIds : undefined,
-        scenario_type: scenarioType,
-        word_count: wordCount,
-      }),
+    mutationFn: (params: {
+      level: string;
+      theme?: string;
+      word_ids?: number[];
+      scenario_type: string;
+      word_count: number;
+    }) => api.generateScenario(params),
     onSuccess: (data) => router.push(`/scenarios/${data.id}`),
   });
 
@@ -114,7 +113,20 @@ function GenerateForm() {
             </div>
           )}
 
-          <Button className="w-full" size="lg" onClick={() => mutation.mutate()} disabled={mutation.isPending}>
+          <Button
+            className="w-full"
+            size="lg"
+            onClick={() =>
+              mutation.mutate({
+                level,
+                theme: theme || undefined,
+                word_ids: initialWordIds.length ? initialWordIds : undefined,
+                scenario_type: scenarioType,
+                word_count: wordCount,
+              })
+            }
+            disabled={mutation.isPending}
+          >
             {mutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

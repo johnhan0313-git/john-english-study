@@ -32,6 +32,20 @@ services:
       SMTP_USE_SSL: ${SMTP_USE_SSL:-true}
       EMAIL_CODE_EXPIRE_MINUTES: ${EMAIL_CODE_EXPIRE_MINUTES:-10}
       EMAIL_CODE_COOLDOWN_SECONDS: ${EMAIL_CODE_COOLDOWN_SECONDS:-60}
+      # LLM 场景生成（未配置 AI_LLM_API_KEY 时使用 Mock 固定内容）
+      AI_LLM_BASE_URL: ${AI_LLM_BASE_URL:-https://api.openai.com/v1}
+      AI_LLM_API_KEY: ${AI_LLM_API_KEY:-}
+      AI_LLM_MODEL: ${AI_LLM_MODEL:-gpt-4o-mini}
+      # 口语转写（可选，未配置则口语评测不可用）
+      AI_STT_BASE_URL: ${AI_STT_BASE_URL:-https://api.openai.com/v1}
+      AI_STT_API_KEY: ${AI_STT_API_KEY:-}
+      AI_STT_MODEL: ${AI_STT_MODEL:-whisper-1}
+      # 听力 TTS（默认 Edge TTS 免费，无需 API Key）
+      USE_EDGE_TTS: ${USE_EDGE_TTS:-true}
+      AI_TTS_BASE_URL: ${AI_TTS_BASE_URL:-https://api.openai.com/v1}
+      AI_TTS_API_KEY: ${AI_TTS_API_KEY:-}
+      AI_TTS_MODEL: ${AI_TTS_MODEL:-tts-1}
+      AI_TTS_VOICE: ${AI_TTS_VOICE:-alloy}
     volumes:
       - english_study_data:/app/data
     restart: unless-stopped
