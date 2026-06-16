@@ -6,7 +6,7 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from app.models.word import Word, WordTag
-from app.seed_paths import seed_dir
+from app.seed_paths import resolve_seed_path
 from app.services.vocabulary.definition_lookup import enrich_definitions
 from app.services.vocabulary.definitions import normalize_definitions
 from app.services.vocabulary.exam_tags import count_words_for_exam_level
@@ -14,7 +14,7 @@ from app.services.vocabulary.levels import PETS_INHERIT_FROM_CET, PETS_LEVELS
 from app.utils.json_helpers import dump_json_field, parse_json_field
 
 def _pets_data_file() -> Path:
-    return seed_dir() / "pets_words.json"
+    return resolve_seed_path("pets_words.json")
 
 
 def _load_pets_data() -> dict:
@@ -24,13 +24,28 @@ def _load_pets_data() -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _existing_tag_word_ids(db: Session, tag: str, word_ids: list[int] | None = None) -> set[int]:
+    query = db.query(WordTag.word_id).filter(WordTag.tag == tag)
+    if word_ids is not None:
+        if not word_ids:
+            return set()
+        query = query.filter(WordTag.word_id.in_(word_ids))
+    return {row[0] for row in query.all()}
+
+
+def _batch_ensure_tags(db: Session, word_ids: list[int], tag: str) -> int:
+    existing = _existing_tag_word_ids(db, tag, word_ids)
+    added = 0
+    for word_id in word_ids:
+        if word_id in existing:
+            continue
+        db.add(WordTag(word_id=word_id, tag=tag))
+        added += 1
+    return added
+
+
 def _ensure_tag(db: Session, word_id: int, tag: str) -> bool:
-    exists = (
-        db.query(WordTag)
-        .filter(WordTag.word_id == word_id, WordTag.tag == tag)
-        .first()
-    )
-    if exists:
+    if word_id in _existing_tag_word_ids(db, tag, [word_id]):
         return False
     db.add(WordTag(word_id=word_id, tag=tag))
     return True
@@ -92,10 +107,11 @@ def import_pets_words(db: Session) -> dict[str, int | bool]:
     for pets_level, cet_levels in inherit.items():
         if pets_level not in PETS_LEVELS:
             continue
-        words = db.query(Word).filter(Word.level.in_(cet_levels)).all()
-        for word in words:
-            if _ensure_tag(db, word.id, pets_level):
-                stats["tagged"] += 1
+        word_ids = [
+            row[0]
+            for row in db.query(Word.id).filter(Word.level.in_(cet_levels)).all()
+        ]
+        stats["tagged"] += _batch_ensure_tags(db, word_ids, pets_level)
 
     db.commit()
     per_level = {level: count_words_for_exam_level(db, level) for level in PETS_LEVELS}

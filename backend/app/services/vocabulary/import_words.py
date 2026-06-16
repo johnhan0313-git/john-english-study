@@ -8,7 +8,7 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from app.models.word import Word, WordGroup, WordGroupMember, WordTag
-from app.seed_paths import seed_dir
+from app.seed_paths import resolve_seed_path
 from app.services.vocabulary.definition_lookup import enrich_definitions, fill_missing_definitions, lookup_definition
 from app.services.vocabulary.definitions import normalize_definitions
 from app.services.vocabulary.exam_tags import sync_all_exam_tags
@@ -17,7 +17,7 @@ from app.utils.json_helpers import dump_json_field, parse_json_field
 
 
 def _load_word_groups() -> list[dict]:
-    path = seed_dir() / "word_groups.json"
+    path = resolve_seed_path("word_groups.json")
     if path.is_file():
         return json.loads(path.read_text(encoding="utf-8"))
     return []

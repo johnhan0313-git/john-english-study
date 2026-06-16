@@ -30,12 +30,32 @@ def sync_exam_tags_for_word(db: Session, word: Word) -> int:
 
 
 def sync_all_exam_tags(db: Session) -> int:
-    total = 0
-    for word in db.query(Word).all():
-        total += sync_exam_tags_for_word(db, word)
-    if total:
+    words = db.query(Word).all()
+    if not words:
+        return 0
+
+    word_ids = [word.id for word in words]
+    existing = {
+        (row[0], row[1])
+        for row in db.query(WordTag.word_id, WordTag.tag)
+        .filter(WordTag.word_id.in_(word_ids), WordTag.tag.in_(ALL_EXAM_LEVELS))
+        .all()
+    }
+
+    added = 0
+    for word in words:
+        for tag in levels_from_word_field(word.level):
+            if not is_exam_tag(tag):
+                continue
+            key = (word.id, tag)
+            if key in existing:
+                continue
+            db.add(WordTag(word_id=word.id, tag=tag))
+            existing.add(key)
+            added += 1
+    if added:
         db.commit()
-    return total
+    return added
 
 
 def count_words_for_exam_level(db: Session, exam_level: str) -> int:
