@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 
 import boto3
+from botocore.config import Config as BotoConfig
 from botocore.exceptions import ClientError
 
 from app.config import Settings, get_settings
@@ -21,6 +22,12 @@ class S3StorageBackend:
             aws_secret_access_key=cfg.s3_secret_key,
             region_name=cfg.s3_region,
             use_ssl=cfg.s3_use_ssl,
+            config=BotoConfig(
+                s3={"addressing_style": "path"},
+                connect_timeout=5,
+                read_timeout=30,
+                retries={"max_attempts": 3},
+            ),
         )
         self._ensure_bucket()
 
@@ -62,3 +69,14 @@ class S3StorageBackend:
     def delete(self, key: str) -> None:
         normalized = self._normalize_key(key)
         self._client.delete_object(Bucket=self._bucket, Key=normalized)
+
+    def clear_bucket(self) -> None:
+        paginator = self._client.get_paginator("list_objects_v2")
+        for page in paginator.paginate(Bucket=self._bucket):
+            contents = page.get("Contents", [])
+            if not contents:
+                continue
+            self._client.delete_objects(
+                Bucket=self._bucket,
+                Delete={"Objects": [{"Key": obj["Key"]} for obj in contents]},
+            )

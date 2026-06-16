@@ -15,10 +15,25 @@ CMD="${1:-start}"
 
 case "$CMD" in
   start)
-    mkdir -p "$RUN_DIR" "$BACKEND_DIR/data/media"
+    mkdir -p "$RUN_DIR" "$BACKEND_DIR/data"
 
     if [[ ! -f "$BACKEND_DIR/.env" ]]; then
       cp "$BACKEND_DIR/.env.example" "$BACKEND_DIR/.env"
+    fi
+
+    if command -v tailscale >/dev/null 2>&1 && [[ -f "$BACKEND_DIR/.env" ]]; then
+      ts_ip=$(tailscale ip -4 john-server 2>/dev/null | head -1 || true)
+      if [[ -n "$ts_ip" ]] && grep -q 'S3_ENDPOINT_URL=http://john-server:19000' "$BACKEND_DIR/.env"; then
+        sed -i.bak "s|S3_ENDPOINT_URL=http://john-server:19000|S3_ENDPOINT_URL=http://${ts_ip}:19000|" "$BACKEND_DIR/.env"
+        rm -f "$BACKEND_DIR/.env.bak"
+      fi
+    fi
+
+    if [[ -f "$BACKEND_DIR/.env" ]]; then
+      db_line=$(grep -E '^DATABASE_URL=' "$BACKEND_DIR/.env" | head -1 || true)
+      bucket_line=$(grep -E '^S3_BUCKET=' "$BACKEND_DIR/.env" | head -1 || true)
+      echo "[start] ${db_line:-DATABASE_URL=（未配置）}"
+      echo "[start] ${bucket_line:-S3_BUCKET=（未配置）}"
     fi
     if [[ ! -f "$FRONTEND_DIR/.env" ]]; then
       cp "$FRONTEND_DIR/.env.example" "$FRONTEND_DIR/.env"

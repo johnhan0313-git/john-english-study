@@ -18,9 +18,20 @@
 
 - Python 3.11+
 - Node.js 20+（前端）
+- **Tailscale** 连通 john-server（数据库与 MinIO 在远程，见 [docs/TEST_ENV.md](docs/TEST_ENV.md)）
 - OpenAI 兼容 API Key（可选，未配置时使用 Mock 数据）
 
-### 后端
+### 一键启动（推荐）
+
+```bash
+cp backend/.env.example backend/.env   # 首次
+cp frontend/.env.example frontend/.env # 首次
+./run.sh start
+```
+
+访问 http://localhost:3000
+
+### 后端（手动）
 
 ```bash
 cd backend
@@ -29,7 +40,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 cp .env.example .env
-# 编辑 backend/.env 填入 AI_LLM_API_KEY 等
+# 编辑 backend/.env 填入 AI_LLM_API_KEY 等（默认已指向 john-server 测试 PG + MinIO）
 
 uvicorn app.main:app --reload --port 8000
 ```
@@ -101,6 +112,8 @@ docs/            扩展文档
 
 ## 测试
 
+本地测试连接 john-server 的 `english-study-test` 与 `english-study-bucket-test`，详见 [docs/TEST_ENV.md](docs/TEST_ENV.md)。
+
 ```bash
 cd backend
 pytest
@@ -108,12 +121,11 @@ pytest
 
 ## 数据库迁移（Alembic）
 
-默认开发环境仍使用 `create_all()` 建表。生产或需要版本化迁移时：
+默认 `.env` 已设置 `USE_MIGRATIONS=true`，启动时自动 `alembic upgrade head`。手动执行：
 
 ```bash
 cd backend
 source .venv/bin/activate
-export USE_MIGRATIONS=true   # 启动时跳过 create_all，仅依赖迁移
 alembic upgrade head
 ```
 
@@ -136,6 +148,6 @@ python -m app.cli daily-scenarios   # 手动触发每日场景
 ## 扩展
 
 - 多用户：JWT 骨架已就绪，见 `/api/auth/*`
-- PostgreSQL：见 [docs/POSTGRESQL_MIGRATION.md](docs/POSTGRESQL_MIGRATION.md)
+- 本地测试环境（PostgreSQL + MinIO）：见 [docs/TEST_ENV.md](docs/TEST_ENV.md)
 - 生产部署（PostgreSQL + MinIO + Portainer）：见 [docs/PORTAINER_DEPLOY.md](docs/PORTAINER_DEPLOY.md)，Stack 文件 [docker-compose.prod.yml](docker-compose.prod.yml)
 - 前端 TypeScript 类型可从 `/openapi.json` 生成（暂未引入 codegen 依赖）

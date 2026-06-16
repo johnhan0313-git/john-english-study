@@ -4,7 +4,7 @@ import logging
 from collections.abc import Generator
 from pathlib import Path
 
-from sqlalchemy import create_engine, event, inspect
+from sqlalchemy import create_engine, event, inspect, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -100,6 +100,79 @@ def run_migrations() -> None:
     logger.info("Database migrations applied (alembic upgrade head)")
 
 
+_TEST_SEED_TABLES = frozenset({
+    "alembic_version",
+    "words",
+    "word_tags",
+    "word_groups",
+    "word_group_members",
+    "phonetic_symbols",
+    "grammar_points",
+})
+
+
+def _truncate_all_tables(engine: Engine) -> None:
+    insp = inspect(engine)
+    tables = [t for t in insp.get_table_names() if t != "alembic_version"]
+    if not tables:
+        return
+    quoted = ", ".join(f'"{table}"' for table in tables)
+    with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+        conn.execute(
+            text(
+                "SELECT pg_terminate_backend(pid) FROM pg_stat_activity "
+                "WHERE datname = current_database() AND pid <> pg_backend_pid()"
+            )
+        )
+        conn.execute(text("SET lock_timeout = '10s'"))
+        conn.execute(text(f"TRUNCATE {quoted} RESTART IDENTITY CASCADE"))
+    logger.info("Truncated %d tables for test isolation", len(tables))
+
+
+def _truncate_test_tables(engine: Engine) -> None:
+    insp = inspect(engine)
+    tables = [t for t in insp.get_table_names() if t not in _TEST_SEED_TABLES]
+    if not tables:
+        return
+    quoted = ", ".join(f'"{table}"' for table in tables)
+    with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+        conn.execute(
+            text(
+                "SELECT pg_terminate_backend(pid) FROM pg_stat_activity "
+                "WHERE datname = current_database() AND pid <> pg_backend_pid()"
+            )
+        )
+        conn.execute(text("SET lock_timeout = '10s'"))
+        conn.execute(text(f"TRUNCATE {quoted} RESTART IDENTITY CASCADE"))
+    logger.info("Truncated %d test tables for isolation", len(tables))
+
+
+def prepare_test_database() -> None:
+    settings = get_settings()
+    settings.data_dir.mkdir(parents=True, exist_ok=True)
+
+    from app import models  # noqa: F401
+
+    engine = get_engine()
+    if _is_postgresql(settings.database_url):
+        insp = inspect(engine)
+        if not insp.has_table("alembic_version"):
+            run_migrations()
+        return
+
+    Base.metadata.create_all(bind=engine)
+
+
+def reset_test_database() -> None:
+    settings = get_settings()
+    engine = get_engine()
+    if _is_postgresql(settings.database_url):
+        _truncate_test_tables(engine)
+        return
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+
+
 def _column_not_null(engine: Engine, table: str, column: str) -> bool:
     insp = inspect(engine)
     if not insp.has_table(table):
@@ -155,7 +228,8 @@ def init_db() -> None:
     engine = get_engine()
 
     if settings.testing:
-        Base.metadata.create_all(bind=engine)
+        prepare_test_database()
+        reset_test_database()
         return
 
     insp = inspect(engine)

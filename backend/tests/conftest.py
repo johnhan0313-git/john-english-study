@@ -2,27 +2,64 @@ from __future__ import annotations
 
 import os
 
-# Must run before any app imports so Settings and engine use test configuration.
+from tests.env_helpers import assert_test_resource_isolation, load_backend_env
+
+load_backend_env()
+
 os.environ["TESTING"] = "1"
-os.environ["AUTH_EXPOSE_CODES"] = "true"
-os.environ["SMTP_HOST"] = ""
-os.environ["SMTP_FROM"] = ""
-os.environ["DATABASE_URL"] = "sqlite:///:memory:"
-os.environ["STORAGE_BACKEND"] = "local"
-os.environ["AI_LLM_API_KEY"] = ""
-os.environ["AI_STT_API_KEY"] = ""
-os.environ["AI_TTS_API_KEY"] = ""
-os.environ["ENABLE_SCHEDULER"] = "false"
-os.environ["SKIP_STARTUP_SEED"] = "true"
+os.environ.setdefault("AUTH_EXPOSE_CODES", "true")
+os.environ.setdefault("SMTP_HOST", "")
+os.environ.setdefault("SMTP_FROM", "")
+os.environ.setdefault("AI_LLM_API_KEY", "")
+os.environ.setdefault("AI_STT_API_KEY", "")
+os.environ.setdefault("AI_TTS_API_KEY", "")
+os.environ.setdefault("ENABLE_SCHEDULER", "false")
+os.environ.setdefault("SKIP_STARTUP_SEED", "true")
+
+assert_test_resource_isolation()
 
 import pytest
 from fastapi.testclient import TestClient
 
 from app.config import get_settings
-from app.database import SessionLocal, init_db, reset_engine_for_tests
+from app.database import (
+    SessionLocal,
+    prepare_test_database,
+    reset_engine_for_tests,
+    reset_test_database,
+)
 from app.main import app
-from app.services.storage.factory import reset_storage_for_tests
+from app.services.storage.factory import get_storage, reset_storage_for_tests
+from app.services.storage.s3 import S3StorageBackend
 from app.services.vocabulary.import_words import import_words
+
+
+def _clear_test_storage() -> None:
+    settings = get_settings()
+    if settings.storage_backend != "s3":
+        return
+    storage = get_storage()
+    if isinstance(storage, S3StorageBackend):
+        storage.clear_bucket()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _session_test_seed():
+    get_settings.cache_clear()
+    reset_engine_for_tests()
+    prepare_test_database()
+    db = SessionLocal()
+    try:
+        from app.models.word import Word
+
+        if db.query(Word).count() == 0:
+            import_words(db)
+            db.commit()
+    finally:
+        db.close()
+    yield
+    reset_engine_for_tests()
+    get_settings.cache_clear()
 
 
 @pytest.fixture(autouse=True)
@@ -30,12 +67,8 @@ def _fresh_test_database():
     get_settings.cache_clear()
     reset_engine_for_tests()
     reset_storage_for_tests()
-    init_db()
-    db = SessionLocal()
-    try:
-        import_words(db)
-    finally:
-        db.close()
+    reset_test_database()
+    _clear_test_storage()
     yield
     reset_engine_for_tests()
     reset_storage_for_tests()
