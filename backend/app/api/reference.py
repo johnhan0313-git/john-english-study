@@ -31,6 +31,7 @@ from app.services.reference.import_reference import (
 from app.utils.json_helpers import parse_json_field
 from app.services.reference.phonetic_audio import (
     PHONETIC_TTS_VOICE,
+    PHONETIC_WORD_RATE,
     build_phonetic_speech_text,
     build_phonetic_symbol_speech_text,
     phonetic_audio_key,
@@ -124,7 +125,13 @@ async def get_phonetic_audio(
                 speech_text = build_phonetic_symbol_speech_text(phonetic)
             else:
                 speech_text = build_phonetic_speech_text(phonetic, resolved_word)
-            audio = await generate_speech_bytes(speech_text, settings, voice=PHONETIC_TTS_VOICE)
+            rate = PHONETIC_WORD_RATE if " " not in speech_text.strip() else None
+            audio = await generate_speech_bytes(
+                speech_text,
+                settings,
+                voice=PHONETIC_TTS_VOICE,
+                rate=rate,
+            )
             storage.put_bytes(audio_key, audio, "audio/mpeg")
         except AIProviderError as exc:
             raise HTTPException(status_code=503, detail=str(exc)) from exc

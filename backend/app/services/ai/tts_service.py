@@ -14,12 +14,16 @@ async def generate_speech_bytes(
     text: str,
     settings: Settings,
     voice: str = "en-US-AriaNeural",
+    rate: str | None = None,
 ) -> bytes:
     if settings.use_edge_tts:
         with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
             output_path = Path(tmp.name)
         try:
-            communicate = edge_tts.Communicate(text[:5000], voice)
+            kwargs: dict[str, str] = {"text": text[:5000], "voice": voice}
+            if rate:
+                kwargs["rate"] = rate
+            communicate = edge_tts.Communicate(**kwargs)
             await communicate.save(str(output_path))
             return output_path.read_bytes()
         finally:

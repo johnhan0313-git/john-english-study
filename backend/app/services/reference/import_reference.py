@@ -309,14 +309,16 @@ def phonetic_to_brief(p: PhoneticSymbol) -> dict:
 
 
 def phonetic_to_detail(p: PhoneticSymbol) -> dict:
-    from app.services.reference.phonetic_audio import SYMBOL_SOUND_CUE, build_phonetic_symbol_speech_text
+    from app.services.reference.phonetic_audio import get_primary_example_word
 
     symbol = p.symbol.strip()
+    primary_word = get_primary_example_word(p)
     return {
         **phonetic_to_brief(p),
         "description": p.description,
         "examples": parse_json_field(p.examples, []),
-        "sound_cue": SYMBOL_SOUND_CUE.get(symbol) or build_phonetic_symbol_speech_text(p),
+        "primary_example_word": primary_word,
+        "sound_cue": primary_word,
     }
 
 

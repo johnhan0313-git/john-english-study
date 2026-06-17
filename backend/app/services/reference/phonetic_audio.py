@@ -6,9 +6,10 @@ from app.models.reference import PhoneticSymbol
 from app.utils.json_helpers import parse_json_field
 
 PHONETIC_TTS_VOICE = "en-GB-SoniaNeural"
-SYMBOL_AUDIO_VERSION = "v2"
+SYMBOL_AUDIO_VERSION = "v3"
+PHONETIC_WORD_RATE = "-8%"
 
-# Edge TTS 无法直接合成 IPA phoneme，使用英式教学用的独立音素提示音（非例词整词）
+# Edge TTS 不支持 IPA 音素合成；仅在无例词时作为最后兜底（质量有限）
 SYMBOL_SOUND_CUE: dict[str, str] = {
     # 短元音
     "ɪ": "ih",
@@ -65,14 +66,23 @@ def get_phonetic_examples(phonetic: PhoneticSymbol) -> list[dict]:
     return parse_json_field(phonetic.examples, [])
 
 
+def get_primary_example_word(phonetic: PhoneticSymbol) -> str | None:
+    examples = get_phonetic_examples(phonetic)
+    if not examples:
+        return None
+    word = examples[0].get("word")
+    return str(word).strip() if word else None
+
+
 def build_phonetic_symbol_speech_text(phonetic: PhoneticSymbol) -> str:
+    """Prefer a real BrE example word over spell-it-out cues for TTS accuracy."""
+    primary = get_primary_example_word(phonetic)
+    if primary:
+        return primary
+
     cue = SYMBOL_SOUND_CUE.get(phonetic.symbol.strip())
     if cue:
         return cue
-
-    examples = get_phonetic_examples(phonetic)
-    if examples:
-        return examples[0]["word"]
 
     return phonetic.name_en.replace("/", " ").strip() or phonetic.symbol
 

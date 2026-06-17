@@ -5,6 +5,7 @@ import { useState } from "react";
 import { BookText, ChevronRight, Search, X } from "lucide-react";
 import { api, GrammarBrief, GrammarDetail } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { MobileDetailSheet } from "@/components/reference/mobile-detail-sheet";
 import { Badge, Card, Input, Spinner, StatCard } from "@/components/ui";
 
 const LEVEL_LABEL: Record<string, string> = {
@@ -53,7 +54,7 @@ function GrammarItem({
 
 function GrammarDetailPanel({ detail, onClose }: { detail: GrammarDetail; onClose: () => void }) {
   return (
-    <Card className="space-y-5 lg:sticky-below-header">
+    <Card glass={false} className="space-y-5 border-0 bg-transparent p-0 shadow-none lg:glass-card lg:sticky-below-header lg:border lg:bg-white/80 lg:p-5 lg:shadow-card">
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -216,15 +217,13 @@ export default function GrammarPage() {
         </div>
       )}
 
-      {selectedSlug !== null && (
-        <div className="lg:hidden">
-          {detailLoading ? (
-            <Spinner label="加载详情..." />
-          ) : detail ? (
-            <GrammarDetailPanel detail={detail} onClose={() => setSelectedSlug(null)} />
-          ) : null}
-        </div>
-      )}
+      <MobileDetailSheet open={selectedSlug !== null} onClose={() => setSelectedSlug(null)}>
+        {detailLoading ? (
+          <Spinner label="加载详情..." />
+        ) : detail ? (
+          <GrammarDetailPanel detail={detail} onClose={() => setSelectedSlug(null)} />
+        ) : null}
+      </MobileDetailSheet>
     </div>
   );
 }

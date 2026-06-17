@@ -7,7 +7,15 @@ import { api, PhoneticBrief, PhoneticDetail } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useAudioPlayer } from "@/hooks/use-audio-player";
 import { AudioPlayButton } from "@/components/audio-play-button";
+import { MobileDetailSheet } from "@/components/reference/mobile-detail-sheet";
 import { Alert, Badge, Button, Card, Input, Spinner, StatCard } from "@/components/ui";
+
+function phoneticAudioUrl(phoneticId: number, previewWord?: string | null) {
+  if (previewWord) {
+    return api.getPhoneticAudioUrl(phoneticId, { word: previewWord });
+  }
+  return api.getPhoneticAudioUrl(phoneticId, { kind: "symbol" });
+}
 
 function PhoneticCard({
   item,
@@ -20,7 +28,7 @@ function PhoneticCard({
   onClick: () => void;
   player: ReturnType<typeof useAudioPlayer>;
 }) {
-  const symbolAudioKey = `phonetic-symbol-${item.id}`;
+  const symbolAudioKey = `phonetic-word-${item.id}-${item.preview_word ?? "symbol"}`;
 
   return (
     <div
@@ -43,9 +51,9 @@ function PhoneticCard({
       <div className="absolute right-3 top-3">
         <AudioPlayButton
           audioKey={symbolAudioKey}
-          url={api.getPhoneticAudioUrl(item.id, { kind: "symbol" })}
+          url={phoneticAudioUrl(item.id, item.preview_word)}
           player={player}
-          label={`播放 /${item.symbol}/ 读音`}
+          label={item.preview_word ? `播放例词 ${item.preview_word}` : `播放 /${item.symbol}/ 读音`}
           onClick={(e) => e.stopPropagation()}
         />
       </div>
@@ -62,11 +70,12 @@ function PhoneticDetailPanel({
   onClose: () => void;
   player: ReturnType<typeof useAudioPlayer>;
 }) {
-  const symbolAudioKey = `phonetic-symbol-${detail.id}`;
+  const primaryWord = detail.examples[0]?.word ?? detail.sound_cue ?? null;
+  const symbolAudioKey = `phonetic-word-${detail.id}-${primaryWord ?? "symbol"}`;
   const allAudioKey = `phonetic-all-${detail.id}`;
 
   return (
-    <Card className="space-y-4 lg:sticky-below-header">
+    <Card glass={false} className="space-y-4 border-0 bg-transparent p-0 shadow-none lg:glass-card lg:sticky-below-header lg:border lg:bg-white/80 lg:p-5 lg:shadow-card">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase tracking-wider text-brand-600">音标详情</p>
@@ -74,10 +83,10 @@ function PhoneticDetailPanel({
             <p className="font-display text-4xl font-bold text-brand-700">{detail.symbol}</p>
             <AudioPlayButton
               audioKey={symbolAudioKey}
-              url={api.getPhoneticAudioUrl(detail.id, { kind: "symbol" })}
+              url={phoneticAudioUrl(detail.id, primaryWord)}
               player={player}
               size="md"
-              label={`播放 /${detail.symbol}/ 读音`}
+              label={primaryWord ? `播放例词 ${primaryWord}` : `播放 /${detail.symbol}/ 读音`}
             />
           </div>
           <p className="mt-1 text-lg font-medium text-slate-800">{detail.name_zh}</p>
@@ -92,15 +101,17 @@ function PhoneticDetailPanel({
         </button>
       </div>
 
-      <Button
-        variant="outline"
-        size="sm"
-        className="w-full"
-        onClick={() => void player.toggle(api.getPhoneticAudioUrl(detail.id, { kind: "symbol" }), symbolAudioKey)}
-      >
-        <Volume2 className="mr-2 h-4 w-4" />
-        {player.isPlaying(symbolAudioKey) ? "暂停音标发音" : `听力：/${detail.symbol}/ 音素 (${detail.sound_cue ?? "…"})`}
-      </Button>
+      {primaryWord && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full"
+          onClick={() => void player.toggle(phoneticAudioUrl(detail.id, primaryWord), symbolAudioKey)}
+        >
+          <Volume2 className="mr-2 h-4 w-4" />
+          {player.isPlaying(symbolAudioKey) ? "暂停" : `播放例词 ${primaryWord}`}
+        </Button>
+      )}
 
       {detail.examples.length > 0 && (
         <Button
@@ -263,15 +274,13 @@ export default function PhoneticsPage() {
         </div>
       )}
 
-      {selectedId !== null && (
-        <div className="lg:hidden">
-          {detailLoading ? (
-            <Spinner label="加载详情..." />
-          ) : detail ? (
-            <PhoneticDetailPanel detail={detail} onClose={() => setSelectedId(null)} player={player} />
-          ) : null}
-        </div>
-      )}
+      <MobileDetailSheet open={selectedId !== null} onClose={() => setSelectedId(null)}>
+        {detailLoading ? (
+          <Spinner label="加载详情..." />
+        ) : detail ? (
+          <PhoneticDetailPanel detail={detail} onClose={() => setSelectedId(null)} player={player} />
+        ) : null}
+      </MobileDetailSheet>
     </div>
   );
 }
