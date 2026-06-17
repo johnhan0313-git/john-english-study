@@ -250,38 +250,42 @@ GRAMMAR_SEED: list[dict] = [
 
 
 def import_reference(db: Session) -> dict[str, int]:
-    if db.query(PhoneticSymbol).count() > 0:
+    phonetics_count = db.query(PhoneticSymbol).count()
+    grammar_count = db.query(GrammarPoint).count()
+    if phonetics_count > 0 and grammar_count > 0:
         return {
-            "phonetics": db.query(PhoneticSymbol).count(),
-            "grammar": db.query(GrammarPoint).count(),
+            "phonetics": phonetics_count,
+            "grammar": grammar_count,
             "skipped": True,
         }
 
-    for i, item in enumerate(PHONETICS_SEED):
-        db.add(PhoneticSymbol(
-            symbol=item["symbol"],
-            category=item["category"],
-            subcategory=item.get("subcategory"),
-            name_zh=item["name_zh"],
-            name_en=item["name_en"],
-            description=item.get("description"),
-            examples=dump_json_field(item.get("examples", [])),
-            sort_order=i,
-        ))
+    if phonetics_count == 0:
+        for i, item in enumerate(PHONETICS_SEED):
+            db.add(PhoneticSymbol(
+                symbol=item["symbol"],
+                category=item["category"],
+                subcategory=item.get("subcategory"),
+                name_zh=item["name_zh"],
+                name_en=item["name_en"],
+                description=item.get("description"),
+                examples=dump_json_field(item.get("examples", [])),
+                sort_order=i,
+            ))
 
-    for i, item in enumerate(GRAMMAR_SEED):
-        db.add(GrammarPoint(
-            slug=item["slug"],
-            category=item["category"],
-            title=item["title"],
-            level=item["level"],
-            summary=item["summary"],
-            structure=item.get("structure"),
-            rules=dump_json_field(item.get("rules", [])),
-            examples=dump_json_field(item.get("examples", [])),
-            tips=item.get("tips"),
-            sort_order=i,
-        ))
+    if grammar_count == 0:
+        for i, item in enumerate(GRAMMAR_SEED):
+            db.add(GrammarPoint(
+                slug=item["slug"],
+                category=item["category"],
+                title=item["title"],
+                level=item["level"],
+                summary=item["summary"],
+                structure=item.get("structure"),
+                rules=dump_json_field(item.get("rules", [])),
+                examples=dump_json_field(item.get("examples", [])),
+                tips=item.get("tips"),
+                sort_order=i,
+            ))
 
     db.commit()
     return {

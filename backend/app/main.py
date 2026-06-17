@@ -59,13 +59,19 @@ async def lifespan(app: FastAPI):
     else:
         logger.warning("TTS 未配置，非 Edge TTS 时将无法生成音频。")
 
-    if not settings.skip_startup_seed and settings.seed_on_startup:
+    if settings.seed_on_startup:
         db = SessionLocal()
         try:
-            import_words(db)
             from app.services.reference.import_reference import import_reference
 
-            import_reference(db)
+            ref = import_reference(db)
+            if ref.get("skipped"):
+                logger.debug("Reference data already present: %s", ref)
+            else:
+                logger.info("Reference seed: %s", ref)
+
+            if not settings.skip_startup_seed:
+                import_words(db)
         finally:
             db.close()
 

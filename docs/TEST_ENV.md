@@ -102,6 +102,7 @@ pytest
 | `S3_BUCKET` | `english-study-bucket-test` |
 | `ENABLE_SCHEDULER` | `false` |
 | `AUTH_EXPOSE_CODES` | `true` |
+| `SKIP_STARTUP_SEED` | `true`（跳过词库同步；音标/语法仍会在启动时自动灌库） |
 
 ## 与生产隔离
 
