@@ -69,7 +69,7 @@ export function FilterChipGroup({
 
   return (
     <div className={cn("flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3", className)}>
-      <span className="shrink-0 text-xs font-semibold text-slate-500 sm:w-10">{label}</span>
+      <span className="shrink-0 text-xs font-semibold text-slate-500 sm:min-w-[2.5rem]">{label}</span>
       <div className="inline-flex flex-wrap gap-1 rounded-xl bg-slate-100/90 p-1">
         {showAll && (
           <button type="button" onClick={() => onChange(null)} className={chipClass(value === null)}>

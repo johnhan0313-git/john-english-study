@@ -7,6 +7,11 @@ interface LearningSidebarProps {
   mobile?: boolean;
 }
 
+export function hasLearningSidebarContent(overview?: ActivityOverview): boolean {
+  const themeCounts = overview?.theme_counts ?? {};
+  return Boolean(overview?.heatmap?.length) || Object.keys(themeCounts).length > 0;
+}
+
 export function LearningSidebar({ overview, mobile = false }: LearningSidebarProps) {
   const themeCounts = overview?.theme_counts ?? {};
   const themes = Object.entries(themeCounts).sort((a, b) => b[1] - a[1]);

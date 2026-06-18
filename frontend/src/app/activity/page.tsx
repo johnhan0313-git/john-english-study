@@ -17,6 +17,7 @@ import {
   FilterPanel,
   LearningEmptyGuide,
   LearningSidebar,
+  hasLearningSidebarContent,
   LearningStatsBar,
   ScenarioGridCard,
 } from "@/components/learning";
@@ -44,6 +45,7 @@ import {
   timelineNextPageParam,
 } from "@/lib/learning/pagination";
 import { Button, EmptyState, PageHeader, Spinner, Tabs } from "@/components/ui";
+import { cn } from "@/lib/utils";
 
 type ActivityTab = "scenarios" | "conversations" | "timeline";
 
@@ -327,6 +329,8 @@ function ActivityHubContent() {
     [router],
   );
 
+  const showDesktopSidebar = hasLearningSidebarContent(overview);
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -363,9 +367,13 @@ function ActivityHubContent() {
 
       <Tabs tabs={TAB_OPTIONS} active={activeTab} onChange={(id) => setTab(id as ActivityTab)} />
 
-      <div className="lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-6">
-        <LearningSidebar overview={overview} />
-        <div>
+      <div
+        className={cn(
+          showDesktopSidebar && "lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start lg:gap-6",
+        )}
+      >
+        {showDesktopSidebar && <LearningSidebar overview={overview} />}
+        <div className="min-w-0">
           {activeTab === "scenarios" && (
             <ScenariosTabContent filters={scenarioFilters} onFiltersChange={syncScenarioFilters} />
           )}

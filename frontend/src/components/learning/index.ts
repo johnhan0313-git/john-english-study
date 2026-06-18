@@ -7,4 +7,4 @@ export { LearningEmptyGuide } from "./learning-empty-guide";
 export { ContinueLearningSection } from "./continue-learning-section";
 export { LearningHeatmap } from "./learning-heatmap";
 export { ActivityTimeline } from "./activity-timeline";
-export { LearningSidebar } from "./learning-sidebar";
+export { LearningSidebar, hasLearningSidebarContent } from "./learning-sidebar";
