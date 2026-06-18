@@ -57,6 +57,14 @@ class OpenAICompatibleProvider:
             system_content = f"{SCENARIO_SYSTEM}\nSchema: {schema_hint}"
         elif task == "exercise":
             system_content = f"{EXERCISE_SYSTEM}\nSchema: {schema_hint}"
+        elif task == "translate":
+            from app.services.ai.prompts import TRANSLATION_SYSTEM
+
+            system_content = f"{TRANSLATION_SYSTEM}\nSchema: {schema_hint}"
+        elif task == "writing_sample":
+            from app.services.ai.prompts import WRITING_SAMPLE_SYSTEM
+
+            system_content = f"{WRITING_SAMPLE_SYSTEM}\nSchema: {schema_hint}"
         else:
             system_content = (
                 "You must respond with valid JSON only, no markdown. "
@@ -232,6 +240,10 @@ class MockAIProvider:
     ) -> dict[str, Any]:
         if task == "exercise":
             return await self._mock_exercises()
+        if task == "writing_sample":
+            return await self._mock_writing_sample(messages)
+        if task == "translate":
+            return await self._mock_translation(messages)
         return await self._mock_scenario(messages)
 
     @classmethod
@@ -284,6 +296,12 @@ class MockAIProvider:
                 {"speaker": "Jordan", "text": f"Good idea. {lead_word} is central to our plan today."},
                 {"speaker": "Alex", "text": f"We should also cover {words[1] if len(words) > 1 else 'the next step'}."},
             ]
+        passage_zh = meta["summary_zh"]
+        if word_usage:
+            passage_zh += " " + " ".join(
+                f"讨论中，大家关注到了关键词「{item['word']}」。"
+                for item in word_usage[:6]
+            )
         return {
             "title": meta["title"],
             "theme": theme,
@@ -291,7 +309,77 @@ class MockAIProvider:
             "dialogue": dialogue,
             "word_usage": word_usage,
             "summary_zh": meta["summary_zh"],
+            "passage_zh": passage_zh,
             "fun_fact": meta["fun_fact"],
+        }
+
+    @classmethod
+    def _parse_target_words(cls, messages: list[dict[str, str]]) -> list[str]:
+        for msg in messages:
+            if msg.get("role") != "user":
+                continue
+            for line in msg.get("content", "").splitlines():
+                stripped = line.strip()
+                if stripped.startswith("Target words"):
+                    part = stripped.split(":", 1)[1].strip()
+                    return [word.strip() for word in part.split(",") if word.strip()]
+        return ["plan", "practice", "learn", "improve", "focus"]
+
+    async def _mock_writing_sample(self, messages: list[dict[str, str]]) -> dict[str, Any]:
+        import random
+
+        words = self._parse_target_words(messages)
+        regenerate = any("REGENERATION request" in msg.get("content", "") for msg in messages)
+        templates = [
+            (
+                "During my first semester on campus, I decided to enroll in a faculty-led seminar. "
+                "We discussed how to choose a thesis topic and manage tuition costs. "
+                "The professor encouraged us to review every syllabus carefully and ask questions early. "
+                "By the end of the week, I felt more confident about academic planning.",
+                "在我大学第一个学期，我决定报名参加由 faculty 主持的研讨课。"
+                "我们讨论了如何选择 thesis 题目以及如何规划 tuition 开支。"
+                "教授鼓励我们认真研读每份 syllabus 并尽早提问。"
+                "到周末时，我对学业规划更有信心了。",
+            ),
+            (
+                "Before paying tuition, I met with a faculty advisor to plan my thesis. "
+                "She explained how to enroll in research workshops and balance workload across the semester. "
+                "We mapped deadlines on a calendar and listed resources that would support my writing. "
+                "The conversation helped me start the term with a clearer goal.",
+                "在缴纳 tuition 之前，我与 faculty 导师会面，规划我的 thesis。"
+                "她说明了如何 enroll 参加研究 workshop，并在整个 semester 内平衡学习负担。"
+                "我们在日历上标注截止日期，并列出了有助于写作的资源。"
+                "这次谈话让我以更清晰的目标开启新学期。",
+            ),
+            (
+                "At the start of the semester, our class debated how thesis research shapes career choices. "
+                "Some students worried about tuition, while others asked how to enroll in advanced labs. "
+                "The faculty host shared examples from alumni who turned small projects into strong portfolios. "
+                "It reminded us that steady practice matters more than perfect first drafts.",
+                "学期初，我们班讨论了 thesis 研究如何影响职业选择。"
+                "有同学担心 tuition，也有同学询问如何 enroll 进入高阶实验课。"
+                "faculty 主持人分享了校友将小型项目做成优秀 portfolio 的例子。"
+                "这提醒我们，持续练习比追求一次写完美更重要。",
+            ),
+        ]
+        if regenerate:
+            sample_en, sample_zh = random.choice(templates)
+        else:
+            sample_en, sample_zh = templates[0]
+        return {"sample_en": sample_en, "sample_zh": sample_zh}
+
+    async def _mock_translation(self, messages: list[dict[str, str]]) -> dict[str, Any]:
+        passage = ""
+        for msg in messages:
+            if msg.get("role") != "user":
+                continue
+            content = msg.get("content", "")
+            if "Passage:" in content:
+                passage = content.split("Passage:", 1)[1].split("\n\nDialogue", 1)[0].strip()
+                break
+        return {
+            "passage_zh": f"【译文】{passage[:200]}" if passage else "暂无译文",
+            "dialogue_zh": [],
         }
 
     async def _mock_exercises(self) -> dict[str, Any]:

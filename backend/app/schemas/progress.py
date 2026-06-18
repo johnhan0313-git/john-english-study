@@ -37,3 +37,16 @@ class WritingEvaluateResponse(BaseModel):
     used_target_words: list[str]
     missing_target_words: list[str]
     suggestions: list[str]
+
+
+class WritingSampleRequest(BaseModel):
+    prompt: str
+    target_words: list[str] = Field(default_factory=list)
+    level: str = "cet4"
+    theme: str | None = None
+    regenerate: bool = False
+
+
+class WritingSampleResponse(BaseModel):
+    sample_en: str
+    sample_zh: str

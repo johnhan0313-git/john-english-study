@@ -1,7 +1,7 @@
 export { ScenarioGridCard } from "./scenario-grid-card";
 export { ConversationCard } from "./conversation-card";
 export { DateGroupSection } from "./date-group-section";
-export { FilterChips, SingleFilterChips } from "./filter-chips";
+export { FilterChips, FilterChipGroup, FilterPanel, SingleFilterChips } from "./filter-chips";
 export { LearningStatsBar } from "./learning-stats-bar";
 export { LearningEmptyGuide } from "./learning-empty-guide";
 export { ContinueLearningSection } from "./continue-learning-section";

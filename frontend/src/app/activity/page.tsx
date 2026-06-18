@@ -13,7 +13,8 @@ import {
   ContinueLearningSection,
   ConversationCard,
   DateGroupSection,
-  FilterChips,
+  FilterChipGroup,
+  FilterPanel,
   LearningEmptyGuide,
   LearningSidebar,
   LearningStatsBar,
@@ -21,12 +22,18 @@ import {
 } from "@/components/learning";
 import { groupByDate } from "@/lib/learning/date-groups";
 import {
+  buildScenarioThemeOptions,
+  CONVERSATION_STATUS_OPTIONS,
+  LEARNING_LEVEL_OPTIONS,
+  SCENARIO_KIND_OPTIONS,
+} from "@/lib/learning/catalog";
+import {
   EMPTY_CONVERSATION_FILTERS,
   EMPTY_SCENARIO_FILTERS,
   filterConversations,
   filterScenarios,
   scenarioFiltersToSearch,
-  uniqueThemes,
+  type ScenarioKind,
 } from "@/lib/learning/filters";
 import {
   ACTIVITY_LIST_PAGE_SIZE,
@@ -67,32 +74,13 @@ function ScenariosTabContent({
   );
   const filtered = useMemo(() => filterScenarios(items, filters), [items, filters]);
   const groups = useMemo(() => groupByDate(filtered, (s) => s.created_at), [filtered]);
-  const themes = useMemo(() => uniqueThemes(items), [items]);
 
-  const chipOptions = useMemo(
-    () => [
-      { id: "cet4", label: "CET4" },
-      { id: "cet6", label: "CET6" },
-      { id: "daily", label: "每日" },
-      ...themes.map((t) => ({ id: `theme:${t}`, label: t })),
-    ],
-    [themes],
-  );
+  const { data: wordGroups } = useQuery({
+    queryKey: ["groups"],
+    queryFn: () => api.getWordGroups(),
+  });
 
-  const selectedChips = useMemo(() => {
-    const chips = [...(filters.levels ?? [])];
-    if (filters.dailyOnly) chips.push("daily");
-    for (const t of filters.themes ?? []) chips.push(`theme:${t}`);
-    return chips;
-  }, [filters]);
-
-  const handleChipChange = (selected: string[]) => {
-    onFiltersChange({
-      levels: selected.filter((s) => s === "cet4" || s === "cet6"),
-      themes: selected.filter((s) => s.startsWith("theme:")).map((s) => s.slice(6)),
-      dailyOnly: selected.includes("daily"),
-    });
-  };
+  const themeOptions = useMemo(() => buildScenarioThemeOptions(wordGroups), [wordGroups]);
 
   if (isLoading) return <Spinner label="加载场景..." />;
 
@@ -122,7 +110,26 @@ function ScenariosTabContent({
 
   return (
     <div className="space-y-6">
-      <FilterChips options={chipOptions} selected={selectedChips} onChange={handleChipChange} />
+      <FilterPanel>
+        <FilterChipGroup
+          label="等级"
+          options={LEARNING_LEVEL_OPTIONS}
+          value={filters.levels[0] ?? null}
+          onChange={(level) => onFiltersChange({ ...filters, levels: level ? [level] : [] })}
+        />
+        <FilterChipGroup
+          label="类型"
+          options={SCENARIO_KIND_OPTIONS}
+          value={filters.scenarioKind}
+          onChange={(kind) => onFiltersChange({ ...filters, scenarioKind: kind as ScenarioKind | null })}
+        />
+        <FilterChipGroup
+          label="主题"
+          options={themeOptions}
+          value={filters.themes[0] ?? null}
+          onChange={(theme) => onFiltersChange({ ...filters, themes: theme ? [theme] : [] })}
+        />
+      </FilterPanel>
       {filtered.length === 0 ? (
         <EmptyState title="无匹配场景" description="试试调整筛选条件" />
       ) : (
@@ -174,14 +181,8 @@ function ConversationsTabContent({
   const filteredRest = useMemo(() => filterConversations(rest, filters), [rest, filters]);
   const filtered = useMemo(() => [...filteredActive, ...filteredRest], [filteredActive, filteredRest]);
 
-  const statusOptions = [
-    { id: "active", label: "进行中" },
-    { id: "ended", label: "已结束" },
-  ];
-  const levelOptions = [
-    { id: "cet4", label: "CET4" },
-    { id: "cet6", label: "CET6" },
-  ];
+  const statusOptions = CONVERSATION_STATUS_OPTIONS;
+  const levelOptions = LEARNING_LEVEL_OPTIONS;
 
   if (isLoading) return <Spinner label="加载对话..." />;
 
@@ -208,18 +209,20 @@ function ConversationsTabContent({
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <FilterChips
+      <FilterPanel>
+        <FilterChipGroup
+          label="状态"
           options={statusOptions}
-          selected={filters.statuses}
-          onChange={(statuses) => onFiltersChange({ ...filters, statuses })}
+          value={filters.statuses[0] ?? null}
+          onChange={(status) => onFiltersChange({ ...filters, statuses: status ? [status] : [] })}
         />
-        <FilterChips
+        <FilterChipGroup
+          label="等级"
           options={levelOptions}
-          selected={filters.levels}
-          onChange={(levels) => onFiltersChange({ ...filters, levels })}
+          value={filters.levels[0] ?? null}
+          onChange={(level) => onFiltersChange({ ...filters, levels: level ? [level] : [] })}
         />
-      </div>
+      </FilterPanel>
 
       {filteredActive.length > 0 && (
         <section className="space-y-3">

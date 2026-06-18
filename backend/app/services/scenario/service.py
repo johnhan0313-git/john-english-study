@@ -16,7 +16,7 @@ from app.models.scenario import Scenario, ScenarioWord
 from app.models.word import Word, WordGroup, WordGroupMember
 from app.services.ai.factory import AIProviders, build_providers
 from app.services.ai.openai_provider import AIProviderError
-from app.services.ai.prompts import EXERCISE_SCHEMA, SCENARIO_SCHEMA, build_exercise_prompt, build_scenario_prompt
+from app.services.ai.prompts import EXERCISE_SCHEMA, SCENARIO_SCHEMA, TRANSLATION_SCHEMA, build_exercise_prompt, build_scenario_prompt
 from app.services.ai.response_normalizer import (
     WrongResponseTypeError,
     normalize_exercise_response,
@@ -25,6 +25,7 @@ from app.services.ai.response_normalizer import (
 from app.services.exercise.generator import save_exercises_from_ai
 from app.services.vocabulary.import_words import word_to_dict
 from app.services.vocabulary.srs import get_due_word_ids
+from app.services.ai.openai_provider import MockAIProvider
 from app.utils.json_helpers import dump_json_field, parse_json_field
 
 
@@ -91,7 +92,7 @@ class ScenarioService:
                     "role": "user",
                     "content": (
                         "Your previous response was wrong. Return a SCENARIO only.\n"
-                        "Required keys: title, theme, passage, dialogue, word_usage, summary_zh, fun_fact.\n"
+                        "Required keys: title, theme, passage, dialogue, word_usage, summary_zh, passage_zh, fun_fact.\n"
                         "Do NOT return 'exercises'. The 'passage' field must contain 150+ words of English text."
                     ),
                 })
@@ -334,3 +335,72 @@ class ScenarioService:
             "conversation_count": conversation_count,
             "exercise_count": exercise_count,
         }
+
+    def _mock_translation(self, content: dict, dialogue: list[dict], theme: str) -> tuple[str, list[dict]]:
+        meta = MockAIProvider._THEME_META.get(theme, MockAIProvider._THEME_META["daily"])
+        parts = [meta["summary_zh"]]
+        for item in content.get("word_usage", []):
+            word = _as_str(item.get("word"))
+            meaning = _as_str(item.get("meaning_zh"))
+            if word and meaning and meaning.lower() != word.lower():
+                parts.append(f"在情节发展中，{word}（{meaning}）成为讨论焦点。")
+        passage_zh = "\n".join(parts)
+        dialogue_zh = [
+            {
+                "speaker": _as_str(item.get("speaker") or "Speaker"),
+                "text": f"{_as_str(item.get('text'))}（对话译文略）",
+            }
+            for item in dialogue
+            if isinstance(item, dict) and _as_str(item.get("text"))
+        ]
+        return passage_zh, dialogue_zh
+
+    async def get_scenario_translation(self, scenario_id: int) -> dict:
+        scenario = self.get_scenario(scenario_id)
+        if not scenario:
+            raise ValueError("Scenario not found")
+
+        content = parse_json_field(scenario.content, {})
+        dialogue = parse_json_field(scenario.dialogue, [])
+        cached_dialogue = content.get("dialogue_zh")
+        if content.get("passage_zh"):
+            return {
+                "passage_zh": content["passage_zh"],
+                "dialogue_zh": cached_dialogue if isinstance(cached_dialogue, list) else [],
+            }
+
+        passage = content.get("passage", "")
+        if isinstance(self.ai, MockAIProvider):
+            passage_zh, dialogue_zh = self._mock_translation(content, dialogue, scenario.theme)
+        else:
+            import json
+
+            messages = [
+                {
+                    "role": "user",
+                    "content": (
+                        "Translate the following English learning content into natural Simplified Chinese.\n\n"
+                        f"Passage:\n{passage}\n\n"
+                        f"Dialogue JSON:\n{json.dumps(dialogue, ensure_ascii=False)}"
+                    ),
+                }
+            ]
+            raw = await self.ai.chat_json(messages, TRANSLATION_SCHEMA, task="translate")
+            passage_zh = _as_str(raw.get("passage_zh")) or _as_str(content.get("summary_zh"))
+            dialogue_zh = raw.get("dialogue_zh") if isinstance(raw.get("dialogue_zh"), list) else []
+
+        content["passage_zh"] = passage_zh
+        if dialogue_zh:
+            content["dialogue_zh"] = dialogue_zh
+        scenario.content = dump_json_field(content)
+        self.db.commit()
+
+        return {"passage_zh": passage_zh, "dialogue_zh": dialogue_zh}
+
+
+def _as_str(value) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value.strip()
+    return str(value).strip()

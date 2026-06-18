@@ -22,6 +22,11 @@ export const scenariosApi = {
 
   getScenario: (id: number) => request<ScenarioDetail>(`/scenarios/${id}`),
 
+  getScenarioTranslation: (id: number) =>
+    request<{ passage_zh: string; dialogue_zh: { speaker: string; text: string }[] }>(
+      `/scenarios/${id}/translation`,
+    ),
+
   getScenarioAudioUrl: (id: number) => `${API_BASE}/scenarios/${id}/audio`,
 
   getExercises: (scenarioId: number) => request<Exercise[]>(`/exercises/scenario/${scenarioId}`),

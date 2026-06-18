@@ -19,24 +19,28 @@ const PORTRAIT_MOUTH_TOP_PERCENT = (112 / 260) * 100;
 
 function mouthStyles(shape: MouthShape, open: number) {
   const width = {
-    closed: 22,
-    slight: 24 + open * 8,
-    medium: 28 + open * 14,
-    wide: 34 + open * 18,
-    round: 18 + open * 10,
-    smile: 30 + open * 12,
+    closed: 20,
+    slight: 22 + open * 10,
+    medium: 26 + open * 16,
+    wide: 32 + open * 20,
+    round: 16 + open * 12,
+    smile: 28 + open * 14,
   }[shape];
 
   const height = {
-    closed: 3,
-    slight: 6 + open * 10,
-    medium: 10 + open * 16,
-    wide: 14 + open * 22,
-    round: 16 + open * 14,
-    smile: 8 + open * 8,
+    closed: 2,
+    slight: 5 + open * 12,
+    medium: 9 + open * 18,
+    wide: 12 + open * 24,
+    round: 14 + open * 16,
+    smile: 7 + open * 10,
   }[shape];
 
-  return { width, height, borderRadius: shape === "round" ? "9999px" : shape === "smile" ? "0 0 9999px 9999px" : "9999px" };
+  return {
+    width,
+    height,
+    borderRadius: shape === "round" ? "9999px" : shape === "smile" ? "0 0 9999px 9999px" : "9999px",
+  };
 }
 
 export function TalkingPortrait({
@@ -65,40 +69,64 @@ export function TalkingPortrait({
 
   const shape = visemeToMouthShape(viseme);
   const mouth = mouthStyles(shape, isSpeaking ? mouthOpen : 0);
+  const showMouth = isSpeaking && mouthOpen > 0.06;
 
   return (
-    <div className={cn("relative mx-auto w-full max-w-xs", className)}>
+    <div className={cn("relative mx-auto w-full max-w-[280px]", className)} style={{ perspective: "900px" }}>
       <div
         className={cn(
-          "relative transition-transform duration-700",
-          isSpeaking ? "animate-[portrait-talk_2s_ease-in-out_infinite]" : "animate-[portrait-idle_4s_ease-in-out_infinite]",
+          "pointer-events-none absolute left-1/2 top-[42%] h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-300/25 blur-3xl",
+          isSpeaking && "animate-pulse bg-brand-200/40",
+        )}
+        aria-hidden
+      />
+
+      <div
+        className={cn(
+          "relative transition-transform duration-500 [transform-style:preserve-3d]",
+          isSpeaking
+            ? "animate-[portrait-talk_2s_ease-in-out_infinite] scale-[1.02]"
+            : "animate-[portrait-idle_4s_ease-in-out_infinite]",
           blink && "scale-y-[0.98]",
         )}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={portraitUrl}
-          alt={roleLabel}
-          className="mx-auto h-auto w-full max-h-[320px] object-contain drop-shadow-2xl"
-          onError={(e) => {
-            e.currentTarget.src = "/avatars/default.svg";
-          }}
-        />
-
         <div
-          className="absolute left-1/2 -translate-x-1/2 transition-all duration-75"
-          style={{
-            top: `${PORTRAIT_MOUTH_TOP_PERCENT}%`,
-            width: mouth.width,
-            height: mouth.height,
-            borderRadius: mouth.borderRadius,
-            backgroundColor: isSpeaking && mouthOpen > 0.08 ? "#7c2d12" : "#92400e",
-            opacity: isSpeaking ? 0.95 : 0,
-          }}
-        />
+          className={cn(
+            "overflow-hidden rounded-[2rem] border bg-gradient-to-b from-white/15 to-white/5 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.35)] ring-1 backdrop-blur-sm transition-all duration-300",
+            isSpeaking
+              ? "border-brand-200/40 ring-brand-200/30 shadow-[0_24px_60px_rgba(99,102,241,0.25)]"
+              : "border-white/20 ring-white/15",
+          )}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={portraitUrl}
+            alt={roleLabel}
+            className="mx-auto h-auto w-full max-h-[300px] object-contain"
+            onError={(e) => {
+              e.currentTarget.src = "/avatars/default.svg";
+            }}
+          />
+        </div>
+
+        {showMouth && (
+          <div
+            className="absolute left-1/2 -translate-x-1/2 transition-all duration-75"
+            style={{
+              top: `${PORTRAIT_MOUTH_TOP_PERCENT}%`,
+              width: mouth.width,
+              height: mouth.height,
+              borderRadius: mouth.borderRadius,
+              backgroundColor: "#991b1b",
+              boxShadow: "0 0 0 2px rgba(253, 164, 175, 0.85), inset 0 1px 2px rgba(0,0,0,0.2)",
+            }}
+          />
+        )}
       </div>
 
-      <p className="mt-3 text-center text-sm font-medium text-white/90 drop-shadow-md">{roleLabel}</p>
+      <p className="mt-4 text-center text-sm font-semibold tracking-wide text-white drop-shadow-md">
+        {roleLabel}
+      </p>
     </div>
   );
 }

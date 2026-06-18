@@ -56,6 +56,7 @@ def normalize_scenario_response(raw: dict[str, Any]) -> dict[str, Any]:
 
     title = _pick(data, "title", "name", "heading", "标题")
     summary_zh = _pick(data, "summary_zh", "summary", "summary_cn", "chinese_summary", "中文摘要", "摘要")
+    passage_zh = _pick(data, "passage_zh", "passage_cn", "translation_zh", "chinese_passage", "译文")
     fun_fact = _pick(data, "fun_fact", "funFact", "interesting_fact", "fact", "趣味知识")
     theme = _pick(data, "theme", "topic", "主题")
     dialogue = _pick(data, "dialogue", "dialogues", "conversation", "lines", "对话")
@@ -114,6 +115,7 @@ def normalize_scenario_response(raw: dict[str, Any]) -> dict[str, Any]:
         "dialogue": normalized_dialogue,
         "word_usage": [w for w in normalized_word_usage if w["word"]],
         "summary_zh": _as_str(summary_zh),
+        "passage_zh": _as_str(passage_zh),
         "fun_fact": _as_str(fun_fact) or None,
     }
 

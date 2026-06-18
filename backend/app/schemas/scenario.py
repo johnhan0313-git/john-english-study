@@ -61,6 +61,11 @@ class ScenarioListResponse(BaseModel):
     total: int
 
 
+class ScenarioTranslationResponse(BaseModel):
+    passage_zh: str
+    dialogue_zh: list[DialogueLine] = Field(default_factory=list)
+
+
 class DailyScenariosResponse(BaseModel):
     date: str
     items: list[ScenarioBrief]

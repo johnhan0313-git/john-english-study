@@ -57,7 +57,7 @@ export default function ChatImmersivePage() {
           <h1 className="text-2xl font-bold text-white">沉浸式角色对话</h1>
           <p className="text-sm leading-relaxed text-white/80">
             与 <span className="font-semibold text-white">{visuals.roleLabel}</span> 在
-            {visuals.ambientLabel} 场景中练习英语。角色会根据语音实时口型动画（非真人录像）。
+            {visuals.ambientLabel} 场景中练习英语。角色会根据语音实时口型动画。
           </p>
           <Button
             type="button"

@@ -13,6 +13,7 @@ from app.schemas.scenario import (
     ScenarioDetail,
     ScenarioGenerateRequest,
     ScenarioListResponse,
+    ScenarioTranslationResponse,
 )
 from app.services.media.tts_facade import ensure_scenario_audio
 from app.services.storage.responses import storage_stream_response
@@ -85,6 +86,19 @@ def get_scenario(scenario_id: int, db: Session = Depends(get_db)):
     if not scenario:
         raise HTTPException(status_code=404, detail="Scenario not found")
     return ScenarioDetail(**service.scenario_to_detail(scenario))
+
+
+@router.get("/{scenario_id}/translation", response_model=ScenarioTranslationResponse)
+async def get_scenario_translation(scenario_id: int, db: Session = Depends(get_db)):
+    service = ScenarioService(db)
+    scenario = service.get_scenario(scenario_id)
+    if not scenario:
+        raise HTTPException(status_code=404, detail="Scenario not found")
+    try:
+        result = await service.get_scenario_translation(scenario_id)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Translation failed: {e}") from e
+    return ScenarioTranslationResponse(**result)
 
 
 @router.get("/{scenario_id}/audio")

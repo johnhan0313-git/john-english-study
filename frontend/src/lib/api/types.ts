@@ -46,6 +46,7 @@ export interface ScenarioDetail extends ScenarioBrief {
   content: {
     passage: string;
     summary_zh: string;
+    passage_zh?: string;
     fun_fact: string | null;
     word_usage: { word: string; sentence: string; meaning_zh?: string }[];
   };

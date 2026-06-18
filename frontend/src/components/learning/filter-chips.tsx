@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export interface FilterChipOption {
@@ -12,6 +13,15 @@ interface FilterChipsProps {
   className?: string;
 }
 
+function chipClass(active: boolean) {
+  return cn(
+    "rounded-lg px-3 py-1.5 text-sm font-medium transition-all",
+    active
+      ? "bg-white text-brand-700 shadow-sm ring-1 ring-brand-200/80"
+      : "text-slate-600 hover:bg-white/60 hover:text-slate-900",
+  );
+}
+
 export function FilterChips({ options, selected, onChange, className }: FilterChipsProps) {
   if (options.length === 0) return null;
 
@@ -24,25 +34,75 @@ export function FilterChips({ options, selected, onChange, className }: FilterCh
   };
 
   return (
-    <div className={cn("flex flex-wrap gap-2", className)}>
+    <div className={cn("inline-flex flex-wrap gap-1", className)}>
       {options.map((opt) => {
         const active = selected.includes(opt.id);
         return (
-          <button
-            key={opt.id}
-            type="button"
-            onClick={() => toggle(opt.id)}
-            className={cn(
-              "rounded-full px-3 py-1 text-xs font-semibold transition-colors",
-              active
-                ? "bg-brand-600 text-white shadow-sm"
-                : "border border-surface-border bg-white text-slate-600 hover:border-brand-300 hover:text-brand-700",
-            )}
-          >
+          <button key={opt.id} type="button" onClick={() => toggle(opt.id)} className={chipClass(active)}>
             {opt.label}
           </button>
         );
       })}
+    </div>
+  );
+}
+
+interface FilterChipGroupProps {
+  label: string;
+  options: FilterChipOption[];
+  /** null = 全部（不筛选） */
+  value: string | null;
+  onChange: (value: string | null) => void;
+  showAll?: boolean;
+  className?: string;
+}
+
+export function FilterChipGroup({
+  label,
+  options,
+  value,
+  onChange,
+  showAll = true,
+  className,
+}: FilterChipGroupProps) {
+  if (options.length === 0) return null;
+
+  return (
+    <div className={cn("flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3", className)}>
+      <span className="shrink-0 text-xs font-semibold text-slate-500 sm:w-10">{label}</span>
+      <div className="inline-flex flex-wrap gap-1 rounded-xl bg-slate-100/90 p-1">
+        {showAll && (
+          <button type="button" onClick={() => onChange(null)} className={chipClass(value === null)}>
+            全部
+          </button>
+        )}
+        {options.map((opt) => {
+          const active = value === opt.id;
+          return (
+            <button
+              key={opt.id}
+              type="button"
+              onClick={() => onChange(active ? null : opt.id)}
+              className={chipClass(active)}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+interface FilterPanelProps {
+  children: ReactNode;
+  className?: string;
+}
+
+export function FilterPanel({ children, className }: FilterPanelProps) {
+  return (
+    <div className={cn("space-y-3 rounded-2xl border border-surface-border/80 bg-white/80 px-4 py-3 shadow-sm", className)}>
+      {children}
     </div>
   );
 }
@@ -56,7 +116,7 @@ interface SingleFilterChipsProps {
 
 export function SingleFilterChips({ options, selected, onChange, className }: SingleFilterChipsProps) {
   return (
-    <div className={cn("flex flex-wrap gap-2", className)}>
+    <div className={cn("inline-flex flex-wrap gap-1 rounded-xl bg-slate-100/90 p-1", className)}>
       {options.map((opt) => {
         const active = selected === opt.id;
         return (
@@ -64,12 +124,7 @@ export function SingleFilterChips({ options, selected, onChange, className }: Si
             key={opt.id}
             type="button"
             onClick={() => onChange(active ? null : opt.id)}
-            className={cn(
-              "rounded-full px-3 py-1 text-xs font-semibold transition-colors",
-              active
-                ? "bg-brand-600 text-white shadow-sm"
-                : "border border-surface-border bg-white text-slate-600 hover:border-brand-300 hover:text-brand-700",
-            )}
+            className={chipClass(active)}
           >
             {opt.label}
           </button>

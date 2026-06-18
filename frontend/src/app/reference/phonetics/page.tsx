@@ -2,13 +2,13 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Headphones, Search, Volume2, X } from "lucide-react";
+import { Search, Volume2, X } from "lucide-react";
 import { api, PhoneticBrief, PhoneticDetail } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useAudioPlayer } from "@/hooks/use-audio-player";
 import { AudioPlayButton } from "@/components/audio-play-button";
 import { MobileDetailSheet } from "@/components/reference/mobile-detail-sheet";
-import { Alert, Badge, Button, Card, Input, Spinner, StatCard } from "@/components/ui";
+import { Alert, Badge, Card, Input, Spinner, StatCard } from "@/components/ui";
 
 function phoneticAudioUrl(phoneticId: number, previewWord?: string | null) {
   if (previewWord) {
@@ -73,22 +73,14 @@ function PhoneticDetailPanel({
   const primaryWord = detail.examples[0]?.word ?? detail.sound_cue ?? null;
   const symbolAudioKey = `phonetic-word-${detail.id}-${primaryWord ?? "symbol"}`;
   const allAudioKey = `phonetic-all-${detail.id}`;
+  const hasExamples = detail.examples.length > 0;
 
   return (
     <Card glass={false} className="space-y-4 border-0 bg-transparent p-0 shadow-none lg:glass-card lg:sticky-below-header lg:border lg:bg-white/80 lg:p-5 lg:shadow-card">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase tracking-wider text-brand-600">音标详情</p>
-          <div className="mt-1 flex items-center gap-3">
-            <p className="font-display text-4xl font-bold text-brand-700">{detail.symbol}</p>
-            <AudioPlayButton
-              audioKey={symbolAudioKey}
-              url={phoneticAudioUrl(detail.id, primaryWord)}
-              player={player}
-              size="md"
-              label={primaryWord ? `播放例词 ${primaryWord}` : `播放 /${detail.symbol}/ 读音`}
-            />
-          </div>
+          <p className="mt-1 font-display text-4xl font-bold text-brand-700">{detail.symbol}</p>
           <p className="mt-1 text-lg font-medium text-slate-800">{detail.name_zh}</p>
           <p className="text-sm text-slate-500">{detail.name_en}</p>
         </div>
@@ -101,28 +93,16 @@ function PhoneticDetailPanel({
         </button>
       </div>
 
-      {primaryWord && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full"
-          onClick={() => void player.toggle(phoneticAudioUrl(detail.id, primaryWord), symbolAudioKey)}
-        >
-          <Volume2 className="mr-2 h-4 w-4" />
-          {player.isPlaying(symbolAudioKey) ? "暂停" : `播放例词 ${primaryWord}`}
-        </Button>
-      )}
-
-      {detail.examples.length > 0 && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full border border-surface-border"
-          onClick={() => void player.toggle(api.getPhoneticAudioUrl(detail.id, { kind: "examples" }), allAudioKey)}
-        >
-          <Headphones className="mr-2 h-4 w-4" />
-          {player.isPlaying(allAudioKey) ? "暂停例词朗读" : "播放全部例词"}
-        </Button>
+      {!hasExamples && primaryWord && (
+        <div className="flex items-center gap-3 rounded-xl border border-surface-border bg-white px-4 py-3">
+          <AudioPlayButton
+            audioKey={symbolAudioKey}
+            url={phoneticAudioUrl(detail.id, primaryWord)}
+            player={player}
+            label={`播放 /${detail.symbol}/ 读音`}
+          />
+          <span className="text-sm text-slate-600">点击试听发音</span>
+        </div>
       )}
 
       {detail.description && (
@@ -131,9 +111,22 @@ function PhoneticDetailPanel({
         </p>
       )}
 
-      {detail.examples.length > 0 && (
+      {hasExamples && (
         <div>
-          <h3 className="mb-2 text-sm font-semibold text-slate-700">例词</h3>
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold text-slate-700">例词</h3>
+            {detail.examples.length > 1 && (
+              <button
+                type="button"
+                className="text-xs font-semibold text-brand-600 hover:text-brand-700"
+                onClick={() =>
+                  void player.toggle(api.getPhoneticAudioUrl(detail.id, { kind: "examples" }), allAudioKey)
+                }
+              >
+                {player.isPlaying(allAudioKey) ? "暂停全部" : "播放全部"}
+              </button>
+            )}
+          </div>
           <div className="space-y-2">
             {detail.examples.map((ex) => {
               const wordKey = `phonetic-word-${detail.id}-${ex.word}`;

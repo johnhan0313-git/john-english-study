@@ -8,20 +8,33 @@ SCENARIO_SCHEMA = """
   "dialogue": [{"speaker": "string", "text": "string"}],
   "word_usage": [{"word": "string", "sentence": "string", "meaning_zh": "string"}],
   "summary_zh": "string",
+  "passage_zh": "string (natural Simplified Chinese translation of passage)",
   "fun_fact": "string (interesting fact related to theme or vocabulary)"
 }
 """
 
 SCENARIO_SYSTEM = """You are an English reading scenario writer for CET-4/CET-6 learners.
 Your job is STEP 1 ONLY: write a reading scenario (story or dialogue context).
-Return ONLY one JSON object with these keys: title, theme, passage, dialogue, word_usage, summary_zh, fun_fact.
+Return ONLY one JSON object with these keys: title, theme, passage, dialogue, word_usage, summary_zh, passage_zh, fun_fact.
 CRITICAL: Include a non-empty "passage" field with the main English text (150+ words).
+Include "passage_zh": a faithful Simplified Chinese translation of the full passage.
 Do NOT return exercises, questions, quiz, or an "exercises" key."""
 
 EXERCISE_SYSTEM = """You are an English quiz generator.
 Your job is STEP 2 ONLY: create practice questions based on a given passage.
 Return ONLY one JSON object with key "exercises" (array of question objects).
 Do NOT return passage, title, or scenario fields."""
+
+TRANSLATION_SCHEMA = """
+{
+  "passage_zh": "string (faithful Simplified Chinese translation of the passage)",
+  "dialogue_zh": [{"speaker": "string", "text": "string"}]
+}
+"""
+
+TRANSLATION_SYSTEM = """You translate English learning materials into natural Simplified Chinese.
+Return ONLY valid JSON with keys passage_zh and dialogue_zh (empty array if no dialogue).
+Keep proper nouns when appropriate; translate the full passage faithfully."""
 
 
 def build_scenario_prompt(
@@ -53,7 +66,7 @@ def build_scenario_prompt(
                 f"Tone: professional yet engaging for adult learners.\n\n"
                 f"IMPORTANT: This is STEP 1 — generate a READING SCENARIO only.\n"
                 f"Do NOT generate exercises or questions. Do NOT use key 'exercises'.\n"
-                f"Required JSON keys: title, theme, passage, dialogue, word_usage, summary_zh, fun_fact.\n"
+                f"Required JSON keys: title, theme, passage, dialogue, word_usage, summary_zh, passage_zh, fun_fact.\n"
                 f"The 'passage' field must be a long English text using all target words."
             ),
         }
@@ -111,3 +124,15 @@ Evaluate the student's writing. Return JSON:
   "suggestions": ["string"]
 }
 """
+
+WRITING_SAMPLE_SCHEMA = """
+{
+  "sample_en": "string (about 80 words, natural paragraph using ALL target words)",
+  "sample_zh": "string (faithful Simplified Chinese translation of sample_en)"
+}
+"""
+
+WRITING_SAMPLE_SYSTEM = """You write model paragraphs for English learners (CET-4/CET-6).
+Return ONLY valid JSON with keys sample_en and sample_zh.
+The English paragraph should be ~80 words, cohesive, and use every target word naturally.
+The Chinese translation should faithfully match sample_en."""

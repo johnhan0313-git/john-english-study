@@ -7,10 +7,17 @@ from app.auth.dependencies import get_current_user
 from app.config import get_settings
 from app.database import get_db
 from app.models.user import User
-from app.schemas.progress import ProgressOverview, ReviewWordItem, WritingEvaluateRequest, WritingEvaluateResponse
+from app.schemas.progress import (
+    ProgressOverview,
+    ReviewWordItem,
+    WritingEvaluateRequest,
+    WritingEvaluateResponse,
+    WritingSampleRequest,
+    WritingSampleResponse,
+)
 from app.schemas.speaking import SpeakingEvaluateResponse
 from app.services.ai.openai_provider import get_stt_provider
-from app.services.speaking.evaluator import evaluate_speaking, evaluate_writing
+from app.services.speaking.evaluator import evaluate_speaking, evaluate_writing, generate_writing_sample
 from app.services.vocabulary.progress_service import get_progress_overview, get_review_words
 
 router = APIRouter(prefix="/progress", tags=["progress"])
@@ -38,6 +45,26 @@ async def writing_evaluate(
     settings = get_settings()
     result = await evaluate_writing(settings, body.prompt, body.content, body.target_words)
     return WritingEvaluateResponse(**result)
+
+
+@router.post("/writing/sample", response_model=WritingSampleResponse)
+async def writing_sample(
+    body: WritingSampleRequest,
+    user: User = Depends(get_current_user),
+):
+    settings = get_settings()
+    try:
+        result = await generate_writing_sample(
+            settings,
+            body.prompt,
+            body.target_words,
+            level=body.level,
+            theme=body.theme,
+            regenerate=body.regenerate,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Writing sample generation failed: {e}") from e
+    return WritingSampleResponse(**result)
 
 
 @router.post("/speaking/evaluate", response_model=SpeakingEvaluateResponse)

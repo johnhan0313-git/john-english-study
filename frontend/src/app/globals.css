@@ -113,3 +113,21 @@
 .animate-captcha-shake {
   animation: captcha-shake 0.45s ease-in-out;
 }
+
+@keyframes alphabet-bubble-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.55);
+  }
+  70% {
+    transform: translateY(-50%) scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+}
+
+.animate-alphabet-bubble {
+  animation: alphabet-bubble-pop 0.18s ease-out forwards;
+}

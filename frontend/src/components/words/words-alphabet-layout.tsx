@@ -33,7 +33,7 @@ export function WordsAlphabetLayout({
   total: number;
   availableLetters: string[];
   selectedLetter: string;
-  onLetterSelect: (letter: string) => void;
+  onLetterSelect: (letter: string, options?: { fromDrag?: boolean }) => void;
   children: (groups: WordsLetterGroup[]) => React.ReactNode;
 }) {
   const groups = useMemo(() => groupWordsByLetter(words), [words]);

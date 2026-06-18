@@ -4,7 +4,7 @@ import difflib
 import re
 
 from app.services.ai.openai_provider import get_ai_provider
-from app.services.ai.prompts import WRITING_EVAL_PROMPT
+from app.services.ai.prompts import WRITING_EVAL_PROMPT, WRITING_SAMPLE_SCHEMA
 from app.config import Settings
 
 
@@ -78,3 +78,42 @@ async def evaluate_writing(
         "missing_target_words": result.get("missing_target_words", []),
         "suggestions": result.get("suggestions", []),
     }
+
+
+async def generate_writing_sample(
+    settings: Settings,
+    prompt: str,
+    target_words: list[str],
+    *,
+    level: str = "cet4",
+    theme: str | None = None,
+    regenerate: bool = False,
+) -> dict:
+    provider = get_ai_provider(settings)
+    target = ", ".join(target_words)
+    theme_line = f"Theme/context: {theme}\n" if theme else ""
+    regenerate_line = (
+        "Important: This is a REGENERATION request. Write a completely NEW paragraph "
+        "with a different story angle and sentence structure. Do not repeat a previous version.\n"
+        if regenerate
+        else ""
+    )
+    messages = [
+        {
+            "role": "user",
+            "content": (
+                f"Write a model paragraph for this writing exercise.\n"
+                f"Level: {level}\n"
+                f"{theme_line}"
+                f"{regenerate_line}"
+                f"Prompt: {prompt}\n"
+                f"Target words (each MUST appear at least once): {target}"
+            ),
+        }
+    ]
+    result = await provider.chat_json(messages, WRITING_SAMPLE_SCHEMA, task="writing_sample")
+    sample_en = str(result.get("sample_en", "")).strip()
+    sample_zh = str(result.get("sample_zh", "")).strip()
+    if not sample_en:
+        raise ValueError("AI returned empty writing sample")
+    return {"sample_en": sample_en, "sample_zh": sample_zh}

@@ -94,10 +94,14 @@ export default function WordsPage() {
     setPage(1);
   };
 
-  const handleLetterSelect = (value: string) => {
-    setLetter((prev) => (prev === value ? "" : value));
+  const handleLetterSelect = (value: string, options?: { fromDrag?: boolean }) => {
+    if (options?.fromDrag) {
+      setLetter((prev) => (prev === value ? prev : value));
+    } else {
+      setLetter((prev) => (prev === value ? "" : value));
+    }
     setPage(1);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: options?.fromDrag ? "auto" : "smooth" });
   };
 
   const totalPages = Math.ceil((data?.total || 0) / pageSize) || 1;

@@ -16,6 +16,18 @@ export const progressApi = {
       suggestions: string[];
     }>("/progress/writing/evaluate", { method: "POST", body: JSON.stringify(body) }),
 
+  generateWritingSample: (body: {
+    prompt: string;
+    target_words: string[];
+    level?: string;
+    theme?: string;
+    regenerate?: boolean;
+  }) =>
+    request<{ sample_en: string; sample_zh: string }>("/progress/writing/sample", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
   evaluateSpeaking: async (expected: string, audioBlob: Blob) => {
     const form = new FormData();
     form.append("expected", expected);
