@@ -1,6 +1,7 @@
 export { configureApiClient, getApiBase, getApiClientConfig } from "./config";
 export type { ApiClientConfig } from "./config";
 export { ApiError, request, authFetch, authHeaders, apiPathFromUrl, API_BASE } from "./client";
+export { parseApiError } from "./errors";
 export { api } from "./api";
 export * from "./api/types";
 export { authApi, wechatAuthorizeHref } from "./auth/api";

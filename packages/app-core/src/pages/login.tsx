@@ -6,19 +6,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { CaptchaModal } from "@sceneenglish/app-core/components/auth/captcha-modal";
 import { Button, Card, Input, PageHeader } from "@sceneenglish/app-core/components/ui";
 import { useAuth } from "@sceneenglish/app-core/contexts/auth-context";
-import { authApi, wechatAuthorizeHref } from "@sceneenglish/api-client";
-import { ApiError } from "@sceneenglish/api-client";
-
-function parseApiError(err: unknown, fallback: string): string {
-  if (!(err instanceof ApiError)) return fallback;
-  try {
-    const parsed = JSON.parse(err.message) as { detail?: string };
-    if (typeof parsed.detail === "string") return parsed.detail;
-  } catch {
-    // plain text
-  }
-  return err.message || fallback;
-}
+import { authApi, wechatAuthorizeHref, parseApiError } from "@sceneenglish/api-client";
 
 export default function LoginPage() {
   const { loginWithEmail, isAuthenticated } = useAuth();

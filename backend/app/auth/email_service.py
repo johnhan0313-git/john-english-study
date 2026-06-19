@@ -26,8 +26,10 @@ def send_login_code(settings: Settings, email: str, code: str) -> None:
     )
 
     if not settings.smtp_configured:
-        logger.warning("[dev-email] to=%s code=%s (SMTP 未配置，验证码仅写入日志)", email, code)
-        return
+        if settings.testing or settings.debug or settings.auth_expose_codes:
+            logger.warning("[dev-email] to=%s code=%s (SMTP 未配置，验证码仅写入日志)", email, code)
+            return
+        raise EmailDeliveryError("邮件服务未配置，请联系管理员")
 
     message = EmailMessage()
     message["Subject"] = subject
@@ -66,8 +68,10 @@ def send_email_change_code(settings: Settings, email: str, code: str) -> None:
     )
 
     if not settings.smtp_configured:
-        logger.warning("[dev-email] change-email to=%s code=%s (SMTP 未配置)", email, code)
-        return
+        if settings.testing or settings.debug or settings.auth_expose_codes:
+            logger.warning("[dev-email] change-email to=%s code=%s (SMTP 未配置)", email, code)
+            return
+        raise EmailDeliveryError("邮件服务未配置，请联系管理员")
 
     message = EmailMessage()
     message["Subject"] = subject

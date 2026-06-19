@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
-from app.auth.email_codes import can_send_code, create_email_code, verify_email_code
+from app.auth.email_codes import can_send_code, create_email_code, rollback_email_code, verify_email_code
 from app.auth.email_service import EmailDeliveryError, send_email_change_code
 from app.auth.users import normalize_email
 from app.config import Settings, get_settings
@@ -94,9 +94,11 @@ def send_email_change_code_endpoint(
     try:
         send_email_change_code(settings, new_email, code)
     except EmailDeliveryError as exc:
+        rollback_email_code(new_email)
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     return SendEmailChangeCodeResponse(
+        cooldown_seconds=settings.email_code_cooldown_seconds,
         dev_code=code if _should_expose_dev_secrets(settings) else None,
     )
 

@@ -6,21 +6,9 @@ import { Camera, ChevronRight } from "lucide-react";
 
 import { Button, Input } from "@sceneenglish/app-core/components/ui";
 import { useAuth } from "@sceneenglish/app-core/contexts/auth-context";
-import { ApiError } from "@sceneenglish/api-client";
+import { parseApiError } from "@sceneenglish/api-client";
 import { cn } from "@sceneenglish/app-core/lib/utils";
 import { profileApi, resolveAvatarUrl } from "@sceneenglish/app-core/profile/api";
-
-function parseApiError(err: unknown, fallback: string): string {
-  if (!(err instanceof ApiError) && !(err instanceof Error)) return fallback;
-  const message = err instanceof ApiError ? err.message : err.message;
-  try {
-    const parsed = JSON.parse(message) as { detail?: string };
-    if (typeof parsed.detail === "string") return parsed.detail;
-  } catch {
-    // plain text
-  }
-  return message || fallback;
-}
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString("zh-CN", {

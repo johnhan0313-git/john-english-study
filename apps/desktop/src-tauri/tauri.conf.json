@@ -7,7 +7,7 @@
     "beforeDevCommand": "npm run build -w @sceneenglish/shell",
     "devUrl": "http://localhost:5173",
     "beforeBuildCommand": "npm run build -w @sceneenglish/shell",
-    "frontendDist": "../shell/dist"
+    "frontendDist": "../../shell/dist"
   },
   "app": {
     "windows": [

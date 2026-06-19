@@ -35,7 +35,11 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./data/app.db"
     media_dir: Path = Path("./data/media")
     use_migrations: bool = False
-    cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
+    cors_origins: str = (
+        "http://localhost:3000,http://127.0.0.1:3000,"
+        "http://localhost:5173,http://127.0.0.1:5173,"
+        "capacitor://localhost,https://localhost,tauri://localhost"
+    )
 
     # Object storage (local filesystem or S3-compatible MinIO)
     storage_backend: str = "local"  # local | s3
@@ -103,7 +107,7 @@ class Settings(BaseSettings):
 
     @property
     def smtp_configured(self) -> bool:
-        return bool(self.smtp_host and self.smtp_from)
+        return bool(self.smtp_host and (self.smtp_from or self.smtp_user))
 
     def llm_config(self) -> AIEndpointConfig:
         return AIEndpointConfig(

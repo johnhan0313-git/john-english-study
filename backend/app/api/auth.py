@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.captcha import create_captcha, verify_captcha
 from app.auth.dependencies import get_current_user
-from app.auth.email_codes import can_send_code, create_email_code, verify_email_code
+from app.auth.email_codes import can_send_code, create_email_code, rollback_email_code, verify_email_code
 from app.auth.email_service import EmailDeliveryError, send_login_code
 from app.auth.jwt import create_access_token
 from app.auth.merge import merge_device_to_user
@@ -93,16 +93,18 @@ def send_email_code(
         if not allowed:
             raise HTTPException(
                 status_code=429,
-                detail=f"Please wait {wait_seconds}s before requesting another code",
+                detail=f"请等待 {wait_seconds}s 后再试",
             )
 
     code = create_email_code(email, ttl_seconds=settings.email_code_expire_minutes * 60)
     try:
         send_login_code(settings, email, code)
     except EmailDeliveryError as exc:
+        rollback_email_code(email)
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     return SendEmailCodeResponse(
+        cooldown_seconds=settings.email_code_cooldown_seconds,
         dev_code=code if _should_expose_dev_secrets(settings) else None,
     )
 

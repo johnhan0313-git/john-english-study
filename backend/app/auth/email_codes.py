@@ -50,6 +50,12 @@ def create_email_code(email: str, *, ttl_seconds: int = 600) -> str:
     return code
 
 
+def rollback_email_code(email: str) -> None:
+    with _lock:
+        _codes.pop(email, None)
+        _last_sent.pop(email, None)
+
+
 def verify_email_code(email: str, code: str) -> bool:
     normalized = normalize_code(code)
     now = time.time()
