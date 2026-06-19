@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="culture scene">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#g)"/>
+  <path d="M400,150 L500,350 L700,350 L540,480 L590,680 L400,560 L210,680 L260,480 L100,350 L300,350 Z" fill="#fde68a" opacity="0.35"/>
+  <circle cx="650" cy="120" r="60" fill="#fff" opacity="0.15"/>
+</svg>

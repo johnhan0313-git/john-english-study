@@ -86,6 +86,7 @@ class Settings(BaseSettings):
     wechat_app_secret: str = ""
     wechat_redirect_uri: str = ""
     frontend_base_url: str = "http://localhost:3000"
+    app_oauth_deeplink_scheme: str = "sceneenglish"
 
     # Scheduler / startup
     daily_scenario_hour: int = 6

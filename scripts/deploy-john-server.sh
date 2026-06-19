@@ -15,7 +15,7 @@ ssh "${REMOTE}" "mkdir -p '${REMOTE_DIR}'"
 rsync -avz --delete \
   --exclude .git \
   --exclude node_modules \
-  --exclude frontend/.next \
+  --exclude apps/web/.next \
   --exclude backend/.venv \
   --exclude backend/__pycache__ \
   --exclude backend/.env \

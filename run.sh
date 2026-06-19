@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKEND_DIR="$ROOT_DIR/backend"
-FRONTEND_DIR="$ROOT_DIR/frontend"
+FRONTEND_DIR="$ROOT_DIR/apps/web"
 RUN_DIR="$ROOT_DIR/.run"
 
 BACKEND_PORT="${BACKEND_PORT:-8000}"
@@ -48,9 +48,9 @@ case "$CMD" in
     pip install -q -U pip
     pip install -q -r "$BACKEND_DIR/requirements.txt"
 
-    if [[ ! -d "$FRONTEND_DIR/node_modules" ]]; then
-      echo "[start] 安装前端依赖..."
-      (cd "$FRONTEND_DIR" && npm install)
+    if [[ ! -d "$ROOT_DIR/node_modules" ]]; then
+      echo "[start] 安装 monorepo 依赖..."
+      (cd "$ROOT_DIR" && npm install)
     fi
 
     if [[ -f "$BACKEND_PID" ]] && kill -0 "$(cat "$BACKEND_PID")" 2>/dev/null; then

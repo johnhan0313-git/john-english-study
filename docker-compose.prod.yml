@@ -17,7 +17,7 @@ services:
       S3_BUCKET: english-study-bucket
       S3_REGION: us-east-1
       S3_USE_SSL: "false"
-      CORS_ORIGINS: https://se.cool-app.me,http://se.cool-app.me
+      CORS_ORIGINS: https://se.cool-app.me,http://se.cool-app.me,capacitor://localhost,https://localhost,tauri://localhost,http://localhost:5173
       ENABLE_SCHEDULER: "true"
       SEED_ON_STARTUP: "true"
       JWT_SECRET: change-me-in-production
@@ -58,7 +58,8 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: .
+      dockerfile: ./apps/web/Dockerfile
       args:
         NEXT_PUBLIC_API_URL: /api
     ports:

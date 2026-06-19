@@ -25,7 +25,7 @@
 
 ```bash
 cp backend/.env.example backend/.env   # 首次
-cp frontend/.env.example frontend/.env # 首次
+cp apps/web/.env.example apps/web/.env # 首次
 ./run.sh start
 ```
 
@@ -48,7 +48,7 @@ uvicorn app.main:app --reload --port 8000
 ### 前端
 
 ```bash
-cd frontend
+cd apps/web
 npm install
 cp .env.example .env
 npm run dev
@@ -60,7 +60,7 @@ npm run dev
 
 ```bash
 cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
+cp apps/web/.env.example apps/web/.env
 docker compose up --build
 ```
 
@@ -78,7 +78,7 @@ services:
 ## 环境变量
 
 - 后端：[backend/.env.example](backend/.env.example)
-- 前端：[frontend/.env.example](frontend/.env.example)
+- 前端：[apps/web/.env.example](apps/web/.env.example)
 
 后端关键配置：
 
@@ -105,10 +105,15 @@ services:
 ## 项目结构
 
 ```
-backend/app/     FastAPI 后端
-frontend/src/    Next.js 前端
-docs/            扩展文档
+packages/api-client/   共享 API 客户端
+packages/app-core/     共享 React UI
+apps/web/              Next.js Web 主线
+apps/shell/            Vite SPA（Capacitor/Tauri）
+backend/app/           FastAPI 后端
+docs/                  扩展文档（含 MONOREPO.md）
 ```
+
+详见 [docs/MONOREPO.md](docs/MONOREPO.md)。
 
 ## 测试
 

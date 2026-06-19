@@ -37,7 +37,7 @@ from app.utils.time import utc_now
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-_oauth_states: dict[str, str] = {}
+_oauth_states: dict[str, tuple[str, str]] = {}
 
 
 def _user_response(user: User) -> UserResponse:
@@ -125,12 +125,13 @@ def email_login(body: EmailLoginRequest, db: Session = Depends(get_db)):
 @router.get("/wechat/authorize")
 def wechat_authorize(
     next: str = Query("/", max_length=256),
+    platform: str = Query("web", pattern="^(web|app)$"),
     settings: Settings = Depends(get_settings),
 ):
     if not wechat_configured(settings):
         raise HTTPException(status_code=503, detail="WeChat login is not configured")
     state = secrets.token_urlsafe(16)
-    _oauth_states[state] = next if next.startswith("/") else "/"
+    _oauth_states[state] = (next if next.startswith("/") else "/", platform)
     return RedirectResponse(build_wechat_authorize_url(settings, state=state))
 
 
@@ -144,7 +145,7 @@ async def wechat_callback(
     if not wechat_configured(settings):
         raise HTTPException(status_code=503, detail="WeChat login is not configured")
 
-    next_path = _oauth_states.pop(state, "/")
+    next_path, oauth_platform = _oauth_states.pop(state, ("/", "web"))
     try:
         profile = await exchange_wechat_code(settings, code)
     except WeChatNotConfiguredError:
@@ -162,7 +163,9 @@ async def wechat_callback(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Account inactive")
 
     token = _issue_token(user, db).access_token
-    return RedirectResponse(frontend_callback_url(settings, token, next_path=next_path))
+    return RedirectResponse(
+        frontend_callback_url(settings, token, next_path=next_path, platform=oauth_platform)
+    )
 
 
 @router.get("/me", response_model=UserResponse)

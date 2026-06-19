@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="travel scene">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0ea5e9"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#g)"/>
+  <path d="M120,420 L200,320 L280,380 L360,280 L440,350 L520,250 L600,320 L680,200 L800,280 L800,600 L0,600 Z" fill="#bae6fd" opacity="0.35"/>
+  <circle cx="650" cy="120" r="60" fill="#fff" opacity="0.15"/>
+</svg>

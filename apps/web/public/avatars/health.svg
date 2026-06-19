@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 260" role="img" aria-label="health avatar">
+  <defs>
+    <linearGradient id="skin" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fde8d5"/>
+      <stop offset="100%" stop-color="#f0c095"/>
+    </linearGradient>
+    <linearGradient id="outfit" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="100" cy="238" rx="72" ry="16" fill="#000" opacity="0.14"/>
+  <path d="M46 260 L46 176 Q100 154 154 176 L154 260 Z" fill="url(#outfit)"/>
+  <path d="M58 182 Q100 172 142 182 L146 214 Q100 206 54 214 Z" fill="#fff" opacity="0.12"/>
+  <rect x="88" y="136" width="24" height="30" rx="8" fill="#e8b88a"/>
+  <ellipse cx="100" cy="86" rx="56" ry="50" fill="#134e4a"/>
+  <ellipse cx="100" cy="92" rx="46" ry="42" fill="url(#skin)"/>
+  <path d="M54 90 Q62 58 100 54 Q138 58 146 90 Q136 70 100 66 Q64 70 54 90" fill="#134e4a"/>
+  <ellipse cx="78" cy="96" rx="9" ry="11" fill="#fff"/>
+  <ellipse cx="122" cy="96" rx="9" ry="11" fill="#fff"/>
+  <circle cx="80" cy="98" r="5.5" fill="#1e293b"/>
+  <circle cx="124" cy="98" r="5.5" fill="#1e293b"/>
+  <circle cx="82" cy="96" r="1.8" fill="#fff"/>
+  <circle cx="126" cy="96" r="1.8" fill="#fff"/>
+  <path d="M66 84 Q78 77 90 84" stroke="#134e4a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M110 84 Q122 77 134 84" stroke="#134e4a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <ellipse cx="68" cy="110" rx="9" ry="5.5" fill="#fb7185" opacity="0.28"/>
+  <ellipse cx="132" cy="110" rx="9" ry="5.5" fill="#fb7185" opacity="0.28"/>
+  <path d="M88 112 Q100 118 112 112" stroke="#d97706" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.35"/>
+  <rect x="133" y="198" width="18" height="18" rx="4" fill="#fff" opacity="0.95"/><path d="M142 202 L142 212 M137 207 L147 207" stroke="#059669" stroke-width="2.5" stroke-linecap="round"/>
+  <ellipse id="mouth-anchor" cx="100" cy="112" rx="0" ry="0" fill="none"/>
+</svg>

@@ -10,11 +10,13 @@ services:
     restart: unless-stopped
 
   frontend:
-    build: ./frontend
+    build:
+      context: .
+      dockerfile: ./apps/web/Dockerfile
     ports:
       - "3000:3000"
     env_file:
-      - ./frontend/.env
+      - ./apps/web/.env
     depends_on:
       - backend
     restart: unless-stopped

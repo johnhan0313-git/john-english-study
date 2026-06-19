@@ -1,0 +1,13 @@
+<!-- Add to AndroidManifest.xml inside <manifest> -->
+<uses-permission android:name="android.permission.RECORD_AUDIO" />
+<uses-permission android:name="android.permission.INTERNET" />
+
+<!-- Deep link intent filter example for MainActivity -->
+<!--
+<intent-filter>
+  <action android:name="android.intent.action.VIEW" />
+  <category android:name="android.intent.category.DEFAULT" />
+  <category android:name="android.intent.category.BROWSABLE" />
+  <data android:scheme="sceneenglish" android:host="auth" android:pathPrefix="/callback" />
+</intent-filter>
+-->

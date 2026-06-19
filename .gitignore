@@ -8,8 +8,19 @@ venv/
 
 # Node
 node_modules/
-frontend/.next/
-frontend/out/
+.next/
+out/
+dist/
+
+# Monorepo app build outputs
+apps/web/.next/
+apps/web/out/
+apps/shell/dist/
+apps/mobile/ios/
+apps/mobile/android/
+
+# Tauri / Rust
+apps/desktop/src-tauri/target/
 
 # Env
 .env

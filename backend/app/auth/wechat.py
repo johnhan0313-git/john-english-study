@@ -68,7 +68,16 @@ async def exchange_wechat_code(settings: Settings, code: str) -> dict:
     }
 
 
-def frontend_callback_url(settings: Settings, token: str, *, next_path: str = "/") -> str:
-    base = settings.frontend_base_url.rstrip("/")
+def frontend_callback_url(
+    settings: Settings,
+    token: str,
+    *,
+    next_path: str = "/",
+    platform: str = "web",
+) -> str:
     query = urlencode({"token": token, "next": next_path})
+    if platform == "app":
+        scheme = settings.app_oauth_deeplink_scheme.strip().rstrip(":")
+        return f"{scheme}://auth/callback?{query}"
+    base = settings.frontend_base_url.rstrip("/")
     return f"{base}/auth/callback?{query}"
