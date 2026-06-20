@@ -6,7 +6,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { CaptchaModal } from "@sceneenglish/app-core/components/auth/captcha-modal";
 import { Button, Card, Input, PageHeader } from "@sceneenglish/app-core/components/ui";
 import { useAuth } from "@sceneenglish/app-core/contexts/auth-context";
-import { authApi, wechatAuthorizeHref, parseApiError } from "@sceneenglish/api-client";
+import { authApi, parseApiError } from "@sceneenglish/api-client";
 
 export default function LoginPage() {
   const { loginWithEmail, isAuthenticated } = useAuth();
@@ -93,14 +93,10 @@ export default function LoginPage() {
     }
   };
 
-  const onWeChatLogin = () => {
-    window.location.href = wechatAuthorizeHref(next);
-  };
-
   return (
     <>
       <div className="mx-auto max-w-md space-y-6">
-        <PageHeader badge="账号" title="登录 / 注册" description="使用邮箱验证码或微信授权登录，首次登录将自动注册" />
+        <PageHeader badge="账号" title="登录 / 注册" description="使用邮箱验证码登录，首次登录将自动注册" />
         <Card>
           <form onSubmit={onSubmit} className="space-y-4">
             <div>
@@ -147,19 +143,6 @@ export default function LoginPage() {
               {loggingIn ? "登录中..." : "登录 / 注册"}
             </Button>
           </form>
-
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-slate-500">或</span>
-            </div>
-          </div>
-
-          <Button type="button" variant="outline" className="w-full" onClick={onWeChatLogin}>
-            微信扫码登录
-          </Button>
         </Card>
       </div>
 

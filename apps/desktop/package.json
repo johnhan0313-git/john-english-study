@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "build:web": "npm run build -w @sceneenglish/shell",
-    "tauri": "tauri",
-    "dev": "npm run build:web && tauri dev",
-    "build": "npm run build:web && tauri build"
+    "tauri": "PATH=\"$HOME/.cargo/bin:$PATH\" tauri",
+    "dev": "npm run build:web && npm run tauri -- dev",
+    "build": "npm run build:web && npm run tauri -- build"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.2.0"
