@@ -25,7 +25,9 @@ npm run build:shell         # 构建 shell/dist
 # Capacitor（需先 build:shell）
 cd apps/mobile && npm run cap:sync
 
-# Electron 桌面端（需先 build:shell 或使用 npm run dev:desktop）
+# Electron 桌面端（需先在仓库根目录 npm install）
+npm run build:desktop
+# 或
 cd apps/desktop && npm run build
 ```
 

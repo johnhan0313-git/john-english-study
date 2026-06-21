@@ -3,22 +3,29 @@
   "version": "0.1.0",
   "private": true,
   "main": "electron/main.js",
+  "installConfig": {
+    "hoistingLimits": "workspaces"
+  },
   "scripts": {
     "build:shell": "npm run build -w @sceneenglish/shell",
     "dev:shell": "npm run dev -w @sceneenglish/shell",
     "dev": "concurrently -k \"npm run dev:shell\" \"wait-on http://127.0.0.1:5173 && cross-env ELECTRON_DEV=1 electron .\"",
     "start": "electron .",
-    "build": "npm run build:shell && electron-builder",
-    "pack": "npm run build:shell && electron-builder --dir"
+    "build": "npm run build:shell && electron-builder --project .",
+    "pack": "npm run build:shell && electron-builder --project . --dir"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",
     "cross-env": "^7.0.3",
-    "electron": "^34.2.0",
+    "electron": "34.5.8",
     "electron-builder": "^25.1.8",
     "wait-on": "^8.0.3"
   },
   "build": {
+    "electronVersion": "34.5.8",
+    "electronDist": "../../node_modules/electron/dist",
+    "nodeGypRebuild": false,
+    "npmRebuild": false,
     "appId": "me.cool-app.sceneenglish",
     "productName": "SceneEnglish",
     "directories": {

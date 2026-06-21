@@ -11,7 +11,12 @@
     "dev:desktop": "npm run dev -w @sceneenglish/desktop",
     "build:web": "npm run build -w @sceneenglish/web",
     "build:shell": "npm run build -w @sceneenglish/shell",
+    "build:desktop": "npm run build:shell && electron-builder --project apps/desktop",
     "build:packages": "npm run build -w @sceneenglish/api-client && npm run build -w @sceneenglish/app-core",
     "lint": "npm run lint -w @sceneenglish/web"
+  },
+  "devDependencies": {
+    "electron": "34.5.8",
+    "electron-builder": "^25.1.8"
   }
 }
