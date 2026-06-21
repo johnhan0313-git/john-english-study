@@ -8,6 +8,7 @@
   "scripts": {
     "dev:web": "npm run dev -w @sceneenglish/web",
     "dev:shell": "npm run dev -w @sceneenglish/shell",
+    "dev:desktop": "npm run dev -w @sceneenglish/desktop",
     "build:web": "npm run build -w @sceneenglish/web",
     "build:shell": "npm run build -w @sceneenglish/shell",
     "build:packages": "npm run build -w @sceneenglish/api-client && npm run build -w @sceneenglish/app-core",

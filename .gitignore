@@ -19,8 +19,8 @@ apps/shell/dist/
 apps/mobile/ios/
 apps/mobile/android/
 
-# Tauri / Rust
-apps/desktop/src-tauri/target/
+# Electron
+apps/desktop/release/
 
 # Env
 .env

@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
+import { HashRouter } from "react-router-dom";
 
 import "@sceneenglish/app-core/styles/globals.css";
 
@@ -11,10 +11,10 @@ const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <BrowserRouter>
+    <HashRouter>
       <ShellPlatformProviders apiBase={apiBase}>
         <ShellApp />
       </ShellPlatformProviders>
-    </BrowserRouter>
+    </HashRouter>
   </StrictMode>,
 );

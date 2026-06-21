@@ -108,7 +108,7 @@ services:
 packages/api-client/   共享 API 客户端
 packages/app-core/     共享 React UI
 apps/web/              Next.js Web 主线
-apps/shell/            Vite SPA（Capacitor/Tauri）
+apps/shell/            Vite SPA（Capacitor / Electron）
 backend/app/           FastAPI 后端
 docs/                  扩展文档（含 MONOREPO.md）
 ```
