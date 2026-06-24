@@ -7,8 +7,9 @@ COPY package.json package-lock.json ./
 COPY packages/api-client/package.json ./packages/api-client/
 COPY packages/app-core/package.json ./packages/app-core/
 COPY apps/web/package.json ./apps/web/
+# 不要 --include-workspace-root：根 package.json 含 electron/electron-builder（~500MB），web 构建不需要
 RUN printf '@johnhan0313-git:registry=https://npm.pkg.github.com\n//npm.pkg.github.com/:_authToken=%s\n' "$GITHUB_TOKEN" > .npmrc \
-    && npm ci --workspace=@sceneenglish/web --include-workspace-root
+    && npm ci --workspace=@sceneenglish/web
 
 FROM base AS builder
 WORKDIR /app

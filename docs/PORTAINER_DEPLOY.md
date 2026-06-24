@@ -52,12 +52,12 @@ environment:
 
 ### Docker 构建时 pip 很慢
 
-`docker compose up --build` 在**构建镜像**阶段执行 `pip install`，此时**不会**使用 Stack 里给运行中容器配的 `HTTP_PROXY`，默认直连 `pypi.org`。john-server 上直连官方 PyPI 与国内镜像均易 15s+ 超时，表现为 backend 构建卡住 10–20 分钟。
+john-server 直连官方 PyPI 易超时。默认使用**清华镜像直连**（无需 mihomo），一般 1–3 分钟装完。
 
-**已处理**：`docker-compose.prod.yml` 为 backend 构建同时传入：
+**镜像 OR 代理，二选一**，不要同时开：
 
-- `PIP_INDEX_URL`：清华镜像（默认）
-- `PIP_HTTP_PROXY` / `PIP_HTTPS_PROXY`：仅 pip 步骤走宿主机 mihomo `7890`（不用 `HTTP_PROXY` 命名，避免 BuildKit 让 apt-get 也走代理）
+- 默认：`PIP_INDEX_URL` 清华源，`PIP_HTTP_PROXY` 留空
+- 备选（镜像不可用）：清空 `PIP_INDEX_URL`，改设 `PIP_HTTP_PROXY` / `PIP_HTTPS_PROXY` 走 mihomo
 
 重新部署：
 
@@ -65,24 +65,24 @@ environment:
 ./scripts/deploy-john-server.sh
 ```
 
-当前卡住的构建可先 `Ctrl+C` 中断，同步代码后再跑脚本。
-
-可在 `.env.prod` 覆盖镜像或代理：
+可在 `.env.prod` 覆盖：
 
 ```bash
-PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
-PIP_HTTP_PROXY=http://host.docker.internal:7890
-PIP_HTTPS_PROXY=http://host.docker.internal:7890
+# 推荐（默认）
+PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+
+# 或镜像挂了时
+# PIP_INDEX_URL=
+# PIP_HTTP_PROXY=http://host.docker.internal:7890
+# PIP_HTTPS_PROXY=http://host.docker.internal:7890
 ```
 
-**前提**：mihomo 必须在 john-server 上保持运行。临时手动构建：
+临时手动构建：
 
 ```bash
 cd ~/apps/john-english-study
 docker compose --env-file .env.prod -f docker-compose.prod.yml build \
-  --build-arg PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple \
-  --build-arg PIP_HTTP_PROXY=http://host.docker.internal:7890 \
-  --build-arg PIP_HTTPS_PROXY=http://host.docker.internal:7890 backend
+  --build-arg PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple backend
 ```
 
 ## 词库初始化

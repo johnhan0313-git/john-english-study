@@ -11,7 +11,7 @@ ARG PIP_HTTP_PROXY
 ARG PIP_HTTPS_PROXY
 
 COPY requirements.txt .
-RUN HTTP_PROXY="${PIP_HTTP_PROXY}" HTTPS_PROXY="${PIP_HTTPS_PROXY}" \
+RUN if [ -n "${PIP_HTTP_PROXY}" ]; then export HTTP_PROXY="${PIP_HTTP_PROXY}" HTTPS_PROXY="${PIP_HTTPS_PROXY}"; fi; \
     pip install --no-cache-dir --default-timeout=300 \
     ${PIP_INDEX_URL:+--index-url "$PIP_INDEX_URL"} \
     -r requirements.txt
