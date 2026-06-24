@@ -26,6 +26,8 @@ async def generate_speech_bytes(
             communicate = edge_tts.Communicate(**kwargs)
             await communicate.save(str(output_path))
             return output_path.read_bytes()
+        except Exception as exc:
+            raise AIProviderError(f"Edge TTS failed: {exc}") from exc
         finally:
             output_path.unlink(missing_ok=True)
 

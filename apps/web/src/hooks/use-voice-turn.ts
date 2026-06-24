@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { ApiError, fetchAuthenticatedAudioBlobUrl } from "@/lib/api/client";
+import { parseApiError } from "@sceneenglish/api-client";
 import { useLipsyncAudio } from "@/hooks/use-lipsync-audio";
 
 interface UseVoiceTurnOptions {
@@ -160,7 +161,7 @@ export function useVoiceTurn({
         queryClient.invalidateQueries({ queryKey: ["conversations"] });
         playAudio(result.audio_url);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "语音发送失败");
+        setError(parseApiError(e, "语音发送失败"));
       } finally {
         setProcessing(false);
       }

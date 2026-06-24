@@ -134,6 +134,8 @@ class OpenAICompatibleProvider:
                             yield content
         except AIProviderError:
             yielded = False
+        except Exception:
+            yielded = False
 
         if not yielded:
             text = await self.chat_text(messages)
@@ -166,15 +168,25 @@ class OpenAICompatibleProvider:
             mime = "audio/mp4"
 
         async with self._http_client() as client:
-            resp = await client.post(
-                f"{self.base_url}/audio/transcriptions",
-                headers={"Authorization": f"Bearer {self.api_key}"},
-                data={"model": self.model},
-                files={"file": (filename, audio, mime)},
-            )
+            try:
+                resp = await client.post(
+                    f"{self.base_url}/audio/transcriptions",
+                    headers={"Authorization": f"Bearer {self.api_key}"},
+                    data={"model": self.model},
+                    files={"file": (filename, audio, mime)},
+                )
+            except Exception as exc:
+                raise AIProviderError(f"STT request error: {exc}") from exc
             if resp.status_code != 200:
                 raise AIProviderError(f"STT request failed: {resp.status_code} {resp.text}")
-            return resp.json()["text"]
+            try:
+                data = resp.json()
+            except json.JSONDecodeError as exc:
+                raise AIProviderError(f"STT invalid response: {resp.text[:200]}") from exc
+            text = data.get("text")
+            if text is None:
+                raise AIProviderError(f"STT response missing text: {data}")
+            return str(text)
 
 
 class MockAIProvider:

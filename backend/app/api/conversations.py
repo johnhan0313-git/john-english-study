@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -211,6 +211,7 @@ async def get_message_audio(
 async def voice_turn(
     session_id: int,
     audio: UploadFile = File(...),
+    show_chinese_hint: bool | None = Form(None),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -221,23 +222,30 @@ async def voice_turn(
 
     service = _conversation_service(db)
     session = _get_user_session(service, session_id, user.id)
-    show_chinese_hint = ConversationService.get_show_chinese_hint(session)
+    hint = (
+        show_chinese_hint
+        if show_chinese_hint is not None
+        else ConversationService.get_show_chinese_hint(session)
+    )
 
     audio_bytes = await audio.read()
     if not audio_bytes:
         raise HTTPException(status_code=400, detail="Empty audio upload")
 
     try:
-        transcript = await stt.speech_to_text(audio_bytes, audio.filename or "recording.webm")
+        transcript_raw = await stt.speech_to_text(audio_bytes, audio.filename or "recording.webm")
     except AIProviderError as exc:
         raise HTTPException(status_code=503, detail=f"语音转写失败: {exc}") from exc
 
-    if not transcript.strip():
+    transcript = (transcript_raw or "").strip()
+    if not transcript:
         raise HTTPException(status_code=400, detail="Could not transcribe audio")
 
     try:
-        assistant = await service.send_message(session, transcript.strip(), show_chinese_hint=show_chinese_hint)
-        db.refresh(session)
+        assistant = await service.send_message(session, transcript, show_chinese_hint=hint)
+        session = service.get_session(session_id, user.id)
+        if not session:
+            raise HTTPException(status_code=404, detail="Conversation not found")
         user_messages = [m for m in session.messages if m.role == "user"]
         user_msg = user_messages[-1] if user_messages else None
         await ensure_conversation_message_audio(session_id, assistant.id, assistant.content, settings)
@@ -251,7 +259,7 @@ async def voice_turn(
     return VoiceTurnResponse(
         user_message_id=user_msg.id if user_msg else 0,
         assistant_message_id=assistant.id,
-        transcript=transcript.strip(),
+        transcript=transcript,
         content=assistant.content,
         audio_url=f"/conversations/{session_id}/messages/{assistant.id}/audio",
         used_words=used_words,

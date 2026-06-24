@@ -41,6 +41,33 @@ def test_stream_message(client: TestClient):
     assert "text/event-stream" in resp.headers.get("content-type", "")
 
 
+def test_voice_turn(client: TestClient):
+    from io import BytesIO
+    from unittest.mock import AsyncMock, patch
+
+    data = register_user(client, email="voice@example.com")
+    headers = auth_headers(data["access_token"])
+    create = client.post("/api/conversations", json={"level": "cet4"}, headers=headers)
+    session_id = create.json()["id"]
+
+    with patch("app.api.conversations.get_stt_provider") as mock_stt:
+        provider = AsyncMock()
+        provider.speech_to_text = AsyncMock(return_value="Hello, I need help with my reservation.")
+        mock_stt.return_value = provider
+        resp = client.post(
+            f"/api/conversations/{session_id}/turns/voice",
+            files={"audio": ("recording.webm", BytesIO(b"fake-audio"), "audio/webm")},
+            data={"show_chinese_hint": "true"},
+            headers=headers,
+        )
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["transcript"]
+    assert body["assistant_message_id"] > 0
+    assert body["audio_url"].endswith("/audio")
+
+
 def test_list_conversations(client: TestClient):
     data = register_user(client, email="list@example.com")
     headers = auth_headers(data["access_token"])

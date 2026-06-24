@@ -20,9 +20,14 @@ async def ensure_conversation_message_audio(
     cfg = settings or get_settings()
     key = conversation_message_audio_key(session_id, message_id)
     storage = get_storage(cfg)
-    if not storage.exists(key):
-        audio = await generate_speech_bytes(text[:500], cfg)
-        storage.put_bytes(key, audio, "audio/mpeg")
+    try:
+        if not storage.exists(key):
+            audio = await generate_speech_bytes(text[:500], cfg)
+            storage.put_bytes(key, audio, "audio/mpeg")
+    except AIProviderError:
+        raise
+    except Exception as exc:
+        raise AIProviderError(f"Conversation audio failed: {exc}") from exc
     return key
 
 
