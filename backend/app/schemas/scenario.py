@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -29,6 +31,8 @@ class ScenarioGenerateRequest(BaseModel):
     word_ids: list[int] = Field(default_factory=list)
     scenario_type: str = "narrative"  # narrative | dialogue
     word_count: int = Field(default=10, ge=5, le=15)
+    word_strategy: Literal["smart", "new", "review"] = "smart"
+    exclude_recent: bool = True
 
 
 class ScenarioBrief(BaseModel):

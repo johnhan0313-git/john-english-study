@@ -162,10 +162,19 @@ export default function PhoneticsPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const player = useAudioPlayer();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["phonetics", category, search],
-    queryFn: () => api.getPhonetics({ ...(category && { category }), ...(search && { search }) }),
+  const { data: overview, isLoading: overviewLoading } = useQuery({
+    queryKey: ["phonetics", "", search],
+    queryFn: () => api.getPhonetics({ ...(search && { search }) }),
   });
+
+  const { data: filtered, isLoading: filteredLoading } = useQuery({
+    queryKey: ["phonetics", category, search],
+    queryFn: () => api.getPhonetics({ category, ...(search && { search }) }),
+    enabled: !!category,
+  });
+
+  const data = category ? filtered : overview;
+  const isLoading = category ? filteredLoading : overviewLoading;
 
   const { data: detail, isLoading: detailLoading } = useQuery({
     queryKey: ["phonetic", selectedId],
@@ -173,18 +182,18 @@ export default function PhoneticsPage() {
     enabled: selectedId !== null,
   });
 
-  const categories = data?.groups.map((g) => ({ id: g.category, label: g.category_zh, count: g.count })) ?? [];
+  const categories = overview?.groups.map((g) => ({ id: g.category, label: g.category_zh, count: g.count })) ?? [];
   const vowelCount =
-    (data?.groups.find((g) => g.category === "short_vowel")?.count ?? 0) +
-    (data?.groups.find((g) => g.category === "long_vowel")?.count ?? 0) +
-    (data?.groups.find((g) => g.category === "diphthong")?.count ?? 0);
+    (overview?.groups.find((g) => g.category === "short_vowel")?.count ?? 0) +
+    (overview?.groups.find((g) => g.category === "long_vowel")?.count ?? 0) +
+    (overview?.groups.find((g) => g.category === "diphthong")?.count ?? 0);
 
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="音标总数" value={data?.total ?? "—"} icon={Volume2} tone="brand" />
+        <StatCard label="音标总数" value={overview?.total ?? "—"} icon={Volume2} tone="brand" />
         <StatCard label="元音" value={vowelCount} icon={Volume2} tone="violet" />
-        <StatCard label="辅音" value={data?.groups.find((g) => g.category === "consonant")?.count ?? 0} icon={Volume2} tone="emerald" />
+        <StatCard label="辅音" value={overview?.groups.find((g) => g.category === "consonant")?.count ?? 0} icon={Volume2} tone="emerald" />
       </div>
 
       {player.error && <Alert variant="warning">{player.error}</Alert>}

@@ -2,17 +2,6 @@ import { request } from "../client";
 import { API_BASE } from "../client";
 import type { AuthResponse, AuthUser, MergeDeviceResult } from "./types";
 
-export interface CaptchaData {
-  captcha_id: string;
-  width: number;
-  height: number;
-  puzzle_y: number;
-  piece_width: number;
-  background_svg: string;
-  piece_svg: string;
-  dev_answer?: string | null;
-}
-
 export interface SendCodeResult {
   message: string;
   cooldown_seconds: number;
@@ -20,15 +9,13 @@ export interface SendCodeResult {
 }
 
 export const authApi = {
-  getCaptcha: () => request<CaptchaData>("/auth/captcha"),
-
   sendEmailCode: (body: { email: string }) =>
     request<SendCodeResult>("/auth/email/send-code", {
       method: "POST",
       body: JSON.stringify(body),
     }),
 
-  emailLogin: (body: { email: string; code: string; captcha_id: string; captcha_x: number }) =>
+  emailLogin: (body: { email: string; code: string }) =>
     request<AuthResponse>("/auth/email/login", { method: "POST", body: JSON.stringify(body) }),
 
   me: () => request<AuthUser>("/auth/me"),

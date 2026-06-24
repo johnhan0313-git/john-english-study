@@ -13,6 +13,7 @@ from app.services.vocabulary.definition_lookup import enrich_definitions, fill_m
 from app.services.vocabulary.definitions import normalize_definitions
 from app.services.vocabulary.exam_tags import sync_all_exam_tags
 from app.services.vocabulary.import_pets import import_pets_words
+from app.services.vocabulary.theme_tags import sync_all_theme_tags
 from app.utils.json_helpers import dump_json_field, parse_json_field
 
 
@@ -702,6 +703,7 @@ def import_words(db: Session) -> dict[str, int | bool]:
         repaired = repair_placeholder_definitions(db)
         filled = fill_missing_definitions(db)
         groups = sync_word_groups(db)
+        theme_tags = sync_all_theme_tags(db)
         pets = import_pets_words(db)
         synced = sync_all_exam_tags(db)
         return {
@@ -712,6 +714,7 @@ def import_words(db: Session) -> dict[str, int | bool]:
             "filled_definitions": filled,
             "synced_exam_tags": synced,
             "word_groups": groups,
+            "theme_tags": theme_tags,
             "pets": pets,
         }
 
@@ -746,6 +749,7 @@ def import_words(db: Session) -> dict[str, int | bool]:
 
     db.commit()
     groups = sync_word_groups(db)
+    theme_tags = sync_all_theme_tags(db)
     filled = fill_missing_definitions(db)
     pets = import_pets_words(db)
     synced = sync_all_exam_tags(db)
@@ -756,6 +760,7 @@ def import_words(db: Session) -> dict[str, int | bool]:
         "filled_definitions": filled,
         "synced_exam_tags": synced,
         "word_groups": groups,
+        "theme_tags": theme_tags,
         "pets": pets,
     }
 

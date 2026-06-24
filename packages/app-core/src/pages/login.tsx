@@ -3,7 +3,6 @@
 import { useNavigate, useSearchParams } from "@sceneenglish/app-core/platform/context";
 import { FormEvent, useEffect, useState } from "react";
 
-import { CaptchaModal } from "@sceneenglish/app-core/components/auth/captcha-modal";
 import { Button, Card, Input, PageHeader } from "@sceneenglish/app-core/components/ui";
 import { useAuth } from "@sceneenglish/app-core/contexts/auth-context";
 import { authApi, parseApiError } from "@sceneenglish/api-client";
@@ -20,8 +19,6 @@ export default function LoginPage() {
   const [cooldown, setCooldown] = useState(0);
   const [error, setError] = useState("");
   const [sendingCode, setSendingCode] = useState(false);
-  const [captchaOpen, setCaptchaOpen] = useState(false);
-  const [captchaError, setCaptchaError] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
 
   useEffect(() => {
@@ -55,7 +52,7 @@ export default function LoginPage() {
     }
   };
 
-  const onSubmit = (e: FormEvent) => {
+  const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
     if (!email.trim()) {
@@ -66,93 +63,67 @@ export default function LoginPage() {
       setError("请输入邮箱验证码");
       return;
     }
-    setCaptchaError("");
-    setCaptchaOpen(true);
-  };
-
-  const onCaptchaComplete = async (captchaId: string, captchaX: number) => {
-    setCaptchaError("");
     setLoggingIn(true);
     try {
-      await loginWithEmail(email.trim(), emailCode.trim(), {
-        captcha_id: captchaId,
-        captcha_x: captchaX,
-      });
-      setCaptchaOpen(false);
+      await loginWithEmail(email.trim(), emailCode.trim());
       navigate(next);
     } catch (err) {
-      const message = parseApiError(err, "登录失败");
-      if (message.includes("拼图")) {
-        setCaptchaError(message);
-      } else {
-        setCaptchaOpen(false);
-        setError(message);
-      }
+      setError(parseApiError(err, "登录失败"));
     } finally {
       setLoggingIn(false);
     }
   };
 
   return (
-    <>
-      <div className="mx-auto max-w-md space-y-6">
-        <PageHeader badge="账号" title="登录 / 注册" description="使用邮箱验证码登录，首次登录将自动注册" />
-        <Card>
-          <form onSubmit={onSubmit} className="space-y-4">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">邮箱</label>
+    <div className="mx-auto max-w-md space-y-6">
+      <PageHeader badge="账号" title="登录 / 注册" description="使用邮箱验证码登录，首次登录将自动注册" />
+      <Card>
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">邮箱</label>
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+              placeholder="you@example.com"
+            />
+          </div>
+
+          {codeSent && (
+            <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">验证码已发送，请查收邮件</p>
+          )}
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">邮箱验证码</label>
+            <div className="flex gap-2">
               <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={emailCode}
+                onChange={(e) => setEmailCode(e.target.value)}
                 required
-                autoComplete="email"
-                placeholder="you@example.com"
+                autoComplete="one-time-code"
+                placeholder="6 位数字"
+                className="flex-1"
               />
+              <Button
+                type="button"
+                variant="outline"
+                disabled={sendingCode || cooldown > 0}
+                onClick={onSendCode}
+              >
+                {cooldown > 0 ? `${cooldown}s` : sendingCode ? "发送中..." : codeSent ? "重新发送" : "获取验证码"}
+              </Button>
             </div>
+          </div>
 
-            {codeSent && (
-              <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">验证码已发送，请查收邮件</p>
-            )}
+          {error && <p className="text-sm text-red-600">{error}</p>}
 
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">邮箱验证码</label>
-              <div className="flex gap-2">
-                <Input
-                  value={emailCode}
-                  onChange={(e) => setEmailCode(e.target.value)}
-                  required
-                  autoComplete="one-time-code"
-                  placeholder="6 位数字"
-                  className="flex-1"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={sendingCode || cooldown > 0}
-                  onClick={onSendCode}
-                >
-                  {cooldown > 0 ? `${cooldown}s` : sendingCode ? "发送中..." : codeSent ? "重新发送" : "获取验证码"}
-                </Button>
-              </div>
-            </div>
-
-            {error && <p className="text-sm text-red-600">{error}</p>}
-
-            <Button type="submit" className="w-full" disabled={loggingIn}>
-              {loggingIn ? "登录中..." : "登录 / 注册"}
-            </Button>
-          </form>
-        </Card>
-      </div>
-
-      <CaptchaModal
-        open={captchaOpen}
-        loading={loggingIn}
-        error={captchaError}
-        onClose={() => !loggingIn && setCaptchaOpen(false)}
-        onComplete={onCaptchaComplete}
-      />
-    </>
+          <Button type="submit" className="w-full" disabled={loggingIn}>
+            {loggingIn ? "登录中..." : "登录 / 注册"}
+          </Button>
+        </form>
+      </Card>
+    </div>
   );
 }

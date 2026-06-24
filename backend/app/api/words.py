@@ -25,6 +25,7 @@ from app.schemas.word import (
 )
 from app.services.vocabulary.definition_lookup import enrich_definitions
 from app.services.vocabulary.exam_tags import count_words_for_exam_level
+from app.services.vocabulary.theme_tags import count_theme_tagged_words
 from app.services.vocabulary.levels import ALL_EXAM_LEVELS, is_exam_tag, resolve_exam_levels
 from app.services.vocabulary.word_query import apply_letter_filter, collect_index_letters, words_base_query
 from app.utils.json_helpers import parse_json_field
@@ -129,7 +130,7 @@ def list_groups(db: Session = Depends(get_db)):
     groups = db.query(WordGroup).all()
     result = []
     for g in groups:
-        count = db.query(WordGroupMember).filter(WordGroupMember.group_id == g.id).count()
+        count = count_theme_tagged_words(db, g.slug)
         result.append(
             WordGroupResponse(
                 id=g.id,

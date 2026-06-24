@@ -5,7 +5,7 @@ export { parseApiError } from "./errors";
 export { api } from "./api";
 export * from "./api/types";
 export { authApi, wechatAuthorizeHref } from "./auth/api";
-export type { CaptchaData, SendCodeResult } from "./auth/api";
+export type { SendCodeResult } from "./auth/api";
 export * from "./auth/types";
 export * from "./learning/catalog";
 export * from "./learning/date-groups";

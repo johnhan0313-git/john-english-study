@@ -174,5 +174,137 @@
       "garden",
       "community"
     ]
+  },
+  {
+    "slug": "food",
+    "name_zh": "美食餐饮",
+    "name_en": "Food & Dining",
+    "words": [
+      "appetite",
+      "recipe",
+      "consume",
+      "kitchen",
+      "nutrition",
+      "diet",
+      "organic",
+      "grocery",
+      "purchase",
+      "delivery",
+      "convenient",
+      "health",
+      "exercise",
+      "community",
+      "routine"
+    ]
+  },
+  {
+    "slug": "sports",
+    "name_zh": "运动体育",
+    "name_en": "Sports & Fitness",
+    "words": [
+      "exercise",
+      "champion",
+      "leisure",
+      "energy",
+      "achieve",
+      "challenge",
+      "compete",
+      "active",
+      "health",
+      "nutrition",
+      "therapy",
+      "recovery",
+      "patient",
+      "immune",
+      "diet"
+    ]
+  },
+  {
+    "slug": "social",
+    "name_zh": "社交人际",
+    "name_en": "Social & Relationships",
+    "words": [
+      "emotion",
+      "sympathy",
+      "apologize",
+      "appreciate",
+      "communicate",
+      "community",
+      "introduce",
+      "respect",
+      "respond",
+      "generous",
+      "harmony",
+      "encourage",
+      "interview",
+      "resolve",
+      "neighbor"
+    ]
+  },
+  {
+    "slug": "news",
+    "name_zh": "新闻时事",
+    "name_en": "News & Current Affairs",
+    "words": [
+      "journalist",
+      "headline",
+      "publish",
+      "media",
+      "report",
+      "debate",
+      "policy",
+      "campaign",
+      "public",
+      "represent",
+      "political",
+      "declare",
+      "highlight",
+      "historical",
+      "data"
+    ]
+  },
+  {
+    "slug": "psychology",
+    "name_zh": "情感心理",
+    "name_en": "Psychology & Emotions",
+    "words": [
+      "anxiety",
+      "emotion",
+      "psychology",
+      "mental",
+      "stress",
+      "thought",
+      "therapy",
+      "sympathy",
+      "encourage",
+      "harmony",
+      "anticipate",
+      "express",
+      "struggle",
+      "strength",
+      "enable"
+    ]
+  },
+  {
+    "slug": "science",
+    "name_zh": "科学研究",
+    "name_en": "Science & Research",
+    "words": [
+      "research",
+      "experiment",
+      "hypothesis",
+      "theory",
+      "explore",
+      "explain",
+      "prove",
+      "evidence",
+      "observe",
+      "analyze",
+      "discover",
+      "mechanism",
+      "expert",
+      "structure",
+      "examine"
+    ]
   }
 ]

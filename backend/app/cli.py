@@ -8,6 +8,7 @@ from app.config import get_settings
 from app.database import SessionLocal, init_db
 from app.logging_config import configure_logging
 from app.services.vocabulary.import_words import import_words
+from app.services.vocabulary.theme_tags import sync_all_theme_tags
 from app.services.vocabulary.seed_dictionary import seed_dictionary_entries
 
 
@@ -17,6 +18,17 @@ def cmd_seed_dictionary(force: bool = False) -> int:
     try:
         result = seed_dictionary_entries(db, force=force)
         print(f"Dictionary seed: {result}")
+    finally:
+        db.close()
+    return 0
+
+
+def cmd_sync_theme_tags() -> int:
+    init_db()
+    db = SessionLocal()
+    try:
+        result = sync_all_theme_tags(db)
+        print(f"Theme tags synced: {result}")
     finally:
         db.close()
     return 0
@@ -70,6 +82,7 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     sub.add_parser("seed", help="Import dictionary, vocabulary and reference data")
+    sub.add_parser("sync-theme-tags", help="Infer and apply theme WordTags for the full vocabulary")
     sub.add_parser("daily-scenarios", help="Run daily scenario generation once")
     args = parser.parse_args(argv)
 
@@ -77,6 +90,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_seed_dictionary(force=args.force)
     if args.command == "seed":
         return cmd_seed()
+    if args.command == "sync-theme-tags":
+        return cmd_sync_theme_tags()
     if args.command == "daily-scenarios":
         return asyncio.run(cmd_daily_scenarios())
     parser.print_help()

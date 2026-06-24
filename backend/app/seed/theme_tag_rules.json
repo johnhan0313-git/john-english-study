@@ -1,0 +1,183 @@
+{
+  "travel": {
+    "lemma": [
+      "travel", "trip", "tour", "tourist", "airport", "flight", "fly", "airline", "hotel", "motel",
+      "passport", "visa", "luggage", "baggage", "journey", "route", "destination", "ticket", "cruise",
+      "pilot", "taxi", "cab", "abroad", "overseas", "railway", "train", "voyage", "navigate", "customs",
+      "depart", "arrival", "board", "reservation", "schedule", "immigration", "highway", "excursion",
+      "transit", "fare", "hostel", "wander", "suitcase", "shuttle", "aircraft", "jet", "harbor", "port"
+    ],
+    "definition_zh": [
+      "旅行", "旅游", "机场", "航班", "酒店", "护照", "签证", "行李", "旅程", "路线", "目的地",
+      "机票", "出发", "到达", "登机", "预订", "海关", "出国", "海外", "游客", "轮船", "港口"
+    ]
+  },
+  "campus": {
+    "lemma": [
+      "campus", "college", "university", "school", "lecture", "semester", "tuition", "scholarship",
+      "dormitory", "dorm", "enroll", "graduate", "faculty", "thesis", "exam", "library", "assignment",
+      "academic", "student", "classroom", "diploma", "dean", "curriculum", "freshman", "tutor",
+      "professor", "homework", "textbook", "principal", "pupil", "educate", "education", "tuition",
+      "freshman", "sophomore", "doctoral", "bachelor", "master", "campus", "quiz", "essay", "campus"
+    ],
+    "definition_zh": [
+      "校园", "大学", "学院", "课程", "学期", "学费", "奖学金", "宿舍", "注册", "毕业", "教授",
+      "论文", "考试", "图书馆", "作业", "学术", "学生", "课堂", "学位", "教育", "入学", "院系"
+    ]
+  },
+  "business": {
+    "lemma": [
+      "business", "contract", "negotiate", "client", "revenue", "salary", "interview", "resume",
+      "colleague", "deadline", "proposal", "promotion", "meeting", "budget", "profit", "commerce",
+      "corporate", "employ", "market", "finance", "invest", "trade", "export", "import", "merchant",
+      "stock", "wage", "bank", "loan", "audit", "brand", "retail", "invoice", "partner", "merger",
+      "startup", "entrepreneur", "workplace", "workforce", "executive", "manager", "bonus", "commission"
+    ],
+    "definition_zh": [
+      "商务", "商业", "合同", "协商", "客户", "收入", "薪水", "面试", "简历", "同事", "截止",
+      "提案", "晋升", "会议", "预算", "利润", "市场", "金融", "投资", "贸易", "出口", "进口",
+      "银行", "贷款", "创业", "经理", "职场", "企业"
+    ]
+  },
+  "health": {
+    "lemma": [
+      "health", "medical", "doctor", "patient", "hospital", "symptom", "diagnos", "prescription",
+      "therapy", "surgery", "disease", "infect", "medicine", "nutrition", "immune", "treat", "clinic",
+      "nurse", "physician", "cure", "heal", "dental", "pharmacy", "vaccine", "virus", "bacteria",
+      "chronic", "acute", "wellness", "surgeon", "ambulance", "allergy", "fever", "pain", "injury"
+    ],
+    "definition_zh": [
+      "健康", "医疗", "医生", "病人", "医院", "症状", "诊断", "处方", "治疗", "手术", "疾病",
+      "感染", "药物", "营养", "免疫", "诊所", "护士", "治愈", "牙科", "疫苗", "病毒", "细菌",
+      "发烧", "疼痛", "受伤", "体检"
+    ]
+  },
+  "technology": {
+    "lemma": [
+      "technology", "software", "hardware", "computer", "digital", "internet", "network", "database",
+      "algorithm", "program", "device", "cyber", "online", "system", "robot", "electronic", "server",
+      "cloud", "mobile", "chip", "virtual", "automation", "interface", "browser", "pixel", "tech",
+      "application", "platform", "security", "update", "install", "code", "data", "wireless", "laptop"
+    ],
+    "definition_zh": [
+      "科技", "技术", "软件", "硬件", "电脑", "数字", "互联网", "网络", "数据库", "算法", "程序",
+      "设备", "在线", "系统", "机器人", "电子", "服务器", "云", "手机", "芯片", "自动化", "浏览器",
+      "应用", "平台", "安全", "安装", "代码", "数据", "无线"
+    ]
+  },
+  "environment": {
+    "lemma": [
+      "environment", "climate", "pollut", "recycle", "sustain", "ecosystem", "conserv", "emission",
+      "renew", "wildlife", "carbon", "habitat", "organic", "waste", "forest", "ocean", "planet",
+      "ecology", "solar", "global", "green", "nature", "species", "drought", "flood", "erosion"
+    ],
+    "definition_zh": [
+      "环境", "气候", "污染", "回收", "可持续", "生态", "保护", "排放", "可再生", "野生动物",
+      "碳", "栖息地", "有机", "废物", "森林", "海洋", "地球", "自然", "物种", "干旱", "洪水",
+      "节能", "环保", "绿化"
+    ]
+  },
+  "culture": {
+    "lemma": [
+      "culture", "art", "museum", "literature", "drama", "poetry", "classic", "festival", "heritage",
+      "tradition", "creative", "gallery", "sculpture", "performance", "artistic", "opera", "ballet",
+      "religion", "music", "painting", "theater", "theatre", "antique", "civilization", "folklore",
+      "exhibition", "media", "novel", "author", "composer"
+    ],
+    "definition_zh": [
+      "文化", "艺术", "博物馆", "文学", "戏剧", "诗歌", "经典", "节日", "遗产", "传统", "创意",
+      "画廊", "雕塑", "表演", "歌剧", "芭蕾", "宗教", "音乐", "绘画", "剧院", "文物", "文明",
+      "民俗", "展览", "小说", "作家", "作曲家"
+    ]
+  },
+  "daily": {
+    "lemma": [
+      "home", "house", "family", "apartment", "neighbor", "grocery", "household", "routine", "convenient",
+      "kitchen", "laundry", "garden", "community", "furniture", "domestic", "shopping", "purchase",
+      "delivery", "repair", "rent", "clean", "daily", "chore", "bedroom", "bathroom", "garage",
+      "supermarket", "mall", "store", "wallet", "purse"
+    ],
+    "definition_zh": [
+      "家", "家庭", "公寓", "邻居", "杂货", "家务", "日常", "方便", "厨房", "洗衣", "花园",
+      "社区", "家具", "购物", "购买", "配送", "修理", "租房", "打扫", "卧室", "卫生间", "超市",
+      "商场", "商店", "钱包", "生活"
+    ]
+  },
+  "food": {
+    "lemma": [
+      "food", "eat", "meal", "cook", "recipe", "restaurant", "kitchen", "appetite", "nutrition", "diet",
+      "organic", "grocery", "flavor", "beverage", "delicious", "hunger", "snack", "breakfast", "lunch",
+      "dinner", "fruit", "vegetable", "meat", "bread", "coffee", "tea", "spice", "chef", "dish",
+      "dining", "bakery", "cuisine", "consume", "taste"
+    ],
+    "definition_zh": [
+      "食物", "吃", "餐", "烹饪", "食谱", "餐厅", "厨房", "食欲", "营养", "饮食", "有机", "杂货",
+      "味道", "饮料", "美味", "饥饿", "零食", "早餐", "午餐", "晚餐", "水果", "蔬菜", "肉", "面包",
+      "咖啡", "茶", "香料", "厨师", "菜", "用餐", "烘焙", "美食"
+    ]
+  },
+  "sports": {
+    "lemma": [
+      "sport", "exercise", "athlete", "champion", "fitness", "compete", "competition", "marathon",
+      "stadium", "victory", "coach", "medal", "training", "team", "game", "ball", "swim", "run",
+      "jog", "soccer", "football", "basketball", "tennis", "gym", "olympic", "race", "match",
+      "player", "referee", "league", "workout"
+    ],
+    "definition_zh": [
+      "运动", "锻炼", "运动员", "冠军", "健身", "竞争", "比赛", "马拉松", "体育场", "胜利", "教练",
+      "奖牌", "训练", "团队", "游戏", "球", "游泳", "跑步", "足球", "篮球", "网球", "健身房",
+      "奥运", "赛跑", "选手", "裁判", "联赛"
+    ]
+  },
+  "social": {
+    "lemma": [
+      "social", "friend", "emotion", "sympathy", "communicate", "respect", "generous", "community",
+      "introduce", "relationship", "marriage", "love", "party", "invite", "gossip", "accompany",
+      "greet", "trust", "loyal", "forgive", "chat", "neighbor", "apologize", "appreciate", "encourage",
+      "harmony", "interview", "resolve", "respond"
+    ],
+    "definition_zh": [
+      "社交", "朋友", "情感", "同情", "沟通", "尊重", "慷慨", "社区", "介绍", "关系", "婚姻",
+      "爱", "聚会", "邀请", "陪伴", "问候", "信任", "忠诚", "原谅", "聊天", "邻居", "道歉",
+      "感谢", "鼓励", "和谐", "人际"
+    ]
+  },
+  "news": {
+    "lemma": [
+      "news", "journalist", "headline", "publish", "media", "report", "debate", "policy", "campaign",
+      "political", "public", "broadcast", "editorial", "press", "government", "election", "vote",
+      "parliament", "democracy", "protest", "editor", "newspaper", "magazine", "announce", "declare"
+    ],
+    "definition_zh": [
+      "新闻", "记者", "标题", "出版", "媒体", "报道", "辩论", "政策", "竞选", "政治", "公共",
+      "广播", "社论", "政府", "选举", "投票", "议会", "民主", "抗议", "编辑", "报纸", "杂志",
+      "宣布", "声明", "时事"
+    ]
+  },
+  "psychology": {
+    "lemma": [
+      "psychology", "mental", "anxiety", "stress", "emotion", "thought", "therapy", "depress",
+      "cognitive", "behavior", "behaviour", "personality", "mood", "mind", "feeling", "emotional",
+      "trauma", "confident", "motivat", "self-esteem", "psychiatr", "panic", "phobia", "attitude",
+      "conscious", "subconscious", "empathy", "sympathy", "anticipate"
+    ],
+    "definition_zh": [
+      "心理", "精神", "焦虑", "压力", "情感", "思想", "治疗", "抑郁", "认知", "行为", "性格",
+      "情绪", "心灵", "感觉", "创伤", "自信", "动机", "自尊", "恐慌", "恐惧", "态度", "意识",
+      "共情", "预期", "心态"
+    ]
+  },
+  "science": {
+    "lemma": [
+      "science", "research", "experiment", "hypothesis", "theory", "explore", "evidence", "observe",
+      "analyze", "analyse", "discover", "laboratory", "physics", "chemistry", "biology", "scientific",
+      "empirical", "molecule", "atom", "formula", "microscope", "genetic", "statistic", "examine",
+      "prove", "explain", "mechanism", "expert", "structure", "invent", "innovation", "laboratory"
+    ],
+    "definition_zh": [
+      "科学", "研究", "实验", "假设", "理论", "探索", "证据", "观察", "分析", "发现", "实验室",
+      "物理", "化学", "生物", "分子", "原子", "公式", "显微镜", "基因", "统计", "检验", "证明",
+      "解释", "机制", "专家", "结构", "发明", "创新"
+    ]
+  }
+}

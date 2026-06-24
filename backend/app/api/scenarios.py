@@ -38,6 +38,8 @@ async def generate_scenario(
             word_ids=body.word_ids,
             scenario_type=body.scenario_type,
             word_count=body.word_count,
+            word_strategy=body.word_strategy,
+            exclude_recent=body.exclude_recent,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e

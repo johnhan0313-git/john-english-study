@@ -20,6 +20,7 @@ from app.services.conversation.prompts import (
     strip_chinese_hint_suffix,
 )
 from app.services.scenario.service import ScenarioService
+from app.services.scenario.word_picker import pick_words
 from app.services.vocabulary.srs import record_answer
 from app.utils.json_helpers import dump_json_field, parse_json_field
 
@@ -148,7 +149,8 @@ class ConversationService:
         theme: str,
         word_count: int,
     ) -> dict:
-        words = self.scenario_service.pick_words(
+        words = pick_words(
+            self.db,
             level=level,
             theme=theme if theme != "daily" else None,
             word_ids=[],

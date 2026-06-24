@@ -23,59 +23,21 @@ def test_email_login_auto_register(client: TestClient):
     assert first["user"]["email"] == "bob@example.com"
 
 
-def test_login_invalid_captcha(client: TestClient):
-    send = client.post("/api/auth/email/send-code", json={"email": "bad@example.com"})
-    assert send.status_code == 200
-    code = send.json()["dev_code"]
-
-    cap = client.get("/api/auth/captcha")
-    assert cap.status_code == 200
-    resp = client.post(
-        "/api/auth/email/login",
-        json={
-            "email": "bad@example.com",
-            "code": code,
-            "captcha_id": cap.json()["captcha_id"],
-            "captcha_x": 0,
-        },
-    )
-    assert resp.status_code == 400
-
-    # 拼图失败不应消耗邮箱验证码
-    cap2 = client.get("/api/auth/captcha")
-    resp2 = client.post(
-        "/api/auth/email/login",
-        json={
-            "email": "bad@example.com",
-            "code": code,
-            "captcha_id": cap2.json()["captcha_id"],
-            "captcha_x": int(cap2.json()["dev_answer"]),
-        },
-    )
-    assert resp2.status_code == 200, resp2.text
-
-
 def test_wrong_email_code_not_consumed(client: TestClient):
     from app.auth.email_codes import create_email_code
 
     email = "reuse@example.com"
     create_email_code(email, ttl_seconds=600)
 
-    cap = client.get("/api/auth/captcha")
-    cap_data = cap.json()
     resp = client.post(
         "/api/auth/email/login",
         json={
             "email": email,
             "code": "000000",
-            "captcha_id": cap_data["captcha_id"],
-            "captcha_x": int(cap_data["dev_answer"]),
         },
     )
     assert resp.status_code == 401
 
-    cap2 = client.get("/api/auth/captcha")
-    cap_data2 = cap2.json()
     send = client.post("/api/auth/email/send-code", json={"email": email})
     code = send.json()["dev_code"]
     resp2 = client.post(
@@ -83,8 +45,6 @@ def test_wrong_email_code_not_consumed(client: TestClient):
         json={
             "email": email,
             "code": code,
-            "captcha_id": cap_data2["captcha_id"],
-            "captcha_x": int(cap_data2["dev_answer"]),
         },
     )
     assert resp2.status_code == 200, resp2.text

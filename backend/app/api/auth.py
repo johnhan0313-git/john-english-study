@@ -6,7 +6,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
-from app.auth.captcha import create_captcha, verify_captcha
 from app.auth.dependencies import get_current_user
 from app.auth.email_codes import can_send_code, create_email_code, rollback_email_code, verify_email_code
 from app.auth.email_service import EmailDeliveryError, send_login_code
@@ -24,7 +23,6 @@ from app.config import Settings, get_settings
 from app.database import get_db
 from app.models.user import User
 from app.schemas.auth import (
-    CaptchaResponse,
     EmailLoginRequest,
     MergeDeviceRequest,
     MergeDeviceResponse,
@@ -67,21 +65,6 @@ def _should_expose_dev_secrets(settings: Settings) -> bool:
     return settings.testing or settings.debug or settings.auth_expose_codes
 
 
-@router.get("/captcha", response_model=CaptchaResponse)
-def get_captcha(settings: Settings = Depends(get_settings)):
-    payload = create_captcha()
-    return CaptchaResponse(
-        captcha_id=payload.captcha_id,
-        width=payload.width,
-        height=payload.height,
-        puzzle_y=payload.puzzle_y,
-        piece_width=payload.piece_width,
-        background_svg=payload.background_svg,
-        piece_svg=payload.piece_svg,
-        dev_answer=str(payload.target_x) if _should_expose_dev_secrets(settings) else None,
-    )
-
-
 @router.post("/email/send-code", response_model=SendEmailCodeResponse)
 def send_email_code(
     body: SendEmailCodeRequest,
@@ -111,9 +94,6 @@ def send_email_code(
 
 @router.post("/email/login", response_model=TokenResponse)
 def email_login(body: EmailLoginRequest, db: Session = Depends(get_db)):
-    if not verify_captcha(body.captcha_id, body.captcha_x):
-        raise HTTPException(status_code=400, detail="拼图验证失败，请重试")
-
     email = normalize_email(body.email)
     if not verify_email_code(email, body.code):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="邮箱验证码错误或已过期")

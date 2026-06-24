@@ -13,7 +13,8 @@ from app.models.progress import ScenarioAttempt
 from app.config import Settings, get_settings
 from app.models.exercise import Exercise
 from app.models.scenario import Scenario, ScenarioWord
-from app.models.word import Word, WordGroup, WordGroupMember
+from app.models.word import WordGroup
+from app.services.scenario.word_picker import WordStrategy, pick_words
 from app.services.ai.factory import AIProviders, build_providers
 from app.services.ai.openai_provider import AIProviderError
 from app.services.ai.prompts import EXERCISE_SCHEMA, SCENARIO_SCHEMA, TRANSLATION_SCHEMA, build_exercise_prompt, build_scenario_prompt
@@ -24,7 +25,6 @@ from app.services.ai.response_normalizer import (
 )
 from app.services.exercise.generator import save_exercises_from_ai
 from app.services.vocabulary.import_words import word_to_dict
-from app.services.vocabulary.srs import get_due_word_ids
 from app.services.ai.openai_provider import MockAIProvider
 from app.utils.json_helpers import dump_json_field, parse_json_field
 
@@ -40,48 +40,6 @@ class ScenarioService:
         self.settings = settings or get_settings()
         resolved = providers or build_providers(self.settings)
         self.ai = resolved.llm
-
-    def pick_words(
-        self,
-        level: str,
-        theme: str | None,
-        word_ids: list[int],
-        word_count: int,
-        user_id: int,
-        prefer_review: bool = False,
-    ) -> list[Word]:
-        if word_ids:
-            words = self.db.query(Word).filter(Word.id.in_(word_ids)).all()
-            if words:
-                return words[:word_count]
-
-        query = self.db.query(Word)
-        if level == "cet4":
-            query = query.filter(Word.level.in_(["cet4", "both"]))
-        elif level == "cet6":
-            query = query.filter(Word.level.in_(["cet6", "both"]))
-
-        if theme:
-            group = self.db.query(WordGroup).filter(WordGroup.slug == theme).first()
-            if group:
-                member_ids = [
-                    m.word_id
-                    for m in self.db.query(WordGroupMember).filter(WordGroupMember.group_id == group.id).all()
-                ]
-                if member_ids:
-                    query = query.filter(Word.id.in_(member_ids))
-
-        if prefer_review:
-            due_ids = get_due_word_ids(self.db, user_id, word_count * 2)
-            if due_ids:
-                due_words = self.db.query(Word).filter(Word.id.in_(due_ids)).limit(word_count).all()
-                if len(due_words) >= 5:
-                    return due_words
-
-        all_words = query.all()
-        if len(all_words) <= word_count:
-            return all_words
-        return random.sample(all_words, word_count)
 
     async def _fetch_scenario_with_retry(self, messages: list[dict[str, str]], retries: int = 2) -> dict:
         last_error: Exception | None = None
@@ -128,19 +86,26 @@ class ScenarioService:
         word_count: int = 10,
         is_daily: bool = False,
         daily_kind: str | None = None,
+        word_strategy: WordStrategy = "smart",
+        exclude_recent: bool = True,
         prefer_review: bool = False,
     ) -> Scenario:
+        if prefer_review and word_strategy == "smart":
+            word_strategy = "review"
+
         if not theme:
             themes = [g.slug for g in self.db.query(WordGroup).all()]
             theme = random.choice(themes) if themes else "daily"
 
-        words = self.pick_words(
+        words = pick_words(
+            self.db,
             level=level,
             theme=theme,
             word_ids=word_ids or [],
             word_count=word_count,
             user_id=user_id,
-            prefer_review=prefer_review,
+            word_strategy=word_strategy,
+            exclude_recent=exclude_recent,
         )
         if len(words) < 3:
             raise ValueError("Not enough words available for scenario generation")
@@ -201,12 +166,12 @@ class ScenarioService:
             return existing
 
         kinds = [
-            ("review", "cet4", True),
-            ("new", "cet4", False),
-            ("challenge", "cet6", False),
+            ("review", "cet4", "review"),
+            ("new", "cet4", "new"),
+            ("challenge", "cet6", "smart"),
         ]
         generated = list(existing)
-        for kind, level, prefer_review in kinds:
+        for kind, level, strategy in kinds:
             if any(s.daily_kind == kind for s in generated):
                 continue
             scenario = await self.generate_scenario(
@@ -214,7 +179,7 @@ class ScenarioService:
                 level=level,
                 is_daily=True,
                 daily_kind=kind,
-                prefer_review=prefer_review,
+                word_strategy=strategy,
             )
             generated.append(scenario)
         return generated

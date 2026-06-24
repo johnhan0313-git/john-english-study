@@ -8,6 +8,8 @@ export const scenariosApi = {
     word_ids?: number[];
     scenario_type: string;
     word_count: number;
+    word_strategy?: "smart" | "new" | "review";
+    exclude_recent?: boolean;
   }) =>
     request<ScenarioDetail>("/scenarios/generate", {
       method: "POST",

@@ -6,8 +6,15 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
+ARG PIP_INDEX_URL
+ARG PIP_HTTP_PROXY
+ARG PIP_HTTPS_PROXY
+
 COPY requirements.txt .
-RUN pip install --no-cache-dir --default-timeout=120 -r requirements.txt
+RUN HTTP_PROXY="${PIP_HTTP_PROXY}" HTTPS_PROXY="${PIP_HTTPS_PROXY}" \
+    pip install --no-cache-dir --default-timeout=300 \
+    ${PIP_INDEX_URL:+--index-url "$PIP_INDEX_URL"} \
+    -r requirements.txt
 
 COPY app ./app
 COPY alembic ./alembic

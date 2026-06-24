@@ -1,6 +1,14 @@
 services:
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      extra_hosts:
+        - "host.docker.internal:host-gateway"
+      args:
+        # john-server 直连 PyPI/镜像均易超时；构建阶段不走运行时 HTTP_PROXY，需单独配置
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}
+        PIP_HTTP_PROXY: ${PIP_HTTP_PROXY:-http://host.docker.internal:7890}
+        PIP_HTTPS_PROXY: ${PIP_HTTPS_PROXY:-http://host.docker.internal:7890}
     ports:
       - "8000:8000"
     networks:

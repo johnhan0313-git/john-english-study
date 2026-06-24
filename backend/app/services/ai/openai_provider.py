@@ -241,6 +241,42 @@ class MockAIProvider:
             "fun_fact": "The word 'routine' comes from French route, meaning a regular path.",
             "opener": "Lisa started her morning with a simple household routine.",
         },
+        "food": {
+            "title": "Dinner at a Local Restaurant",
+            "summary_zh": "朋友们讨论食谱、营养与日常饮食习惯。",
+            "fun_fact": "The word 'appetite' comes from Latin appetitus, meaning desire.",
+            "opener": "The friends met to plan a healthy menu for the weekend gathering.",
+        },
+        "sports": {
+            "title": "Training for the Championship",
+            "summary_zh": "运动员为比赛训练并讨论健康与恢复。",
+            "fun_fact": "The word 'champion' originally referred to a warrior who fought in single combat.",
+            "opener": "The team gathered early to review their training plan before the big competition.",
+        },
+        "social": {
+            "title": "Reconnecting with Old Friends",
+            "summary_zh": "朋友们交流情感、尊重与沟通方式。",
+            "fun_fact": "The word 'sympathy' comes from Greek, meaning feeling with someone.",
+            "opener": "They met at a cafe to talk honestly about friendship and community support.",
+        },
+        "news": {
+            "title": "Breaking News in the Headlines",
+            "summary_zh": "记者报道政策辩论与公共议题。",
+            "fun_fact": "The word 'journalist' comes from French journal, meaning a daily record.",
+            "opener": "Editors gathered to discuss how to report the latest political campaign.",
+        },
+        "psychology": {
+            "title": "Managing Stress and Anxiety",
+            "summary_zh": "咨询师帮助来访者理解情绪、压力与心理健康。",
+            "fun_fact": "The word 'psychology' comes from Greek psyche (soul) and logos (study).",
+            "opener": "During the session, they discussed how anxiety can affect daily thoughts and habits.",
+        },
+        "science": {
+            "title": "Designing a Research Experiment",
+            "summary_zh": "科研团队提出假设、收集证据并分析实验结果。",
+            "fun_fact": "The word 'hypothesis' comes from Greek, meaning a foundation or supposition.",
+            "opener": "The researchers met to review their hypothesis before starting the next experiment.",
+        },
     }
 
     async def chat_json(

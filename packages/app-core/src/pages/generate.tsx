@@ -18,6 +18,8 @@ function GenerateForm() {
   const [theme, setTheme] = useState("");
   const [scenarioType, setScenarioType] = useState("narrative");
   const [wordCount, setWordCount] = useState(10);
+  const [wordStrategy, setWordStrategy] = useState<"smart" | "new" | "review">("smart");
+  const [excludeRecent, setExcludeRecent] = useState(true);
 
   const { data: groups } = useQuery({
     queryKey: ["groups"],
@@ -31,6 +33,8 @@ function GenerateForm() {
       word_ids?: number[];
       scenario_type: string;
       word_count: number;
+      word_strategy?: "smart" | "new" | "review";
+      exclude_recent?: boolean;
     }) => api.generateScenario(params),
     onSuccess: (data) => navigate(`/scenarios/${data.id}`),
   });
@@ -98,6 +102,43 @@ function GenerateForm() {
 
           {!initialWordIds.length && (
             <div>
+              <label className="mb-2 block text-sm font-semibold text-slate-700">选词策略</label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { id: "smart" as const, label: "智能混合" },
+                  { id: "new" as const, label: "新词优先" },
+                  { id: "review" as const, label: "复习优先" },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={wordStrategy === item.id ? "chip-active" : "chip-inactive"}
+                    onClick={() => setWordStrategy(item.id)}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-xs text-slate-500">
+                主题仅影响场景语境；词汇从全库按策略抽取，约 70% 倾向主题相关词。
+              </p>
+            </div>
+          )}
+
+          {!initialWordIds.length && (
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={excludeRecent}
+                onChange={(e) => setExcludeRecent(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+              />
+              避开最近场景已学词汇
+            </label>
+          )}
+
+          {!initialWordIds.length && (
+            <div>
               <label className="mb-2 flex justify-between text-sm font-semibold text-slate-700">
                 <span>词汇数量</span>
                 <span className="text-brand-600">{wordCount}</span>
@@ -123,6 +164,8 @@ function GenerateForm() {
                 word_ids: initialWordIds.length ? initialWordIds : undefined,
                 scenario_type: scenarioType,
                 word_count: wordCount,
+                word_strategy: initialWordIds.length ? undefined : wordStrategy,
+                exclude_recent: initialWordIds.length ? undefined : excludeRecent,
               })
             }
             disabled={mutation.isPending}
@@ -150,8 +193,9 @@ function GenerateForm() {
         <h3 className="font-bold text-slate-900">生成说明</h3>
         <ul className="mt-4 space-y-3 text-sm text-slate-600">
           <li className="flex gap-2"><span className="text-brand-500">1.</span>AI 根据词汇编写英文场景短文</li>
-          <li className="flex gap-2"><span className="text-brand-500">2.</span>自动生成 5 道单选 + 3 道填空</li>
-          <li className="flex gap-2"><span className="text-brand-500">3.</span>支持阅读、听力、口语、写作练习</li>
+          <li className="flex gap-2"><span className="text-brand-500">2.</span>智能选词：新词 + 复习 + 主题语境</li>
+          <li className="flex gap-2"><span className="text-brand-500">3.</span>自动生成 5 道单选 + 3 道填空</li>
+          <li className="flex gap-2"><span className="text-brand-500">4.</span>支持阅读、听力、口语、写作练习</li>
         </ul>
         <p className="mt-4 text-xs text-slate-400">通常需要 10–20 秒，请耐心等待</p>
       </Card>
