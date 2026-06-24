@@ -70,6 +70,7 @@ services:
       dockerfile: ./apps/web/Dockerfile
       args:
         NEXT_PUBLIC_API_URL: /api
+        GITHUB_TOKEN: ${GITHUB_TOKEN}
     ports:
       - "3000:3000"
     depends_on:

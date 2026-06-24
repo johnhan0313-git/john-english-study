@@ -1,12 +1,14 @@
 FROM node:20-alpine AS base
 
 FROM base AS deps
+ARG GITHUB_TOKEN
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/api-client/package.json ./packages/api-client/
 COPY packages/app-core/package.json ./packages/app-core/
 COPY apps/web/package.json ./apps/web/
-RUN npm ci --workspace=@sceneenglish/web --include-workspace-root
+RUN printf '@johnhan0313-git:registry=https://npm.pkg.github.com\n//npm.pkg.github.com/:_authToken=%s\n' "$GITHUB_TOKEN" > .npmrc \
+    && npm ci --workspace=@sceneenglish/web --include-workspace-root
 
 FROM base AS builder
 WORKDIR /app

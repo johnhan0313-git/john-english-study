@@ -4,7 +4,7 @@ const path = require("path");
 const nextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.join(__dirname, "../.."),
-  transpilePackages: ["@sceneenglish/api-client", "@sceneenglish/app-core"],
+  transpilePackages: ["@sceneenglish/api-client", "@sceneenglish/app-core", "@johnhan0313-git/shared"],
   async redirects() {
     return [
       {

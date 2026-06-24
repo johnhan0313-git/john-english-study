@@ -19,6 +19,9 @@ const jakarta = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: "SceneEnglish - CET-4/6 场景英语学习",
   description: "成人英语场景学习平台，兼顾听说读写",
+  icons: {
+    icon: "https://share.cool-app.me/logos/english.svg",
+  },
 };
 
 export const viewport: Viewport = {

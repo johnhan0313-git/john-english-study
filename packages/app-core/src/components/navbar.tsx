@@ -5,7 +5,10 @@ import { usePathname, useNavigate } from "@sceneenglish/app-core/platform/naviga
 import { usePlatform } from "@sceneenglish/app-core/platform/context";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { BookOpen, GraduationCap, Home, Layers, Library } from "lucide-react";
+import { BookOpen, Home, Layers, Library } from "lucide-react";
+import { AppLogo } from "@johnhan0313-git/shared/brand";
+import { AppsLauncher } from "@johnhan0313-git/shared/nav";
+import "@johnhan0313-git/shared/nav.css";
 import { cn } from "@sceneenglish/app-core/lib/utils";
 import { AuthNavActions } from "@sceneenglish/app-core/components/auth/user-menu";
 import { prefetchAllRoutes, prefetchNavTarget } from "@sceneenglish/app-core/lib/route-prefetch";
@@ -39,9 +42,12 @@ export function Navbar() {
     <header className="site-header">
       <div className="mx-auto flex h-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
         <Link href="/" className="group flex min-w-0 shrink items-center gap-2 sm:gap-2.5" prefetch>
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-hero-gradient text-white shadow-md transition-transform group-hover:scale-105">
-            <GraduationCap className="h-5 w-5" />
-          </div>
+          <AppLogo
+            appId="english"
+            size={36}
+            className="h-9 w-9 shrink-0 rounded-xl shadow-md transition-transform group-hover:scale-105"
+            alt="SceneEnglish"
+          />
           <div className="min-w-0 flex flex-col leading-none">
             <span className="truncate font-display text-sm font-bold text-slate-900 sm:text-base">SceneEnglish</span>
             <span className="hidden text-[10px] font-semibold uppercase tracking-wider text-brand-600 sm:block">
@@ -79,6 +85,7 @@ export function Navbar() {
               );
             })}
           </nav>
+          <AppsLauncher current="english" />
           <AuthNavActions />
         </div>
       </div>
