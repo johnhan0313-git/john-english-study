@@ -1,3 +1,5 @@
+name: john-english-study
+
 services:
   backend:
     build:
@@ -9,12 +11,14 @@ services:
         PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}
         PIP_HTTP_PROXY: ${PIP_HTTP_PROXY:-}
         PIP_HTTPS_PROXY: ${PIP_HTTPS_PROXY:-}
+    container_name: john-english-study-backend-1
     ports:
       - "8000:8000"
     networks:
       - default
       - john-postgresql_default
       - john-minio_default
+      - john-nginx_default
     environment:
       DATABASE_URL: postgresql+psycopg://english-study:english-study-123@john-postgresql:5432/english-study
       USE_MIGRATIONS: "true"
@@ -73,8 +77,12 @@ services:
         GH_PACKAGES_TOKEN: ${GH_PACKAGES_TOKEN:-}
       secrets:
         - gh_packages_token
+    container_name: john-english-study-frontend-1
     ports:
       - "3000:3000"
+    networks:
+      - default
+      - john-nginx_default
     depends_on:
       - backend
     restart: unless-stopped
@@ -86,7 +94,11 @@ secrets:
     file: ${GH_PACKAGES_TOKEN_FILE:-/run/john-secrets/gh_packages_token}
 
 networks:
+  default:
+    name: john-english-study_default
   john-postgresql_default:
     external: true
   john-minio_default:
+    external: true
+  john-nginx_default:
     external: true
