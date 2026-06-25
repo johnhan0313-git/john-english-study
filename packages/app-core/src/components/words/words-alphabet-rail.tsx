@@ -172,7 +172,7 @@ function MobileAlphabetRail({
           >
             <div className="animate-alphabet-bubble relative flex h-[4.25rem] w-[4.25rem] items-center justify-center">
               <div className="absolute inset-0 rounded-2xl bg-brand-500/20 blur-md" />
-              <div className="relative flex h-full w-full items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-[2rem] font-bold text-white shadow-[0_12px_40px_rgba(79,70,229,0.45)]">
+              <div className="relative flex h-full w-full items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-[2rem] font-bold text-white shadow-[0_12px_40px_rgba(234,88,12,0.35)]">
                 {bubbleLetter}
               </div>
             </div>

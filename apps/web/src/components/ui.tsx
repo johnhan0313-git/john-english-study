@@ -28,7 +28,7 @@ export function Badge({ children, variant = "default" }: { children: React.React
     default: "bg-slate-100 text-slate-700",
     success: "bg-emerald-100 text-emerald-800",
     warning: "bg-amber-100 text-amber-800",
-    purple: "bg-violet-100 text-violet-800",
+    purple: "bg-orange-100 text-orange-800",
     brand: "bg-brand-100 text-brand-800",
     outline: "border border-brand-200 bg-brand-50/50 text-brand-700",
   };
@@ -167,8 +167,8 @@ export function StatCard({
   const tones = {
     brand: "from-brand-500 to-brand-600 shadow-brand-200",
     amber: "from-amber-400 to-orange-500 shadow-amber-200",
-    emerald: "from-emerald-400 to-teal-500 shadow-emerald-200",
-    violet: "from-violet-400 to-purple-500 shadow-violet-200",
+    emerald: "from-amber-400 to-orange-500 shadow-amber-200",
+    violet: "from-orange-400 to-amber-500 shadow-orange-200",
   };
   return (
     <Card hover className="relative overflow-hidden">

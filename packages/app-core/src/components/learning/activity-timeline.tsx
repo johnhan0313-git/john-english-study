@@ -17,7 +17,7 @@ const TYPE_META: Record<
   ActivityTimelineItem["type"],
   { icon: typeof Sparkles; label: string; color: string }
 > = {
-  scenario_created: { icon: Sparkles, label: "生成场景", color: "text-violet-600 bg-violet-50" },
+  scenario_created: { icon: Sparkles, label: "生成场景", color: "text-brand-600 bg-brand-50" },
   scenario_completed: { icon: CheckCircle2, label: "完成练习", color: "text-emerald-600 bg-emerald-50" },
   conversation_started: { icon: MessageSquarePlus, label: "开始对话", color: "text-brand-600 bg-brand-50" },
   conversation_ended: { icon: MessageCircle, label: "结束对话", color: "text-slate-600 bg-slate-100" },

@@ -12,7 +12,7 @@
   }
 
   body {
-    @apply antialiased text-[15px] leading-[1.65] text-slate-800;
+    @apply antialiased text-[15px] leading-[1.65] text-stone-800;
     font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
     text-rendering: optimizeLegibility;
   }

@@ -53,7 +53,7 @@ export default function ChatCallPage() {
             </p>
           </div>
 
-          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-teal-500 text-3xl font-semibold text-white shadow-lg">
+          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-accent-500 text-3xl font-semibold text-white shadow-lg">
             {data.role_ai.charAt(0)}
           </div>
 

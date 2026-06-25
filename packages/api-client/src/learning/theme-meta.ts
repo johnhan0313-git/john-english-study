@@ -23,21 +23,21 @@ export interface ThemeMeta {
 }
 
 const THEME_MAP: Record<string, ThemeMeta> = {
-  technology: { icon: Cpu, iconBg: "bg-sky-50", iconColor: "text-sky-600", label: "科技" },
-  business: { icon: Briefcase, iconBg: "bg-amber-50", iconColor: "text-amber-600", label: "商务" },
+  technology: { icon: Cpu, iconBg: "bg-orange-50", iconColor: "text-orange-700", label: "科技" },
+  business: { icon: Briefcase, iconBg: "bg-amber-50", iconColor: "text-amber-700", label: "商务" },
   daily: { icon: Heart, iconBg: "bg-rose-50", iconColor: "text-rose-600", label: "日常" },
-  travel: { icon: Globe, iconBg: "bg-teal-50", iconColor: "text-teal-600", label: "旅行" },
-  campus: { icon: GraduationCap, iconBg: "bg-violet-50", iconColor: "text-violet-600", label: "校园" },
-  education: { icon: GraduationCap, iconBg: "bg-violet-50", iconColor: "text-violet-600", label: "教育" },
+  travel: { icon: Globe, iconBg: "bg-amber-50", iconColor: "text-amber-700", label: "旅行" },
+  campus: { icon: GraduationCap, iconBg: "bg-brand-50", iconColor: "text-brand-700", label: "校园" },
+  education: { icon: GraduationCap, iconBg: "bg-brand-50", iconColor: "text-brand-700", label: "教育" },
   health: { icon: Heart, iconBg: "bg-red-50", iconColor: "text-red-600", label: "健康" },
-  environment: { icon: Globe, iconBg: "bg-green-50", iconColor: "text-green-600", label: "环境" },
-  culture: { icon: Layers, iconBg: "bg-indigo-50", iconColor: "text-indigo-600", label: "文化" },
+  environment: { icon: Globe, iconBg: "bg-lime-50", iconColor: "text-lime-700", label: "环境" },
+  culture: { icon: Layers, iconBg: "bg-orange-50", iconColor: "text-orange-700", label: "文化" },
   food: { icon: UtensilsCrossed, iconBg: "bg-orange-50", iconColor: "text-orange-600", label: "美食" },
-  sports: { icon: Dumbbell, iconBg: "bg-lime-50", iconColor: "text-lime-700", label: "运动" },
-  social: { icon: Users, iconBg: "bg-pink-50", iconColor: "text-pink-600", label: "社交" },
-  news: { icon: Newspaper, iconBg: "bg-slate-50", iconColor: "text-slate-600", label: "新闻" },
-  psychology: { icon: Brain, iconBg: "bg-fuchsia-50", iconColor: "text-fuchsia-600", label: "心理" },
-  science: { icon: FlaskConical, iconBg: "bg-cyan-50", iconColor: "text-cyan-700", label: "科学" },
+  sports: { icon: Dumbbell, iconBg: "bg-amber-50", iconColor: "text-amber-800", label: "运动" },
+  social: { icon: Users, iconBg: "bg-rose-50", iconColor: "text-rose-600", label: "社交" },
+  news: { icon: Newspaper, iconBg: "bg-stone-100", iconColor: "text-stone-700", label: "新闻" },
+  psychology: { icon: Brain, iconBg: "bg-rose-50", iconColor: "text-rose-700", label: "心理" },
+  science: { icon: FlaskConical, iconBg: "bg-yellow-50", iconColor: "text-yellow-700", label: "科学" },
   general: { icon: Layers, iconBg: "bg-brand-50", iconColor: "text-brand-600" },
 };
 
@@ -50,7 +50,7 @@ const dailyKindLabel: Record<string, string> = {
 const dailyKindVariant: Record<string, ThemeMeta> = {
   review: { icon: Sparkles, iconBg: "bg-amber-50", iconColor: "text-amber-600" },
   new: { icon: Sparkles, iconBg: "bg-brand-50", iconColor: "text-brand-600" },
-  challenge: { icon: Sparkles, iconBg: "bg-violet-50", iconColor: "text-violet-600" },
+  challenge: { icon: Sparkles, iconBg: "bg-amber-50", iconColor: "text-amber-700" },
 };
 
 export function getThemeMeta(theme: string, dailyKind?: string | null): ThemeMeta {

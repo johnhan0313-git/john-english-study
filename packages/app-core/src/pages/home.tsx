@@ -13,10 +13,10 @@ const dailyKindLabel: Record<string, string> = {
   challenge: "挑战场景",
 };
 
-const dailyKindVariant: Record<string, "warning" | "brand" | "purple"> = {
+const dailyKindVariant: Record<string, "warning" | "brand"> = {
   review: "warning",
   new: "brand",
-  challenge: "purple",
+  challenge: "warning",
 };
 
 export default function HomePage() {
