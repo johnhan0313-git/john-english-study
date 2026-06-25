@@ -70,12 +70,20 @@ services:
       dockerfile: ./apps/web/Dockerfile
       args:
         NEXT_PUBLIC_API_URL: /api
-        GITHUB_TOKEN: ${GITHUB_TOKEN}
+        GH_PACKAGES_TOKEN: ${GH_PACKAGES_TOKEN:-}
+      secrets:
+        - gh_packages_token
     ports:
       - "3000:3000"
     depends_on:
       - backend
     restart: unless-stopped
+
+# Portainer 容器需挂载宿主机目录（见 deploy/portainer-compose.example.yaml）:
+#   /home/john-han/.secrets -> /run/john-secrets
+secrets:
+  gh_packages_token:
+    file: ${GH_PACKAGES_TOKEN_FILE:-/run/john-secrets/gh_packages_token}
 
 networks:
   john-postgresql_default:

@@ -1,6 +1,9 @@
+# syntax=docker/dockerfile:1
+
 FROM node:20-alpine AS base
 
 FROM base AS deps
+ARG GH_PACKAGES_TOKEN
 ARG GITHUB_TOKEN
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -8,7 +11,11 @@ COPY packages/api-client/package.json ./packages/api-client/
 COPY packages/app-core/package.json ./packages/app-core/
 COPY apps/web/package.json ./apps/web/
 # 不要 --include-workspace-root：根 package.json 含 electron/electron-builder（~500MB），web 构建不需要
-RUN printf '@johnhan0313-git:registry=https://npm.pkg.github.com\n//npm.pkg.github.com/:_authToken=%s\n' "$GITHUB_TOKEN" > .npmrc \
+RUN --mount=type=secret,id=gh_packages_token,required=false \
+    TOKEN="$(cat /run/secrets/gh_packages_token 2>/dev/null || true)" \
+    && TOKEN="${TOKEN:-${GH_PACKAGES_TOKEN:-${GITHUB_TOKEN}}}" \
+    && test -n "$TOKEN" || (echo "GH_PACKAGES_TOKEN required: Portainer 挂载 /home/john-han/.secrets -> /run/john-secrets，或 deploy 脚本 / export" >&2 && exit 1) \
+    && printf '@johnhan0313-git:registry=https://npm.pkg.github.com\n//npm.pkg.github.com/:_authToken=%s\nalways-auth=true\n' "$TOKEN" > .npmrc \
     && npm ci --workspace=@sceneenglish/web
 
 FROM base AS builder

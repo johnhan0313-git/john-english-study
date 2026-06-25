@@ -101,6 +101,10 @@ docker exec <backend-container> python -m app.cli seed-dictionary
 docker exec <backend-container> python -m app.cli seed
 ```
 
+## GitHub Packages token（构建 frontend）
+
+与 john-readhub 相同：服务器一次执行 `scripts/setup-server-secrets.sh`，Portainer 挂载 `/home/john-han/.secrets:/run/john-secrets:ro`（`deploy/portainer-compose.example.yaml`）。**勿**在 Stack 环境变量填 token。
+
 ## Portainer 部署步骤
 
 1. Stacks → Add stack → **Git repository**

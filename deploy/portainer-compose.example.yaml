@@ -1,0 +1,30 @@
+# john-server Portainer 配置参考（合并到 ~/portainer/portainer-compose.yaml）
+# 一次性添加 secrets 挂载后 restart Portainer，所有 Git Stack 构建共用 token 文件
+#
+#   GH_PACKAGES_TOKEN=ghp_... ./scripts/setup-server-secrets.sh
+#   cd ~/portainer && docker compose up -d
+
+services:
+  portainer:
+    container_name: portainer
+    image: portainer/portainer-ce:lts
+    restart: always
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      HTTP_PROXY: http://host.docker.internal:7890
+      HTTPS_PROXY: http://host.docker.internal:7890
+      NO_PROXY: localhost,127.0.0.1,192.168.0.0/16,10.0.0.0/8,172.16.0.0/12
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+      # 构建 @johnhan0313-git/* 时 compose secrets.file 读此路径（容器内 /run/john-secrets/...）
+      - /home/john-han/.secrets:/run/john-secrets:ro
+    ports:
+      - 9443:9443
+volumes:
+  portainer_data:
+    name: portainer_data
+networks:
+  default:
+    name: portainer_network
