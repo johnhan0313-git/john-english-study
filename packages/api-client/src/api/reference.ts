@@ -1,4 +1,5 @@
-import { getApiBase, request } from "../client";
+import { getApiBase } from "../config";
+import { request } from "../client";
 import type { GrammarDetail, GrammarListResponse, PhoneticDetail, PhoneticListResponse } from "./types";
 
 export const referenceApi = {

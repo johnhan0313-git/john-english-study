@@ -1,4 +1,5 @@
-import { authFetch, authHeaders, getApiBase, request } from "../client";
+import { getApiBase } from "../config";
+import { authFetch, authHeaders, request } from "../client";
 import type { Exercise, ScenarioBrief, ScenarioDetail } from "./types";
 
 export const scenariosApi = {

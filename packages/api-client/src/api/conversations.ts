@@ -1,4 +1,5 @@
-import { ApiError, authFetch, authHeaders, getApiBase, request } from "../client";
+import { getApiBase } from "../config";
+import { ApiError, authFetch, authHeaders, request } from "../client";
 import type { ConversationDetail, ConversationListResponse, ConversationSummary, VoiceTurnResponse } from "./types";
 
 export const conversationsApi = {

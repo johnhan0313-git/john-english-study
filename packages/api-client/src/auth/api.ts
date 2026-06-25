@@ -1,4 +1,5 @@
-import { getApiBase, request } from "../client";
+import { getApiBase } from "../config";
+import { request } from "../client";
 import type { AuthResponse, AuthUser, MergeDeviceResult } from "./types";
 
 export interface SendCodeResult {

@@ -93,4 +93,4 @@ export function apiPathFromUrl(url: string): string {
   return url;
 }
 
-export { getApiBase as API_BASE };
+export { getApiBase, getApiBase as API_BASE };
