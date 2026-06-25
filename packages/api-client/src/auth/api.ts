@@ -1,5 +1,4 @@
-import { request } from "../client";
-import { API_BASE } from "../client";
+import { getApiBase, request } from "../client";
 import type { AuthResponse, AuthUser, MergeDeviceResult } from "./types";
 
 export interface SendCodeResult {
@@ -29,5 +28,5 @@ export const authApi = {
 
 export function wechatAuthorizeHref(nextPath = "/", platform: "web" | "app" = "web"): string {
   const params = new URLSearchParams({ next: nextPath, platform });
-  return `${API_BASE}/auth/wechat/authorize?${params.toString()}`;
+  return `${getApiBase()}/auth/wechat/authorize?${params.toString()}`;
 }

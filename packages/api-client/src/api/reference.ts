@@ -1,6 +1,4 @@
-import { API_BASE } from "../client";
-
-import { request } from "../client";
+import { getApiBase, request } from "../client";
 import type { GrammarDetail, GrammarListResponse, PhoneticDetail, PhoneticListResponse } from "./types";
 
 export const referenceApi = {
@@ -20,7 +18,7 @@ export const referenceApi = {
     if (opts?.word) qs.set("word", opts.word);
     if (opts?.preview) qs.set("preview", "true");
     const q = qs.toString();
-    return `${API_BASE}/reference/phonetics/${id}/audio${q ? `?${q}` : ""}`;
+    return `${getApiBase()}/reference/phonetics/${id}/audio${q ? `?${q}` : ""}`;
   },
 
   getGrammar: (params?: { category?: string; level?: string; search?: string }) => {

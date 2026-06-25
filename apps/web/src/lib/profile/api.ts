@@ -52,7 +52,7 @@ export const profileApi = {
 };
 
 export function resolveAvatarUrl(avatarUrl: string | null | undefined): string {
-  if (!avatarUrl) return "/avatars/default.svg";
+  if (!avatarUrl) return "/avatars/profile-default.svg";
   if (avatarUrl.startsWith("http")) return avatarUrl;
   // API_BASE 已含 /api；兼容历史数据里多余的 /api 前缀
   const path = avatarUrl.startsWith("/api/") ? avatarUrl.slice(4) : avatarUrl;

@@ -1,4 +1,4 @@
-import { API_BASE, ApiError, authFetch, authHeaders, request } from "../client";
+import { ApiError, authFetch, authHeaders, getApiBase, request } from "../client";
 import type { ConversationDetail, ConversationListResponse, ConversationSummary, VoiceTurnResponse } from "./types";
 
 export const conversationsApi = {
@@ -32,7 +32,7 @@ export const conversationsApi = {
     }),
 
   getConversationMessageAudioUrl: (sessionId: number, messageId: number) =>
-    `${API_BASE}/conversations/${sessionId}/messages/${messageId}/audio`,
+    `${getApiBase()}/conversations/${sessionId}/messages/${messageId}/audio`,
 
   async streamConversationMessage(
     sessionId: number,
@@ -92,7 +92,7 @@ export const conversationsApi = {
       form.append("show_chinese_hint", String(showChineseHint));
     }
     form.append("audio", audioBlob, "recording.webm");
-    const res = await fetch(`${API_BASE}/conversations/${sessionId}/turns/voice`, {
+    const res = await fetch(`${getApiBase()}/conversations/${sessionId}/turns/voice`, {
       method: "POST",
       headers: authHeaders(),
       body: form,
@@ -104,7 +104,7 @@ export const conversationsApi = {
     const data = (await res.json()) as VoiceTurnResponse;
     return {
       ...data,
-      audio_url: `${API_BASE}${data.audio_url}`,
+      audio_url: `${getApiBase()}${data.audio_url}`,
     };
   },
 };

@@ -1,4 +1,4 @@
-import { API_BASE, authFetch, authHeaders, request } from "../client";
+import { authFetch, authHeaders, getApiBase, request } from "../client";
 import type { Exercise, ScenarioBrief, ScenarioDetail } from "./types";
 
 export const scenariosApi = {
@@ -29,7 +29,7 @@ export const scenariosApi = {
       `/scenarios/${id}/translation`,
     ),
 
-  getScenarioAudioUrl: (id: number) => `${API_BASE}/scenarios/${id}/audio`,
+  getScenarioAudioUrl: (id: number) => `${getApiBase()}/scenarios/${id}/audio`,
 
   getExercises: (scenarioId: number) => request<Exercise[]>(`/exercises/scenario/${scenarioId}`),
 

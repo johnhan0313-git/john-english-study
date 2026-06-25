@@ -1,6 +1,4 @@
-import { API_BASE } from "../client";
-
-import { request } from "../client";
+import { getApiBase, request } from "../client";
 import type { WordGroup, WordListResponse } from "./types";
 
 export const wordsApi = {
@@ -21,5 +19,5 @@ export const wordsApi = {
     return request<{ letters: string[] }>(`/words/letters?${qs}`);
   },
 
-  getWordAudioUrl: (wordId: number) => `${API_BASE}/words/${wordId}/audio`,
+  getWordAudioUrl: (wordId: number) => `${getApiBase()}/words/${wordId}/audio`,
 };
