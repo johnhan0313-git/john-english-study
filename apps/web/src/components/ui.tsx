@@ -165,7 +165,7 @@ export function StatCard({
   children?: React.ReactNode;
 }) {
   const tones = {
-    brand: "from-brand-500 to-brand-600 shadow-brand-200",
+    brand: "from-brand-400 to-brand-500 shadow-brand-200/80",
     amber: "from-amber-400 to-orange-500 shadow-amber-200",
     emerald: "from-amber-400 to-orange-500 shadow-amber-200",
     violet: "from-orange-400 to-amber-500 shadow-orange-200",

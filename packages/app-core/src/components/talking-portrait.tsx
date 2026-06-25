@@ -94,7 +94,7 @@ export function TalkingPortrait({
           className={cn(
             "overflow-hidden rounded-[2rem] border bg-gradient-to-b from-white/15 to-white/5 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.35)] ring-1 backdrop-blur-sm transition-all duration-300",
             isSpeaking
-              ? "border-brand-200/40 ring-brand-200/30 shadow-[0_24px_60px_rgba(249,115,22,0.22)]"
+              ? "border-brand-200/40 ring-brand-200/30 shadow-[0_24px_60px_rgba(255,173,138,0.2)]"
               : "border-white/20 ring-white/15",
           )}
         >
