@@ -6,7 +6,7 @@
     </linearGradient>
     <linearGradient id="outfit" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#818cf8"/>
-      <stop offset="100%" stop-color="#4f46e5"/>
+      <stop offset="100%" stop-color="#ea580c"/>
     </linearGradient>
   </defs>
   <ellipse cx="100" cy="238" rx="72" ry="16" fill="#000" opacity="0.14"/>
