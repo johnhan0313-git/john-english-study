@@ -11,7 +11,7 @@ export function Card({ children, className, hover, glass = true, ...props }: Car
   return (
     <div
       className={cn(
-        glass ? (hover ? "glass-card-hover" : "glass-card") : "rounded-2xl border border-surface-border bg-white p-5 shadow-card",
+        glass ? (hover ? "glass-card-hover" : "glass-card") : "rounded-lg border border-surface-border bg-white p-5 shadow-card",
         className,
       )}
       {...props}
@@ -28,7 +28,7 @@ export function Badge({ children, variant = "default" }: { children: React.React
     default: "bg-slate-100 text-slate-700",
     success: "bg-emerald-100 text-emerald-800",
     warning: "bg-amber-100 text-amber-800",
-    purple: "bg-orange-100 text-orange-800",
+    purple: "bg-violet-100 text-violet-800",
     brand: "bg-brand-100 text-brand-800",
     outline: "border border-brand-200 bg-brand-50/50 text-brand-700",
   };
@@ -51,12 +51,12 @@ export function Button({
 }) {
   const variants = {
     primary: "btn-brand",
-    secondary: "bg-accent-500 text-white shadow-md hover:bg-accent-600 hover:shadow-lg",
+    secondary: "rounded-lg bg-slate-900 text-white shadow-sm hover:bg-slate-800",
     outline: "border border-surface-border bg-white/90 text-slate-700 shadow-sm hover:border-brand-300 hover:bg-brand-50/50 hover:text-brand-700",
     ghost: "text-slate-600 hover:bg-white/80 hover:text-brand-700",
     danger: "bg-red-500 text-white hover:bg-red-600",
   };
-  const sizes = { sm: "px-3 py-1.5 text-xs rounded-lg", md: "px-4 py-2.5 text-sm rounded-xl", lg: "px-6 py-3 text-base rounded-xl" };
+  const sizes = { sm: "px-3 py-1.5 text-xs rounded-md", md: "px-4 py-2.5 text-sm rounded-lg", lg: "px-5 py-2.5 text-sm rounded-lg" };
   return (
     <button
       type="button"
@@ -141,7 +141,7 @@ export function PageHeader({
             {badge}
           </span>
         )}
-        <h1 className="font-display text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">{title}</h1>
+        <h1 className="font-display text-2xl font-bold text-slate-950 sm:text-3xl">{title}</h1>
         {description && <p className="mt-2 max-w-2xl text-slate-600">{description}</p>}
       </div>
       {action}
@@ -167,8 +167,8 @@ export function StatCard({
   const tones = {
     brand: "from-brand-400 to-brand-500 shadow-brand-200/80",
     amber: "from-amber-400 to-orange-500 shadow-amber-200",
-    emerald: "from-amber-400 to-orange-500 shadow-amber-200",
-    violet: "from-orange-400 to-amber-500 shadow-orange-200",
+    emerald: "from-emerald-500 to-emerald-600 shadow-emerald-200",
+    violet: "from-violet-500 to-violet-600 shadow-violet-200",
   };
   return (
     <Card hover className="relative overflow-hidden">
@@ -192,8 +192,8 @@ export function StatCard({
 export function EmptyState({ title, description, action }: { title: string; description?: string; action?: React.ReactNode }) {
   return (
     <Card className="flex flex-col items-center py-12 text-center">
-      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-500">
-        <span className="text-2xl">📚</span>
+      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+        <span className="font-display text-xl font-bold">Aa</span>
       </div>
       <h3 className="font-semibold text-slate-800">{title}</h3>
       {description && <p className="mt-1 max-w-sm text-sm text-slate-500">{description}</p>}

@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { PlatformLink as Link } from "@sceneenglish/app-core/components/platform-link";
 import { ArrowRight, Flame, RefreshCw, Target, Trophy, Zap } from "lucide-react";
 import { api } from "@sceneenglish/api-client";
-import { Badge, Button, Card, EmptyState, PageHeader, ProgressBar, SectionTitle, Spinner, StatCard } from "@sceneenglish/app-core/components/ui";
+import { Badge, Button, Card, EmptyState, ProgressBar, SectionTitle, Spinner, StatCard } from "@sceneenglish/app-core/components/ui";
 import { useAuth } from "@sceneenglish/app-core/contexts/auth-context";
 
 const dailyKindLabel: Record<string, string> = {
@@ -35,26 +35,30 @@ export default function HomePage() {
   });
 
   return (
-    <div className="space-y-10">
-      <PageHeader
-        badge="每日学习"
-        title="沉浸式场景学英语"
-        description="把 CET-4/6 词汇放进真实语境，听说读写一站练完"
-        action={
+    <div className="space-y-9">
+      <section className="border-b border-surface-border pb-8 pt-3 sm:flex sm:items-end sm:justify-between sm:gap-8 sm:pt-6">
+        <div className="max-w-2xl">
+          <p className="mb-3 text-sm font-semibold text-brand-700">今天，从一个真实场景开始</p>
+          <h1 className="font-display text-3xl font-bold text-slate-950 sm:text-4xl">让英语进入你的日常</h1>
+          <p className="mt-3 max-w-xl text-base leading-7 text-slate-600">用熟悉的生活与工作语境，串联词汇、听力、表达和复习。</p>
+        </div>
+        <div className="mt-5 shrink-0 sm:mt-0">
+          {
           isAuthenticated ? (
             <Link href="/chat/new">
-              <Button size="lg">
+              <Button size="lg" className="w-full sm:w-auto">
                 <ArrowRight className="mr-2 h-4 w-4" />
                 开始对话
               </Button>
             </Link>
           ) : (
             <Link href="/login?next=/chat/new">
-              <Button size="lg">登录开始</Button>
+              <Button size="lg" className="w-full sm:w-auto">登录开始</Button>
             </Link>
           )
-        }
-      />
+          }
+        </div>
+      </section>
 
       {!isAuthenticated && (
         <Card className="border-brand-100 bg-brand-50/50">

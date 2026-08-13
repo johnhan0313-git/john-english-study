@@ -45,7 +45,7 @@ export function MobileBottomNav() {
   if (hidden) return null;
 
   return (
-    <nav className="mobile-bottom-nav fixed inset-x-0 bottom-0 z-50 flex items-stretch border-t border-surface-border/70 bg-surface-cream/90 shadow-[0_-8px_28px_rgba(255,173,138,0.1)] backdrop-blur-md md:hidden">
+    <nav className="mobile-bottom-nav fixed inset-x-0 bottom-0 z-50 flex items-stretch border-t border-surface-border bg-white/95 shadow-[0_-4px_20px_rgba(20,35,31,0.06)] backdrop-blur-xl md:hidden">
       {tabs.map(({ href, label, icon: Icon }) => {
         const active = isNavActive(pathname, href);
         return (

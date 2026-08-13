@@ -6,8 +6,8 @@ import { usePlatform } from "@sceneenglish/app-core/platform/context";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { BookOpen, Home, Layers, Library } from "lucide-react";
-import { AppLogo } from "@johnhan0313-git/shared/brand";
 import { AppsLauncher } from "@johnhan0313-git/shared/nav";
+import { AppLogo } from "@johnhan0313-git/shared/brand";
 import "@johnhan0313-git/shared/nav.css";
 import { cn } from "@sceneenglish/app-core/lib/utils";
 import { AuthNavActions } from "@sceneenglish/app-core/components/auth/user-menu";
@@ -45,19 +45,19 @@ export function Navbar() {
           <AppLogo
             appId="english"
             size={36}
-            className="h-9 w-9 shrink-0 rounded-xl shadow-md transition-transform group-hover:scale-105"
-            alt="SceneEnglish"
+            className="h-9 w-9 shrink-0 rounded-lg transition-transform group-hover:scale-[1.03]"
+            alt="Scene English"
           />
           <div className="min-w-0 flex flex-col leading-none">
-            <span className="truncate font-display text-sm font-bold text-slate-900 sm:text-base">SceneEnglish</span>
-            <span className="hidden text-[10px] font-semibold uppercase tracking-wider text-brand-600 sm:block">
-              CET-4 / CET-6
+            <span className="truncate font-display text-sm font-bold text-slate-950 sm:text-base">Scene English</span>
+            <span className="hidden text-[10px] font-medium text-slate-500 sm:block">
+              场景化英语学习
             </span>
           </div>
         </Link>
 
         <div className="flex min-w-0 items-center gap-2">
-          <nav className="hidden items-center gap-0.5 overflow-x-auto rounded-2xl border border-surface-border/80 bg-white p-1 shadow-sm md:flex [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <nav className="hidden items-center gap-1 overflow-x-auto md:flex [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {nav.map(({ href, label, icon: Icon }) => {
               const active =
                 href === "/reference/phonetics"
@@ -73,10 +73,10 @@ export function Navbar() {
                   onMouseEnter={() => prefetchNavTarget(queryClient, platform.navigation, href)}
                   onFocus={() => prefetchNavTarget(queryClient, platform.navigation, href)}
                   className={cn(
-                    "flex shrink-0 items-center gap-1.5 rounded-xl px-2.5 py-2 text-sm font-medium transition-colors lg:px-3",
+                    "flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors lg:px-3",
                     active
-                      ? "bg-hero-gradient text-white shadow-md"
-                      : "text-slate-600 hover:bg-brand-50 hover:text-brand-700",
+                      ? "bg-brand-50 text-brand-800"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-950",
                   )}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
