@@ -50,9 +50,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: pip install -r backend/requirements.txt
-      - run: pytest
-        working-directory: backend
+      - run: ./scripts/test-env.sh
+
+  production-compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cp .env.prod.example .env.prod
+      - run: |
+          sed -i 's|REPLACE_ME|ci-test-secret|g' .env.prod
+          sed -i 's|REPLACE_WITH_AT_LEAST_32_RANDOM_CHARACTERS|ci-only-jwt-secret-at-least-32-characters|g' .env.prod
+          mkdir -p /tmp/john-secrets
+          printf 'ci-package-token' > /tmp/john-secrets/gh_packages_token
+      - run: GH_PACKAGES_TOKEN_FILE=/tmp/john-secrets/gh_packages_token ./scripts/validate-deployment.sh .env.prod

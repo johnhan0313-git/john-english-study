@@ -36,10 +36,31 @@ class OpenAICompatibleProvider:
         self.http_proxy = http_proxy
 
     def _http_client(self) -> httpx.AsyncClient:
-        kwargs: dict[str, object] = {"timeout": 120.0}
+        timeout = httpx.Timeout(self.config.timeout_seconds, connect=min(self.config.timeout_seconds, 10.0))
+        kwargs: dict[str, object] = {"timeout": timeout}
         if self.http_proxy:
             kwargs["proxy"] = self.http_proxy
         return httpx.AsyncClient(**kwargs)
+
+    async def _post(self, client: httpx.AsyncClient, url: str, **kwargs: Any) -> httpx.Response:
+        last_error: Exception | None = None
+        for attempt in range(self.config.max_retries + 1):
+            try:
+                response = await client.post(url, **kwargs)
+                if response.status_code not in {408, 429, 500, 502, 503, 504}:
+                    return response
+                last_error = AIProviderError(
+                    f"AI upstream temporarily unavailable: {response.status_code} {response.text[:500]}"
+                )
+            except (httpx.TimeoutException, httpx.NetworkError) as exc:
+                last_error = exc
+            if attempt < self.config.max_retries:
+                await asyncio.sleep(0.5 * (2**attempt))
+        if isinstance(last_error, AIProviderError):
+            raise last_error
+        if isinstance(last_error, httpx.TimeoutException):
+            raise AIProviderError(f"AI request timed out after {self.config.timeout_seconds:g}s") from last_error
+        raise AIProviderError(f"AI request failed: {last_error}") from last_error
 
     def _headers(self) -> dict[str, str]:
         if not self.api_key:
@@ -78,13 +99,15 @@ class OpenAICompatibleProvider:
         }
         async with self._http_client() as client:
             payload_with_json = {**base_payload, "response_format": {"type": "json_object"}}
-            resp = await client.post(
+            resp = await self._post(
+                client,
                 f"{self.base_url}/chat/completions",
                 headers=self._headers(),
                 json=payload_with_json,
             )
             if resp.status_code != 200:
-                resp = await client.post(
+                resp = await self._post(
+                    client,
                     f"{self.base_url}/chat/completions",
                     headers=self._headers(),
                     json=base_payload,
@@ -98,7 +121,7 @@ class OpenAICompatibleProvider:
     async def chat_text(self, messages: list[dict[str, str]]) -> str:
         payload = {"model": self.model, "messages": messages, "temperature": 0.5}
         async with self._http_client() as client:
-            resp = await client.post(f"{self.base_url}/chat/completions", headers=self._headers(), json=payload)
+            resp = await self._post(client, f"{self.base_url}/chat/completions", headers=self._headers(), json=payload)
             if resp.status_code != 200:
                 raise AIProviderError(f"LLM request failed: {resp.status_code} {resp.text}")
             return resp.json()["choices"][0]["message"]["content"]
@@ -146,7 +169,8 @@ class OpenAICompatibleProvider:
         voice_name = voice or self.config.voice or "alloy"
         payload = {"model": self.model, "input": text[:4096], "voice": voice_name}
         async with self._http_client() as client:
-            resp = await client.post(
+            resp = await self._post(
+                client,
                 f"{self.base_url}/audio/speech",
                 headers={**self._headers(), "Accept": "audio/mpeg"},
                 json=payload,
@@ -169,7 +193,8 @@ class OpenAICompatibleProvider:
 
         async with self._http_client() as client:
             try:
-                resp = await client.post(
+                resp = await self._post(
+                    client,
                     f"{self.base_url}/audio/transcriptions",
                     headers={"Authorization": f"Bearer {self.api_key}"},
                     data={"model": self.model},

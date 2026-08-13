@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import random
+from sqlalchemy.exc import IntegrityError
 from app.utils.time import local_today
 
 from sqlalchemy import func
@@ -174,24 +175,42 @@ class ScenarioService:
         for kind, level, strategy in kinds:
             if any(s.daily_kind == kind for s in generated):
                 continue
-            scenario = await self.generate_scenario(
-                user_id=user_id,
-                level=level,
-                is_daily=True,
-                daily_kind=kind,
-                word_strategy=strategy,
-            )
+            try:
+                scenario = await self.generate_scenario(
+                    user_id=user_id,
+                    level=level,
+                    is_daily=True,
+                    daily_kind=kind,
+                    word_strategy=strategy,
+                )
+            except IntegrityError:
+                # Another worker may have created this daily item concurrently.
+                self.db.rollback()
+                scenario = (
+                    self.db.query(Scenario)
+                    .filter(
+                        Scenario.user_id == user_id,
+                        Scenario.is_daily.is_(True),
+                        Scenario.daily_date == today,
+                        Scenario.daily_kind == kind,
+                    )
+                    .first()
+                )
+                if scenario is None:
+                    raise
             generated.append(scenario)
         return generated
 
-    def get_scenario(self, scenario_id: int) -> Scenario | None:
-        return (
+    def get_scenario(self, scenario_id: int, user_id: int | None = None) -> Scenario | None:
+        query = (
             self.db.query(Scenario)
             .options(joinedload(Scenario.words).joinedload(ScenarioWord.word))
             .options(joinedload(Scenario.exercises))
             .filter(Scenario.id == scenario_id)
-            .first()
         )
+        if user_id is not None:
+            query = query.filter(Scenario.user_id == user_id)
+        return query.first()
 
     def list_scenarios(self, user_id: int, skip: int = 0, limit: int = 20) -> tuple[list[Scenario], int]:
         q = self.db.query(Scenario).filter(Scenario.user_id == user_id)

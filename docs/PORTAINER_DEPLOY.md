@@ -110,8 +110,16 @@ docker exec <backend-container> python -m app.cli seed
 1. Stacks → Add stack → **Git repository**
 2. URL：`https://github.com/johnhan0313-git/john-english-study.git`
 3. Compose path：`docker-compose.prod.yml`
-4. 覆盖 `JWT_SECRET`、`CORS_ORIGINS`、frontend `NEXT_PUBLIC_API_URL`、**SMTP_***（见下）
+4. 在 Stack Environment variables 填入 `.env.prod.example` 中的变量。`DATABASE_URL`、`S3_ACCESS_KEY`、`S3_SECRET_KEY`、`JWT_SECRET` 为强制项，缺失时 Compose 会拒绝部署。
 5. Deploy
+
+部署前可在本机使用相同环境文件检查：
+
+```bash
+./scripts/validate-deployment.sh .env.prod
+```
+
+部署成功后 Portainer 应显示 backend/frontend 均为 `healthy`。后端健康地址为 `/api/health`。
 
 ## 邮件验证码（SMTP）
 

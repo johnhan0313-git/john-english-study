@@ -1,5 +1,19 @@
 # 本地测试环境（PostgreSQL + MinIO）
 
+## 推荐：完全自包含测试环境
+
+不依赖 Tailscale 或 john-server，Docker 会临时启动 PostgreSQL、MinIO 和测试容器，结束后自动清理：
+
+```bash
+./scripts/test-env.sh
+# 只跑指定文件
+./scripts/test-env.sh tests/test_ai_provider.py
+```
+
+对应文件为 `docker-compose.test.yml` 和 `.env.test.example`。测试资源只存在于临时容器，不会接触生产数据库或 bucket。
+
+## 远程 1:1 测试环境
+
 本地 `./run.sh start` 启动前后端，数据库与对象存储连接 john-server 上与生产 **1:1** 的测试资源（`-test` 后缀），通过 **Tailscale** 访问。
 
 生产部署见 [PORTAINER_DEPLOY.md](PORTAINER_DEPLOY.md)。

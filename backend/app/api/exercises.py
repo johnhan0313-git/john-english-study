@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import get_current_user
 from app.database import get_db
 from app.models.exercise import Exercise
+from app.models.scenario import Scenario
 from app.models.user import User
 from app.schemas.exercise import (
     BatchSubmitRequest,
@@ -23,7 +24,14 @@ router = APIRouter(prefix="/exercises", tags=["exercises"])
 
 
 @router.get("/scenario/{scenario_id}", response_model=list[ExerciseResponse])
-def list_exercises(scenario_id: int, db: Session = Depends(get_db)):
+def list_exercises(
+    scenario_id: int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    owned = db.query(Scenario.id).filter(Scenario.id == scenario_id, Scenario.user_id == user.id).first()
+    if not owned:
+        raise HTTPException(status_code=404, detail="Scenario not found")
     exercises = (
         db.query(Exercise)
         .filter(Exercise.scenario_id == scenario_id)
@@ -49,7 +57,12 @@ def submit_single(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    exercise = db.query(Exercise).filter(Exercise.id == exercise_id).first()
+    exercise = (
+        db.query(Exercise)
+        .join(Scenario, Scenario.id == Exercise.scenario_id)
+        .filter(Exercise.id == exercise_id, Scenario.user_id == user.id)
+        .first()
+    )
     if not exercise:
         raise HTTPException(status_code=404, detail="Exercise not found")
     result = submit_exercise(db, exercise, body.answer, user.id)
@@ -63,6 +76,9 @@ def submit_batch(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    owned = db.query(Scenario.id).filter(Scenario.id == scenario_id, Scenario.user_id == user.id).first()
+    if not owned:
+        raise HTTPException(status_code=404, detail="Scenario not found")
     exercises = (
         db.query(Exercise)
         .filter(Exercise.scenario_id == scenario_id)

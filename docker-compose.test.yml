@@ -1,0 +1,61 @@
+name: john-english-study-test
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${TEST_POSTGRES_USER:-english-study-test}
+      POSTGRES_PASSWORD: ${TEST_POSTGRES_PASSWORD:-english-study-test}
+      POSTGRES_DB: ${TEST_POSTGRES_DB:-english-study-test}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    tmpfs:
+      - /var/lib/postgresql/data
+
+  minio:
+    image: minio/minio:latest
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: ${TEST_MINIO_ROOT_USER:-english-study-test}
+      MINIO_ROOT_PASSWORD: ${TEST_MINIO_ROOT_PASSWORD:-english-study-test-secret}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    tmpfs:
+      - /data
+
+  tests:
+    build:
+      context: ./backend
+      args:
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}
+    entrypoint: ["pytest"]
+    command: ["-q"]
+    environment:
+      TESTING: "true"
+      DATABASE_URL: postgresql+psycopg://${TEST_POSTGRES_USER:-english-study-test}:${TEST_POSTGRES_PASSWORD:-english-study-test}@postgres:5432/${TEST_POSTGRES_DB:-english-study-test}
+      USE_MIGRATIONS: "true"
+      STORAGE_BACKEND: s3
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_ACCESS_KEY: ${TEST_MINIO_ROOT_USER:-english-study-test}
+      S3_SECRET_KEY: ${TEST_MINIO_ROOT_PASSWORD:-english-study-test-secret}
+      S3_BUCKET: ${TEST_S3_BUCKET:-english-study-bucket-test}
+      ENABLE_SCHEDULER: "false"
+      SKIP_STARTUP_SEED: "true"
+      AUTH_EXPOSE_CODES: "true"
+      AI_LLM_API_KEY: ""
+      AI_STT_API_KEY: ""
+      AI_TTS_API_KEY: ""
+    volumes:
+      - ./backend/tests:/app/tests:ro
+      - ./backend/data:/app/data:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy

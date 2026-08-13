@@ -5,6 +5,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
 
 _BACKEND_DIR = Path(__file__).resolve().parents[1]
 ENV_FILE = _BACKEND_DIR / ".env"
@@ -16,6 +17,8 @@ class AIEndpointConfig:
     api_key: str
     model: str
     voice: str = ""
+    timeout_seconds: float = 60.0
+    max_retries: int = 2
 
     @property
     def is_configured(self) -> bool:
@@ -63,6 +66,8 @@ class Settings(BaseSettings):
     ai_tts_model: str = "tts-1"
     ai_tts_voice: str = "alloy"
     use_edge_tts: bool = True
+    ai_timeout_seconds: float = Field(default=60.0, gt=0, le=300)
+    ai_max_retries: int = Field(default=2, ge=0, le=5)
 
     # 海外 AI API HTTP 代理（john-server 访问 Groq STT 等需要）
     ai_http_proxy: str = ""
@@ -114,6 +119,8 @@ class Settings(BaseSettings):
             base_url=self.ai_llm_base_url.rstrip("/"),
             api_key=self.ai_llm_api_key,
             model=self.ai_llm_model,
+            timeout_seconds=self.ai_timeout_seconds,
+            max_retries=self.ai_max_retries,
         )
 
     def stt_config(self) -> AIEndpointConfig:
@@ -121,6 +128,8 @@ class Settings(BaseSettings):
             base_url=self.ai_stt_base_url.rstrip("/"),
             api_key=self.ai_stt_api_key,
             model=self.ai_stt_model,
+            timeout_seconds=self.ai_timeout_seconds,
+            max_retries=self.ai_max_retries,
         )
 
     def tts_config(self) -> AIEndpointConfig:
@@ -129,6 +138,8 @@ class Settings(BaseSettings):
             api_key=self.ai_tts_api_key,
             model=self.ai_tts_model,
             voice=self.ai_tts_voice,
+            timeout_seconds=self.ai_timeout_seconds,
+            max_retries=self.ai_max_retries,
         )
 
 

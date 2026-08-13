@@ -20,19 +20,22 @@ services:
       - john-minio_default
       - john-nginx_default
     environment:
-      DATABASE_URL: postgresql+psycopg://english-study:english-study-123@john-postgresql:5432/english-study
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in Portainer Stack environment}
       USE_MIGRATIONS: "true"
       STORAGE_BACKEND: s3
       S3_ENDPOINT_URL: http://john-minio:9000
-      S3_ACCESS_KEY: minioadmin
-      S3_SECRET_KEY: minioadmin
-      S3_BUCKET: english-study-bucket
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?Set S3_ACCESS_KEY in Portainer Stack environment}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?Set S3_SECRET_KEY in Portainer Stack environment}
+      S3_BUCKET: ${S3_BUCKET:-english-study-bucket}
       S3_REGION: us-east-1
       S3_USE_SSL: "false"
       CORS_ORIGINS: https://se.cool-app.me,http://se.cool-app.me,capacitor://localhost,https://localhost,http://localhost:5173
       ENABLE_SCHEDULER: "true"
       SEED_ON_STARTUP: "true"
-      JWT_SECRET: change-me-in-production
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in Portainer Stack environment}
+      AUTH_EXPOSE_CODES: "false"
+      AI_TIMEOUT_SECONDS: ${AI_TIMEOUT_SECONDS:-60}
+      AI_MAX_RETRIES: ${AI_MAX_RETRIES:-2}
       # 邮件验证码（Portainer Stack 环境变量中填入真实值，见 docs/PORTAINER_DEPLOY.md）
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-465}
@@ -66,6 +69,12 @@ services:
       NO_PROXY: ${NO_PROXY:-localhost,127.0.0.1,john-postgresql,john-minio,192.168.0.0/16,10.0.0.0/8,172.16.0.0/12}
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
     restart: unless-stopped
 
   frontend:
@@ -84,7 +93,14 @@ services:
       - default
       - john-nginx_default
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     restart: unless-stopped
 
 # Portainer 容器需挂载宿主机目录（见 deploy/portainer-compose.example.yaml）:

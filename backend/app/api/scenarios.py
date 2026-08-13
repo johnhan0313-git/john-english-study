@@ -82,18 +82,18 @@ def list_scenarios(
 
 
 @router.get("/{scenario_id}", response_model=ScenarioDetail)
-def get_scenario(scenario_id: int, db: Session = Depends(get_db)):
+def get_scenario(scenario_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     service = ScenarioService(db)
-    scenario = service.get_scenario(scenario_id)
+    scenario = service.get_scenario(scenario_id, user.id)
     if not scenario:
         raise HTTPException(status_code=404, detail="Scenario not found")
     return ScenarioDetail(**service.scenario_to_detail(scenario))
 
 
 @router.get("/{scenario_id}/translation", response_model=ScenarioTranslationResponse)
-async def get_scenario_translation(scenario_id: int, db: Session = Depends(get_db)):
+async def get_scenario_translation(scenario_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     service = ScenarioService(db)
-    scenario = service.get_scenario(scenario_id)
+    scenario = service.get_scenario(scenario_id, user.id)
     if not scenario:
         raise HTTPException(status_code=404, detail="Scenario not found")
     try:
@@ -104,10 +104,10 @@ async def get_scenario_translation(scenario_id: int, db: Session = Depends(get_d
 
 
 @router.get("/{scenario_id}/audio")
-async def get_scenario_audio(scenario_id: int, db: Session = Depends(get_db)):
+async def get_scenario_audio(scenario_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     settings = get_settings()
     service = ScenarioService(db)
-    scenario = service.get_scenario(scenario_id)
+    scenario = service.get_scenario(scenario_id, user.id)
     if not scenario:
         raise HTTPException(status_code=404, detail="Scenario not found")
 
