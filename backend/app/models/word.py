@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy import DateTime, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -21,20 +21,41 @@ class Word(Base):
     examples: Mapped[str] = mapped_column(Text, default="[]")  # JSON array
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
-    tags: Mapped[list["WordTag"]] = relationship(back_populates="word", cascade="all, delete-orphan")
-    group_memberships: Mapped[list["WordGroupMember"]] = relationship(back_populates="word")
-    scenario_words: Mapped[list["ScenarioWord"]] = relationship(back_populates="word")
-    progress_records: Mapped[list["UserWordProgress"]] = relationship(back_populates="word")
+    tags: Mapped[list["WordTag"]] = relationship(
+        back_populates="word",
+        cascade="all, delete-orphan",
+        foreign_keys="WordTag.word_id",
+        primaryjoin="Word.id==WordTag.word_id",
+    )
+    group_memberships: Mapped[list["WordGroupMember"]] = relationship(
+        back_populates="word",
+        foreign_keys="WordGroupMember.word_id",
+        primaryjoin="Word.id==WordGroupMember.word_id",
+    )
+    scenario_words: Mapped[list["ScenarioWord"]] = relationship(
+        back_populates="word",
+        foreign_keys="ScenarioWord.word_id",
+        primaryjoin="Word.id==ScenarioWord.word_id",
+    )
+    progress_records: Mapped[list["UserWordProgress"]] = relationship(
+        back_populates="word",
+        foreign_keys="UserWordProgress.word_id",
+        primaryjoin="Word.id==UserWordProgress.word_id",
+    )
 
 
 class WordTag(Base):
     __tablename__ = "word_tags"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    word_id: Mapped[int] = mapped_column(ForeignKey("words.id", ondelete="CASCADE"), index=True)
+    word_id: Mapped[int] = mapped_column(Integer, index=True)
     tag: Mapped[str] = mapped_column(String(64), index=True)
 
-    word: Mapped["Word"] = relationship(back_populates="tags")
+    word: Mapped["Word"] = relationship(
+        back_populates="tags",
+        foreign_keys=[word_id],
+        primaryjoin="WordTag.word_id==Word.id",
+    )
 
 
 class WordGroup(Base):
@@ -46,7 +67,12 @@ class WordGroup(Base):
     name_en: Mapped[str] = mapped_column(String(128))
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    members: Mapped[list["WordGroupMember"]] = relationship(back_populates="group", cascade="all, delete-orphan")
+    members: Mapped[list["WordGroupMember"]] = relationship(
+        back_populates="group",
+        cascade="all, delete-orphan",
+        foreign_keys="WordGroupMember.group_id",
+        primaryjoin="WordGroup.id==WordGroupMember.group_id",
+    )
 
 
 class WordGroupMember(Base):
@@ -54,8 +80,16 @@ class WordGroupMember(Base):
     __table_args__ = (UniqueConstraint("group_id", "word_id", name="uq_group_word"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    group_id: Mapped[int] = mapped_column(ForeignKey("word_groups.id", ondelete="CASCADE"), index=True)
-    word_id: Mapped[int] = mapped_column(ForeignKey("words.id", ondelete="CASCADE"), index=True)
+    group_id: Mapped[int] = mapped_column(Integer, index=True)
+    word_id: Mapped[int] = mapped_column(Integer, index=True)
 
-    group: Mapped["WordGroup"] = relationship(back_populates="members")
-    word: Mapped["Word"] = relationship(back_populates="group_memberships")
+    group: Mapped["WordGroup"] = relationship(
+        back_populates="members",
+        foreign_keys=[group_id],
+        primaryjoin="WordGroupMember.group_id==WordGroup.id",
+    )
+    word: Mapped["Word"] = relationship(
+        back_populates="group_memberships",
+        foreign_keys=[word_id],
+        primaryjoin="WordGroupMember.word_id==Word.id",
+    )

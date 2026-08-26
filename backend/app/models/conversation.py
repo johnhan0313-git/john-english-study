@@ -4,7 +4,7 @@ from typing import Any, Optional
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import DateTime, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -15,9 +15,9 @@ class ConversationSession(Base):
     __tablename__ = "conversation_sessions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=True)
+    user_id: Mapped[Optional[int]] = mapped_column(Integer, index=True, nullable=True)
     device_id: Mapped[Optional[str]] = mapped_column(String(64), index=True, nullable=True)
-    scenario_id: Mapped[Optional[int]] = mapped_column(ForeignKey("scenarios.id", ondelete="SET NULL"), nullable=True)
+    scenario_id: Mapped[Optional[int]] = mapped_column(Integer, index=True, nullable=True)
     title: Mapped[str] = mapped_column(String(256))
     theme: Mapped[str] = mapped_column(String(128), default="general")
     level: Mapped[str] = mapped_column(String(16), default="cet4")
@@ -37,6 +37,8 @@ class ConversationSession(Base):
         back_populates="session",
         cascade="all, delete-orphan",
         order_by="ConversationMessage.id",
+        foreign_keys="ConversationMessage.session_id",
+        primaryjoin="ConversationSession.id==ConversationMessage.session_id",
     )
 
 
@@ -44,10 +46,14 @@ class ConversationMessage(Base):
     __tablename__ = "conversation_messages"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    session_id: Mapped[int] = mapped_column(ForeignKey("conversation_sessions.id", ondelete="CASCADE"), index=True)
+    session_id: Mapped[int] = mapped_column(Integer, index=True)
     role: Mapped[str] = mapped_column(String(16))
     content: Mapped[str] = mapped_column(Text)
     meta: Mapped[Any] = mapped_column(JSONField, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
-    session: Mapped["ConversationSession"] = relationship(back_populates="messages")
+    session: Mapped["ConversationSession"] = relationship(
+        back_populates="messages",
+        foreign_keys=[session_id],
+        primaryjoin="ConversationMessage.session_id==ConversationSession.id",
+    )

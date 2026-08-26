@@ -166,3 +166,15 @@ def test_seed_helpers_avoid_ensure_prefix_for_tags():
     exam = (BACKEND_APP / "services" / "vocabulary" / "exam_tags.py").read_text(encoding="utf-8")
     assert "def ensure_exam_tag" not in exam
     assert "def apply_exam_tag" in exam
+
+
+def test_models_have_no_physical_foreign_keys():
+    models_dir = BACKEND_APP / "models"
+    for path in _python_files(models_dir):
+        text = path.read_text(encoding="utf-8")
+        assert "ForeignKey(" not in text, f"{path} still declares ForeignKey("
+
+
+def test_dead_progress_and_activity_services_removed():
+    assert not (BACKEND_APP / "services" / "vocabulary" / "progress_service.py").exists()
+    assert not (BACKEND_APP / "services" / "activity" / "service.py").exists()
