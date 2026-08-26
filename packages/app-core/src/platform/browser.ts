@@ -48,12 +48,22 @@ export function createMediaRecorderAdapter(): PlatformRecorder {
 
 export function createHtmlAudioAdapter(): PlatformAudio {
   let audio: HTMLAudioElement | null = null;
+  let onEnded: (() => void) | null = null;
+  let onError: (() => void) | null = null;
+  let onPlay: ((el: HTMLAudioElement) => void) | null = null;
+
   return {
     async play(url) {
       if (audio) {
         audio.pause();
       }
       audio = new Audio(url);
+      audio.setAttribute("playsinline", "true");
+      audio.onended = () => onEnded?.();
+      audio.onerror = () => onError?.();
+      audio.onplay = () => {
+        if (audio) onPlay?.(audio);
+      };
       await audio.play();
     },
     setRate(rate) {
@@ -61,6 +71,18 @@ export function createHtmlAudioAdapter(): PlatformAudio {
     },
     pause() {
       audio?.pause();
+    },
+    getElement() {
+      return audio;
+    },
+    setOnEnded(cb) {
+      onEnded = cb;
+    },
+    setOnError(cb) {
+      onError = cb;
+    },
+    setOnPlay(cb) {
+      onPlay = cb;
     },
   };
 }

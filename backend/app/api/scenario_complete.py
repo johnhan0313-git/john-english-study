@@ -4,11 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from app.application.progress.progress_command import RecordScenarioAttemptInput
 from app.auth.dependencies import get_current_user
+from app.composition.shared_composition import AppContainer, get_container
 from app.database import get_db
-from app.models.user import User
 from app.models.scenario import Scenario
-from app.services.vocabulary.progress_service import record_scenario_attempt
+from app.models.user import User
 
 router = APIRouter(prefix="/scenarios", tags=["scenarios"])
 
@@ -24,9 +25,18 @@ def complete_scenario(
     body: CompleteScenarioRequest,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    container: AppContainer = Depends(get_container),
 ):
     scenario = db.query(Scenario.id).filter(Scenario.id == scenario_id, Scenario.user_id == user.id).first()
     if not scenario:
         raise HTTPException(status_code=404, detail="Scenario not found")
-    record_scenario_attempt(db, scenario_id, user.id, body.total, body.correct)
+    container.progress.record_scenario_attempt.execute(
+        RecordScenarioAttemptInput(
+            user_id=user.id,
+            scenario_id=scenario_id,
+            total=body.total,
+            correct=body.correct,
+            timezone=container.settings.app_timezone,
+        )
+    )
     return {"ok": True}

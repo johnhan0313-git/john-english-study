@@ -22,6 +22,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.config import get_settings
+from app.composition.shared_composition import init_container, reset_container
 from app.database import (
     SessionLocal,
     prepare_test_database,
@@ -70,11 +71,14 @@ def _fresh_test_database():
     get_settings.cache_clear()
     reset_engine_for_tests()
     reset_storage_for_tests()
+    reset_container()
     reset_test_database()
+    init_container(get_settings())
     _clear_test_storage()
     yield
     reset_engine_for_tests()
     reset_storage_for_tests()
+    reset_container()
     get_settings.cache_clear()
 
 

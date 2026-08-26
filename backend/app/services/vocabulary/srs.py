@@ -1,45 +1,35 @@
 from __future__ import annotations
 
-from datetime import timedelta
+"""Legacy SRS helpers used by conversation until Conversation Application owns Progress writes.
+
+Prefer Progress Application RecordAnswerCommand for new call sites.
+"""
 
 from sqlalchemy.orm import Session
 
+from app.domains.progress.progress_domain import WordProgressState, apply_answer
+from app.infrastructure.persistence.progress.progress_repository_impl import SqlAlchemyProgressRepository
 from app.models.progress import UserWordProgress
 from app.utils.time import utc_now
 
-SRS_INTERVALS_DAYS = [1, 3, 7, 14, 30]
 
-
-def get_or_create_progress(db: Session, user_id: int, word_id: int) -> UserWordProgress:
-    progress = (
+def record_answer(db: Session, user_id: int, word_id: int, correct: bool) -> UserWordProgress:
+    repo = SqlAlchemyProgressRepository(db)
+    state = repo.get_word_progress(user_id, word_id)
+    if state is None:
+        state = WordProgressState(user_id=user_id, word_id=word_id)
+        state = apply_answer(state, correct, utc_now())
+        repo.add_word_progress(state)
+    else:
+        state = apply_answer(state, correct, utc_now())
+        repo.save_word_progress(state)
+    row = (
         db.query(UserWordProgress)
         .filter(UserWordProgress.user_id == user_id, UserWordProgress.word_id == word_id)
         .first()
     )
-    if not progress:
-        progress = UserWordProgress(user_id=user_id, word_id=word_id, familiarity=0)
-        db.add(progress)
-        db.flush()
-    return progress
-
-
-def record_answer(db: Session, user_id: int, word_id: int, correct: bool) -> UserWordProgress:
-    progress = get_or_create_progress(db, user_id, word_id)
-    now = utc_now()
-    progress.last_reviewed = now
-
-    if correct:
-        progress.correct_count += 1
-        progress.familiarity = min(5, progress.familiarity + 1)
-        interval_idx = min(progress.familiarity - 1, len(SRS_INTERVALS_DAYS) - 1)
-        if progress.familiarity > 0:
-            progress.next_review = now + timedelta(days=SRS_INTERVALS_DAYS[interval_idx])
-    else:
-        progress.wrong_count += 1
-        progress.familiarity = 0
-        progress.next_review = now + timedelta(days=1)
-
-    return progress
+    assert row is not None
+    return row
 
 
 def get_due_word_ids(db: Session, user_id: int, limit: int = 12) -> list[int]:

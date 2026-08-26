@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import activity, auth, common, conversations, exercises, profile, progress, reference, scenario_complete, scenarios, words
+from app.composition.shared_composition import init_container, get_container
 from app.config import get_settings
 from app.database import SessionLocal, init_db
 from app.logging_config import configure_logging
@@ -19,15 +20,23 @@ scheduler = AsyncIOScheduler()
 
 async def daily_scenario_job():
     settings = get_settings()
+    container = get_container()
+    from app.application.scenario.scenario_input import CreateMissingDailySlotsInput
+    from app.models.user import User
+    from app.utils.time import local_today
+
     db = SessionLocal()
     try:
-        from app.models.user import User
-        from app.services.scenario.service import ScenarioService
-
-        service = ScenarioService(db, settings)
         users = db.query(User).filter(User.is_active.is_(True)).all()
+        today = local_today(settings.app_timezone).isoformat()
         for user in users:
-            await service.ensure_daily_scenarios(user.id)
+            await container.scenario.create_missing_daily_slots.execute(
+                CreateMissingDailySlotsInput(
+                    user_id=user.id,
+                    daily_date=today,
+                    target_count=settings.daily_scenario_count,
+                )
+            )
     finally:
         db.close()
 
@@ -37,6 +46,7 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
     configure_logging(debug=settings.debug)
     init_db()
+    init_container(settings)
 
     llm = settings.llm_config()
     stt = settings.stt_config()

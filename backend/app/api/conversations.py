@@ -24,7 +24,7 @@ from app.services.ai.factory import build_providers
 from app.services.ai.openai_provider import AIProviderError, get_stt_provider
 from app.services.conversation.service import ConversationService
 from app.services.conversation.sse import encode_sse_error, stream_conversation_sse
-from app.services.media.tts_facade import ensure_conversation_message_audio
+from app.application.media.media_command import materialize_conversation_message_audio
 from app.services.storage.responses import storage_stream_response
 from app.utils.json_helpers import parse_json_field
 
@@ -191,7 +191,7 @@ async def get_message_audio(
 
     settings = get_settings()
     try:
-        audio_key = await ensure_conversation_message_audio(
+        audio_key = await materialize_conversation_message_audio(
             session_id,
             message_id,
             message.content,
@@ -248,7 +248,7 @@ async def voice_turn(
             raise HTTPException(status_code=404, detail="Conversation not found")
         user_messages = [m for m in session.messages if m.role == "user"]
         user_msg = user_messages[-1] if user_messages else None
-        await ensure_conversation_message_audio(session_id, assistant.id, assistant.content, settings)
+        await materialize_conversation_message_audio(session_id, assistant.id, assistant.content, settings)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except AIProviderError as exc:

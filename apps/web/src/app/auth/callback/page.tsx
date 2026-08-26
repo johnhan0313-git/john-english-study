@@ -1,3 +1,5 @@
 "use client";
-import Page from "@sceneenglish/app-core/pages/auth-callback";
-export default Page;
+
+import { AuthCallbackPage } from "@sceneenglish/app-core";
+
+export default AuthCallbackPage;

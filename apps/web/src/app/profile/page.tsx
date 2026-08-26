@@ -1,3 +1,5 @@
 "use client";
-import Page from "@sceneenglish/app-core/pages/profile";
-export default Page;
+
+import { ProfilePage } from "@sceneenglish/app-core";
+
+export default ProfilePage;

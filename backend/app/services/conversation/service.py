@@ -19,10 +19,10 @@ from app.services.conversation.prompts import (
     build_system_prompt,
     strip_chinese_hint_suffix,
 )
-from app.services.scenario.service import ScenarioService
 from app.services.scenario.word_picker import pick_words
 from app.services.vocabulary.srs import record_answer
 from app.utils.json_helpers import dump_json_field, parse_json_field
+from app.models.scenario import Scenario, ScenarioWord
 
 
 def detect_used_words(text: str, target_words: list[str]) -> list[str]:
@@ -53,7 +53,6 @@ class ConversationService:
         self.settings = settings or get_settings()
         resolved = providers or build_providers(self.settings)
         self.ai = resolved.llm
-        self.scenario_service = ScenarioService(db, self.settings, providers=resolved)
 
     async def create_session(
         self,
@@ -109,7 +108,12 @@ class ConversationService:
         return session
 
     async def _setup_from_scenario(self, scenario_id: int, level: str) -> dict:
-        scenario = self.scenario_service.get_scenario(scenario_id)
+        scenario = (
+            self.db.query(Scenario)
+            .options(joinedload(Scenario.words).joinedload(ScenarioWord.word))
+            .filter(Scenario.id == scenario_id)
+            .first()
+        )
         if not scenario:
             raise ValueError("Scenario not found")
 
@@ -480,6 +484,7 @@ class ConversationService:
         }
 
     def _apply_srs_for_words(self, user_id: int | None, lemmas: list[str]) -> None:
+        """Apply SRS updates in the current session (no commit — caller owns UoW)."""
         if not lemmas or user_id is None:
             return
         words = self.db.query(Word).filter(Word.lemma.in_(lemmas)).all()
@@ -488,4 +493,3 @@ class ConversationService:
             word_id = by_lemma.get(lemma)
             if word_id:
                 record_answer(self.db, user_id, word_id, correct=True)
-        self.db.commit()

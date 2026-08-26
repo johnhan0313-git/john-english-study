@@ -1,0 +1,23 @@
+from __future__ import annotations
+
+from typing import Protocol
+
+from app.domains.scenario.scenario_domain import ScenarioAggregate
+
+
+class ScenarioRepository(Protocol):
+    def get_by_id(self, scenario_id: int, user_id: int | None = None) -> ScenarioAggregate | None: ...
+
+    def list_by_user(self, user_id: int, skip: int, limit: int) -> tuple[list[ScenarioAggregate], int]: ...
+
+    def list_daily(self, user_id: int, daily_date: str) -> list[ScenarioAggregate]: ...
+
+    def get_daily_by_kind(
+        self, user_id: int, daily_date: str, daily_kind: str
+    ) -> ScenarioAggregate | None: ...
+
+    def add(self, scenario: ScenarioAggregate) -> ScenarioAggregate: ...
+
+    def save_content(self, scenario: ScenarioAggregate) -> None: ...
+
+    def list_theme_slugs(self) -> list[str]: ...

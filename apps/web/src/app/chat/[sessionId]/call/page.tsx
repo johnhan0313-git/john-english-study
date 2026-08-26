@@ -1,3 +1,5 @@
 "use client";
-import Page from "@sceneenglish/app-core/pages/chat-call";
-export default Page;
+
+import { ChatCallPage } from "@sceneenglish/app-core";
+
+export default ChatCallPage;

@@ -1,6 +1,6 @@
 "use client";
 
-import { usePlatform } from "@sceneenglish/app-core/platform/context";
+import { usePlatform } from "./context";
 
 export function usePathname(): string {
   return usePlatform().navigation.usePathname();

@@ -8,8 +8,11 @@ from sqlalchemy.orm import Session, joinedload
 from app.models.conversation import ConversationSession
 from app.models.progress import ScenarioAttempt
 from app.models.scenario import Scenario
+from app.infrastructure.persistence.scenario.scenario_read_mapper import (
+    scenario_to_brief,
+    scenarios_to_briefs,
+)
 from app.services.conversation.service import ConversationService
-from app.services.scenario.service import ScenarioService
 from app.utils.time import local_today
 
 
@@ -17,7 +20,6 @@ class ActivityService:
     def __init__(self, db: Session, timezone: str = "Asia/Shanghai"):
         self.db = db
         self.timezone = timezone
-        self.scenario_service = ScenarioService(db)
         self.conversation_service = ConversationService(db)
 
     def get_overview(self, user_id: int) -> dict:
@@ -68,7 +70,7 @@ class ActivityService:
             .limit(20)
             .all()
         )
-        recent_briefs = self.scenario_service.scenarios_to_briefs(user_id, recent_scenarios)
+        recent_briefs = scenarios_to_briefs(self.db, user_id, recent_scenarios)
         incomplete = [b for b in recent_briefs if not b["is_completed"]][:3]
 
         return {
@@ -131,7 +133,7 @@ class ActivityService:
             .filter(Scenario.user_id == user_id)
             .all()
         )
-        briefs = self.scenario_service.scenarios_to_briefs(user_id, scenarios)
+        briefs = scenarios_to_briefs(self.db, user_id, scenarios)
         scenario_brief_map = {b["id"]: b for b in briefs}
 
         for scenario in scenarios:
@@ -154,7 +156,7 @@ class ActivityService:
             if not attempt.scenario:
                 continue
             score = attempt.correct_questions / attempt.total_questions if attempt.total_questions else 0.0
-            brief = self.scenario_service.scenario_to_brief(
+            brief = scenario_to_brief(
                 attempt.scenario,
                 user_id=user_id,
                 best_score=score,

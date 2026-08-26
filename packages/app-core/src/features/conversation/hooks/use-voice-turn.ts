@@ -1,0 +1,205 @@
+"use client";
+
+import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { api } from "@sceneenglish/api-client";
+import { ApiError, parseApiError } from "@sceneenglish/api-client";
+
+import { fetchAuthenticatedAudioBlobUrl } from "../../../app-chrome/audio";
+import { usePlatform } from "../../../platform/context";
+import { useLipsyncAudio } from "./use-lipsync-audio";
+
+interface UseVoiceTurnOptions {
+  sessionId: number;
+  enabled?: boolean;
+  autoPlayOpening?: boolean;
+  initialStarted?: boolean;
+  showChineseHint?: boolean;
+}
+
+export function useVoiceTurn({
+  sessionId,
+  enabled = true,
+  autoPlayOpening = true,
+  initialStarted = false,
+  showChineseHint = true,
+}: UseVoiceTurnOptions) {
+  const queryClient = useQueryClient();
+  const { recorder, audio: platformAudio } = usePlatform();
+  const blobUrlRef = useRef<string | null>(null);
+  const openingPlayedRef = useRef(false);
+
+  const [recording, setRecording] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const [subtitle, setSubtitle] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [started, setStarted] = useState(initialStarted);
+  const [elapsed, setElapsed] = useState(0);
+
+  const { connect, stopAnalysis, mouthOpen, viseme } = useLipsyncAudio();
+
+  const revokeBlobUrl = useCallback(() => {
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
+  }, []);
+
+  const playAudio = useCallback(
+    async (url: string) => {
+      stopAnalysis();
+      revokeBlobUrl();
+      setPlaying(true);
+      setError(null);
+
+      try {
+        const playUrl = await fetchAuthenticatedAudioBlobUrl(url);
+        blobUrlRef.current = playUrl;
+
+        platformAudio.setOnEnded?.(() => {
+          setPlaying(false);
+          stopAnalysis();
+          revokeBlobUrl();
+        });
+        platformAudio.setOnError?.(() => {
+          setPlaying(false);
+          stopAnalysis();
+          revokeBlobUrl();
+          setError("语音播放失败");
+        });
+        platformAudio.setOnPlay?.((el) => connect(el));
+
+        await platformAudio.play(playUrl);
+      } catch (e) {
+        setPlaying(false);
+        stopAnalysis();
+        revokeBlobUrl();
+        if (e instanceof ApiError) {
+          if (e.status === 503) {
+            setError("语音合成未配置或暂时不可用");
+          } else {
+            setError(e.message || "语音加载失败");
+          }
+        } else {
+          setError("无法播放语音，请允许浏览器自动播放");
+        }
+      }
+    },
+    [connect, platformAudio, revokeBlobUrl, stopAnalysis],
+  );
+
+  const playOpening = useCallback(
+    (
+      messages: { id: number; role: string; content: string }[],
+      status: string,
+    ) => {
+      if (!autoPlayOpening || !messages.length || openingPlayedRef.current) return;
+      const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
+      if (!lastAssistant) {
+        setError("未找到 AI 开场消息");
+        return;
+      }
+      openingPlayedRef.current = true;
+      setSubtitle(lastAssistant.content);
+      if (status === "active") {
+        playAudio(api.getConversationMessageAudioUrl(sessionId, lastAssistant.id));
+      }
+    },
+    [autoPlayOpening, playAudio, sessionId],
+  );
+
+  const playOpeningIfNeeded = useCallback(
+    (
+      messages: { id: number; role: string; content: string }[] | undefined,
+      status: string,
+    ) => {
+      if (!messages?.length || !started) return;
+      playOpening(messages, status);
+    },
+    [playOpening, started],
+  );
+
+  const unlockAndStart = useCallback(
+    (messages?: { id: number; role: string; content: string }[], status?: string) => {
+      setStarted(true);
+      setError(null);
+      if (!messages?.length) {
+        setError("暂无对话消息，请返回重新开始");
+        return;
+      }
+      playOpening(messages, status ?? "active");
+    },
+    [playOpening],
+  );
+
+  const startRecording = useCallback(async () => {
+    if (!enabled || playing || processing) return;
+    setError(null);
+    try {
+      await recorder.start();
+      setRecording(true);
+    } catch {
+      setError("无法开始录音，请允许麦克风权限");
+    }
+  }, [enabled, playing, processing, recorder]);
+
+  const stopRecording = useCallback(async () => {
+    if (!recording) return;
+    setRecording(false);
+    setProcessing(true);
+    try {
+      const blob = await recorder.stop();
+      const result = await api.sendVoiceTurn(sessionId, blob, showChineseHint);
+      setSubtitle(`${result.transcript}\n\n— ${result.content}`);
+      await queryClient.invalidateQueries({ queryKey: ["conversation", sessionId] });
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      playAudio(result.audio_url);
+    } catch (e) {
+      setError(parseApiError(e, "语音发送失败"));
+    } finally {
+      setProcessing(false);
+    }
+  }, [playAudio, queryClient, recorder, recording, sessionId, showChineseHint]);
+
+  useEffect(() => {
+    if (!started) return;
+    const timer = window.setInterval(() => setElapsed((e) => e + 1), 1000);
+    return () => window.clearInterval(timer);
+  }, [started]);
+
+  useEffect(
+    () => () => {
+      stopAnalysis();
+      platformAudio.pause();
+      revokeBlobUrl();
+    },
+    [platformAudio, revokeBlobUrl, stopAnalysis],
+  );
+
+  return {
+    audioRef: { current: platformAudio.getElement?.() ?? null },
+    recording,
+    processing,
+    playing,
+    subtitle,
+    setSubtitle,
+    error,
+    started,
+    elapsed,
+    mouthOpen,
+    viseme,
+    unlockAndStart,
+    playOpeningIfNeeded,
+    playAudio,
+    startRecording,
+    stopRecording,
+    openingPlayedRef,
+  };
+}
+
+export function formatCallTime(sec: number): string {
+  const m = Math.floor(sec / 60).toString().padStart(2, "0");
+  const s = (sec % 60).toString().padStart(2, "0");
+  return `${m}:${s}`;
+}

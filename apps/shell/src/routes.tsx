@@ -1,5 +1,5 @@
-import { ReferenceLayout } from "@sceneenglish/app-core/components/reference-layout";
-import { RequireAuth } from "@sceneenglish/app-core/components/auth/require-auth";
+import { ReferenceLayout } from "@sceneenglish/app-core";
+import { RequireAuth } from "@sceneenglish/app-core";
 import {
   ActivityPage,
   AppShell,
@@ -20,7 +20,7 @@ import {
   ScenarioDetailPage,
   ScenarioPracticePage,
   WordsPage,
-} from "@sceneenglish/app-core/index";
+} from "@sceneenglish/app-core";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 function ReferencePhoneticsRoute() {

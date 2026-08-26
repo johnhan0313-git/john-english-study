@@ -1,3 +1,5 @@
 "use client";
-import Page from "@sceneenglish/app-core/pages/reference-phonetics";
-export default Page;
+
+import { ReferencePhoneticsPage } from "@sceneenglish/app-core";
+
+export default ReferencePhoneticsPage;

@@ -1,3 +1,5 @@
 "use client";
-import Page from "@sceneenglish/app-core/pages/generate";
-export default Page;
+
+import { GeneratePage } from "@sceneenglish/app-core";
+
+export default GeneratePage;

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.config import get_settings
 from app.services.ai.openai_provider import AIProviderError
-from app.services.media.tts_facade import ensure_word_audio
+from app.application.media.media_command import materialize_word_audio
 from app.services.storage.responses import storage_stream_response
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
@@ -164,7 +164,7 @@ async def get_word_audio(word_id: int, db: Session = Depends(get_db)):
 
     settings = get_settings()
     try:
-        audio_key = await ensure_word_audio(word_id, word.lemma, settings)
+        audio_key = await materialize_word_audio(word_id, word.lemma, settings)
     except AIProviderError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 

@@ -1,3 +1,5 @@
 "use client";
-import Page from "@sceneenglish/app-core/pages/words";
-export default Page;
+
+import { WordsPage } from "@sceneenglish/app-core";
+
+export default WordsPage;

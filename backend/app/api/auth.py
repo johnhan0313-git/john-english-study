@@ -6,12 +6,15 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
+from app.application.identity.identity_command import (
+    LoginOrRegisterByEmailInput,
+    LoginOrRegisterByWechatInput,
+)
 from app.auth.dependencies import get_current_user
 from app.auth.email_codes import can_send_code, create_email_code, rollback_email_code, verify_email_code
 from app.auth.email_service import EmailDeliveryError, send_login_code
-from app.auth.jwt import create_access_token
 from app.auth.merge import merge_device_to_user
-from app.auth.users import get_or_create_user_by_email, get_or_create_user_by_wechat, normalize_email
+from app.auth.users import normalize_email
 from app.auth.wechat import (
     WeChatNotConfiguredError,
     build_wechat_authorize_url,
@@ -19,6 +22,7 @@ from app.auth.wechat import (
     frontend_callback_url,
     wechat_configured,
 )
+from app.composition.shared_composition import AppContainer, get_container
 from app.config import Settings, get_settings
 from app.database import get_db
 from app.models.user import User
@@ -31,7 +35,6 @@ from app.schemas.auth import (
     TokenResponse,
     UserResponse,
 )
-from app.utils.time import utc_now
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -51,12 +54,9 @@ def _user_response(user: User) -> UserResponse:
     )
 
 
-def _issue_token(user: User, db: Session) -> TokenResponse:
-    user.last_login_at = utc_now()
-    db.commit()
-    db.refresh(user)
+def _token_response(access_token: str, user: User) -> TokenResponse:
     return TokenResponse(
-        access_token=create_access_token(user.id),
+        access_token=access_token,
         user=_user_response(user),
     )
 
@@ -93,15 +93,20 @@ def send_email_code(
 
 
 @router.post("/email/login", response_model=TokenResponse)
-def email_login(body: EmailLoginRequest, db: Session = Depends(get_db)):
+def email_login(
+    body: EmailLoginRequest,
+    container: AppContainer = Depends(get_container),
+):
     email = normalize_email(body.email)
     if not verify_email_code(email, body.code):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="邮箱验证码错误或已过期")
 
-    user = get_or_create_user_by_email(db, email)
-    if not user.is_active:
+    result = container.identity.login_or_register_email.execute(
+        LoginOrRegisterByEmailInput(email=email)
+    )
+    if not result.user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Account inactive")
-    return _issue_token(user, db)
+    return _token_response(result.access_token, result.user)
 
 
 @router.get("/wechat/authorize")
@@ -121,8 +126,8 @@ def wechat_authorize(
 async def wechat_callback(
     code: str = Query(...),
     state: str = Query(""),
-    db: Session = Depends(get_db),
     settings: Settings = Depends(get_settings),
+    container: AppContainer = Depends(get_container),
 ):
     if not wechat_configured(settings):
         raise HTTPException(status_code=503, detail="WeChat login is not configured")
@@ -135,18 +140,23 @@ async def wechat_callback(
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    user = get_or_create_user_by_wechat(
-        db,
-        openid=profile["openid"],
-        nickname=profile.get("nickname"),
-        avatar_url=profile.get("avatar_url"),
+    result = container.identity.login_or_register_wechat.execute(
+        LoginOrRegisterByWechatInput(
+            openid=profile["openid"],
+            nickname=profile.get("nickname"),
+            avatar_url=profile.get("avatar_url"),
+        )
     )
-    if not user.is_active:
+    if not result.user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Account inactive")
 
-    token = _issue_token(user, db).access_token
     return RedirectResponse(
-        frontend_callback_url(settings, token, next_path=next_path, platform=oauth_platform)
+        frontend_callback_url(
+            settings,
+            result.access_token,
+            next_path=next_path,
+            platform=oauth_platform,
+        )
     )
 
 

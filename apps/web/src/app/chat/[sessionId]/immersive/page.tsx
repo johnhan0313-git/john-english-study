@@ -1,3 +1,5 @@
 "use client";
-import Page from "@sceneenglish/app-core/pages/chat-immersive";
-export default Page;
+
+import { ChatImmersivePage } from "@sceneenglish/app-core";
+
+export default ChatImmersivePage;

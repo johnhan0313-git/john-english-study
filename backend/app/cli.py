@@ -51,16 +51,26 @@ def cmd_seed() -> int:
 
 async def cmd_daily_scenarios() -> int:
     settings = get_settings()
+    init_db()
+    from app.application.scenario.scenario_input import CreateMissingDailySlotsInput
+    from app.composition.shared_composition import init_container
+    from app.models.user import User
+    from app.utils.time import local_today
+
+    container = init_container(settings)
     db = SessionLocal()
     try:
-        from app.models.user import User
-        from app.services.scenario.service import ScenarioService
-
-        service = ScenarioService(db, settings)
         users = db.query(User).filter(User.is_active.is_(True)).all()
+        today = local_today(settings.app_timezone).isoformat()
         for user in users:
-            await service.ensure_daily_scenarios(user.id)
-        print(f"Daily scenarios ensured for {len(users)} user(s).")
+            await container.scenario.create_missing_daily_slots.execute(
+                CreateMissingDailySlotsInput(
+                    user_id=user.id,
+                    daily_date=today,
+                    target_count=settings.daily_scenario_count,
+                )
+            )
+        print(f"Daily scenarios created for {len(users)} user(s).")
     finally:
         db.close()
     return 0

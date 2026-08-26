@@ -93,6 +93,7 @@ def record_scenario_attempt(
     correct: int,
     details: dict | None = None,
 ) -> ScenarioAttempt:
+    """Legacy helper — prefer Progress Application. Does not commit."""
     attempt = ScenarioAttempt(
         scenario_id=scenario_id,
         user_id=user_id,
@@ -103,7 +104,6 @@ def record_scenario_attempt(
     )
     db.add(attempt)
     update_streak(db, user_id)
-    db.commit()
     return attempt
 
 

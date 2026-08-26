@@ -1,11 +1,21 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
+from dataclasses import asdict
 
+from fastapi import APIRouter, Depends, HTTPException, Query
+
+from app.application.scenario.scenario_input import (
+    CreateMissingDailySlotsInput,
+    GenerateScenarioInput,
+    GetScenarioInput,
+    ListScenariosInput,
+)
 from app.auth.dependencies import get_current_user
+from app.composition.shared_composition import AppContainer, get_container
 from app.config import get_settings
-from app.database import get_db
+from app.database import SessionLocal
+from app.infrastructure.persistence.scenario.scenario_repository_impl import SqlAlchemyScenarioRepository
+from app.infrastructure.unit_of_work import SqlAlchemyUnitOfWork
 from app.models.user import User
 from app.schemas.scenario import (
     DailyScenariosResponse,
@@ -15,54 +25,64 @@ from app.schemas.scenario import (
     ScenarioListResponse,
     ScenarioTranslationResponse,
 )
-from app.services.media.tts_facade import ensure_scenario_audio
+from app.application.media.media_command import materialize_scenario_audio
 from app.services.storage.responses import storage_stream_response
-from app.services.scenario.service import ScenarioService
 from app.utils.time import local_today
 
 router = APIRouter(prefix="/scenarios", tags=["scenarios"])
+
+
+def _scenario_app(container: AppContainer = Depends(get_container)):
+    return container.scenario
 
 
 @router.post("/generate", response_model=ScenarioDetail)
 async def generate_scenario(
     body: ScenarioGenerateRequest,
     user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    app=Depends(_scenario_app),
 ):
-    service = ScenarioService(db)
     try:
-        scenario = await service.generate_scenario(
-            user_id=user.id,
-            level=body.level,
-            theme=body.theme,
-            word_ids=body.word_ids,
-            scenario_type=body.scenario_type,
-            word_count=body.word_count,
-            word_strategy=body.word_strategy,
-            exclude_recent=body.exclude_recent,
+        detail = await app.generate.execute(
+            GenerateScenarioInput(
+                user_id=user.id,
+                level=body.level,
+                theme=body.theme,
+                word_ids=tuple(body.word_ids),
+                scenario_type=body.scenario_type,
+                word_count=body.word_count,
+                word_strategy=body.word_strategy,
+                exclude_recent=body.exclude_recent,
+            )
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Scenario generation failed: {e}") from e
-
-    full = service.get_scenario(scenario.id)
-    return ScenarioDetail(**service.scenario_to_detail(full))
+    return ScenarioDetail(**asdict(detail))
 
 
 @router.get("/daily", response_model=DailyScenariosResponse)
-async def daily_scenarios(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    settings = get_settings()
-    service = ScenarioService(db)
-    today = local_today(settings.app_timezone).isoformat()
+async def daily_scenarios(
+    user: User = Depends(get_current_user),
+    app=Depends(_scenario_app),
+    container: AppContainer = Depends(get_container),
+):
+    today = local_today(container.settings.app_timezone).isoformat()
     try:
-        scenarios = await service.ensure_daily_scenarios(user.id)
+        result = await app.create_missing_daily_slots.execute(
+            CreateMissingDailySlotsInput(
+                user_id=user.id,
+                daily_date=today,
+                target_count=container.settings.daily_scenario_count,
+            )
+        )
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Daily scenario generation failed: {e}") from e
     return DailyScenariosResponse(
-        date=today,
-        items=[ScenarioBrief(**service.scenario_to_brief(s)) for s in scenarios],
-        generated=True,
+        date=result.date,
+        items=[ScenarioBrief(**asdict(item)) for item in result.items],
+        generated=result.generated,
     )
 
 
@@ -71,62 +91,89 @@ def list_scenarios(
     user: User = Depends(get_current_user),
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=50),
-    db: Session = Depends(get_db),
+    app=Depends(_scenario_app),
 ):
-    service = ScenarioService(db)
-    items, total = service.list_scenarios(user.id, skip, limit)
+    result = app.list_scenarios.execute(
+        ListScenariosInput(user_id=user.id, skip=skip, limit=limit)
+    )
     return ScenarioListResponse(
-        items=[ScenarioBrief(**b) for b in service.scenarios_to_briefs(user.id, items)],
-        total=total,
+        items=[ScenarioBrief(**asdict(item)) for item in result.items],
+        total=result.total,
     )
 
 
 @router.get("/{scenario_id}", response_model=ScenarioDetail)
-def get_scenario(scenario_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    service = ScenarioService(db)
-    scenario = service.get_scenario(scenario_id, user.id)
-    if not scenario:
+def get_scenario(
+    scenario_id: int,
+    user: User = Depends(get_current_user),
+    app=Depends(_scenario_app),
+):
+    detail = app.get_scenario.execute(GetScenarioInput(scenario_id=scenario_id, user_id=user.id))
+    if not detail:
         raise HTTPException(status_code=404, detail="Scenario not found")
-    return ScenarioDetail(**service.scenario_to_detail(scenario))
+    return ScenarioDetail(**asdict(detail))
 
 
 @router.get("/{scenario_id}/translation", response_model=ScenarioTranslationResponse)
-async def get_scenario_translation(scenario_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    service = ScenarioService(db)
-    scenario = service.get_scenario(scenario_id, user.id)
-    if not scenario:
-        raise HTTPException(status_code=404, detail="Scenario not found")
+async def get_scenario_translation(
+    scenario_id: int,
+    user: User = Depends(get_current_user),
+    app=Depends(_scenario_app),
+):
     try:
-        result = await service.get_scenario_translation(scenario_id)
+        result = await app.translate.execute(scenario_id, user.id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Translation failed: {e}") from e
-    return ScenarioTranslationResponse(**result)
+    return ScenarioTranslationResponse(
+        passage_zh=result.passage_zh,
+        dialogue_zh=result.dialogue_zh,
+    )
 
 
 @router.get("/{scenario_id}/audio")
-async def get_scenario_audio(scenario_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def get_scenario_audio(
+    scenario_id: int,
+    user: User = Depends(get_current_user),
+    app=Depends(_scenario_app),
+):
     settings = get_settings()
-    service = ScenarioService(db)
-    scenario = service.get_scenario(scenario_id, user.id)
-    if not scenario:
+    detail = app.get_scenario.execute(GetScenarioInput(scenario_id=scenario_id, user_id=user.id))
+    if not detail:
         raise HTTPException(status_code=404, detail="Scenario not found")
 
-    content = service.scenario_to_detail(scenario)
-    passage = content["content"].get("passage", "")
-    dialogue_lines = content.get("dialogue", [])
+    passage = (detail.content or {}).get("passage", "")
+    dialogue_lines = detail.dialogue or []
     text = passage
     if dialogue_lines:
         text += " " + " ".join(f"{d['speaker']}: {d['text']}" for d in dialogue_lines)
 
-    audio_key = await ensure_scenario_audio(
+    with SqlAlchemyUnitOfWork(_session=SessionLocal()) as uow:
+        repo = SqlAlchemyScenarioRepository(uow.session)
+        scenario = repo.get_by_id(scenario_id, user.id)
+        if not scenario:
+            raise HTTPException(status_code=404, detail="Scenario not found")
+        stored_path = scenario.audio_path
+
+    audio_key = await materialize_scenario_audio(
         scenario_id,
         text,
         settings,
-        stored_path=scenario.audio_path,
+        stored_path=stored_path,
     )
-    if scenario.audio_path != audio_key:
-        scenario.audio_path = audio_key
-        db.commit()
+
+    if stored_path != audio_key:
+        with SqlAlchemyUnitOfWork(_session=SessionLocal()) as uow:
+            repo = SqlAlchemyScenarioRepository(uow.session)
+            scenario = repo.get_by_id(scenario_id, user.id)
+            if scenario:
+                from app.models.scenario import Scenario
+
+                row = uow.session.query(Scenario).filter(Scenario.id == scenario_id).first()
+                if row:
+                    row.audio_path = audio_key
+                    uow.commit()
 
     return storage_stream_response(
         audio_key,

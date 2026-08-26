@@ -1,3 +1,5 @@
 "use client";
-import Page from "@sceneenglish/app-core/pages/reference-index";
-export default Page;
+
+import { ReferenceIndexPage } from "@sceneenglish/app-core";
+
+export default ReferenceIndexPage;

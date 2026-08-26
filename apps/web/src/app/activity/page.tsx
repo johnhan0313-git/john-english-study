@@ -1,3 +1,5 @@
 "use client";
-import Page from "@sceneenglish/app-core/pages/activity";
-export default Page;
+
+import { ActivityPage } from "@sceneenglish/app-core";
+
+export default ActivityPage;

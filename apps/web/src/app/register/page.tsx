@@ -1,3 +1,5 @@
 "use client";
-import Page from "@sceneenglish/app-core/pages/register";
-export default Page;
+
+import { RegisterPage } from "@sceneenglish/app-core";
+
+export default RegisterPage;

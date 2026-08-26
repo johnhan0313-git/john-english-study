@@ -17,6 +17,7 @@ jobs:
       - run: npm ci
       - run: npm run build -w @sceneenglish/api-client
       - run: npm run build -w @sceneenglish/app-core
+      - run: bash ./scripts/check-frontend-architecture.sh
 
   web:
     runs-on: ubuntu-latest

@@ -6,59 +6,65 @@ SceneEnglish（仓库名 `john-english-study`）是成人英语场景学习平�
 
 ## 仓库结构与边界
 
-- `backend/`：Python 3.11+、FastAPI、SQLAlchemy、Alembic。业务代码位于 `backend/app/`。
-- `packages/api-client/`：纯 TypeScript API 请求封装、类型和领域 API；Web/Shell 共用。
-- `packages/app-core/`：共享 React 页面、组件、认证上下文、平台抽象和 hooks；不直接绑定浏览器/原生运行时。
-- `apps/web/`：Next.js Web 主线，使用 `@sceneenglish/api-client` 与 `@sceneenglish/app-core`。
-- `apps/shell/`：Vite + React 的 HashRouter SPA，供 Capacitor 和 Electron 复用。
-- `apps/mobile/`：Capacitor 原生工程配置。
-- `apps/desktop/`：Electron 主进程与打包资源。
-- `backend/data/`：本地媒体和 seed 数据；生产/测试媒体通常走 MinIO。
-- `docs/`：monorepo、测试环境、Portainer 部署说明。
+- `backend/`：Python 3.11+、FastAPI。目标依赖方向：Entry → Application → Domain → Port → Infrastructure。
+  - `app/domains/`：聚合与 Repository Protocol（无 ORM）
+  - `app/application/`：Command/Query + UoW 编排
+  - `app/infrastructure/`：SQLAlchemy Repository、UoW、Ability 适配
+  - `app/composition/`：进程级 Container（`shared_composition.py`）
+  - `app/services/`：尚未完全迁完的遗留服务（conversation / vocabulary import 等），新写路径优先走 Application
+- `packages/api-client/`：纯 TypeScript 传输层（HTTP + DTO）；不含 UI 展示规则
+- `packages/app-core/`：按 feature 垂直切片（`features/*`）+ `app-chrome` + `platform`
+- `apps/web/`：Next.js 薄壳（仅 `app/**` + `platform/**`）
+- `apps/shell/`：Vite HashRouter SPA（Capacitor / Electron）
+- `backend/data/`：唯一 seed 真相源（词库 JSON、词典、本地 media）
 
 ## 后端启动与请求链路
 
-入口是 `backend/app/main.py` 的 `app`。应用 lifespan 会：配置日志、初始化数据库、检查 LLM/STT/TTS、按配置执行参考资料和词库 seed、启动每日场景 APScheduler。生产/迁移环境用 `USE_MIGRATIONS=true` 时先执行 Alembic；开发 SQLite 可由 `create_all()` 初始化。
+入口是 `backend/app/main.py` 的 `app`。lifespan：日志 → `init_db()` → `init_container()` → 可选 seed → APScheduler。
 
-路由统一挂在 `/api`：`common`、`auth`、`profile`、`words`、`scenarios`、`scenario_complete`、`exercises`、`progress`、`reference`、`conversations`、`activity`。场景生成和每日场景由 `ScenarioService` 驱动，AI 能力位于 `services/ai`，词汇/SRS 位于 `services/vocabulary`，音频/TTS 位于 `services/media`。
+已迁 Application 的主路径：
+
+- Scenario：`GenerateScenario` / `CreateMissingDailySlots` / Query / Translate（无 `ScenarioService` / `ensure_daily_scenarios`）
+- Exercise submit / batch：`ExerciseApplication` + `ProgressApplication`（单次 UoW commit）
+- Activity：只读 Query
+- Identity：`LoginOrRegisterByEmail/WeChat`（无 `get_or_create_user_*`）
+- Media：`materialize_*_audio`（无 `ensure_*_audio` / `tts_facade`）
+
+路由仍挂在 `/api`。跨上下文 Progress 由 Application 协调；Conversation 结束时在同一 session 内写 SRS（不再中途二次 commit）。
 
 ## 前端运行方式
 
-- Web：`NEXT_PUBLIC_API_URL`，默认 `http://localhost:8000/api`。
-- Shell：`VITE_API_URL`，默认 `http://localhost:8000/api`；入口使用 `HashRouter` 和 `ShellPlatformProviders`。
-- API client 通过统一 `request()` / `authFetch()` 注入 Bearer token，收到受保护请求的 401 时调用 `onUnauthorized`。
-- 页面路由和平台差异主要在 `packages/app-core/src/platform`、`apps/shell/src/routes.tsx` 及 Web 壳中维护。
+- Web：`NEXT_PUBLIC_API_URL`，默认 `http://localhost:8000/api`
+- Shell：`VITE_API_URL`；`HashRouter` + `ShellPlatformProviders`
+- Hosts 只从 `@sceneenglish/app-core` 根导出取页面 / chrome；禁止深导入 `./pages/*`
+- 语音走 `PlatformServices.recorder` / `audio`（`createMediaRecorderAdapter`）
 
 ## 常用命令
 
 ```bash
 npm install
-./run.sh start                 # Web :3000 + API :8000
-./run.sh stop
-npm run dev:web
-npm run dev:shell
-npm run build:web
-npm run build:shell
+./run.sh start
 npm run build:packages
 cd backend && source .venv/bin/activate && pytest
+pytest tests/test_architecture_gates.py   # DDD 架构门禁
 ```
 
 ## 环境与数据约束
 
-复制 `backend/.env.example` 和 `apps/web/.env.example` 后再启动。默认测试环境通过 Tailscale 访问 john-server 的 PostgreSQL 和 MinIO；测试资源必须是数据库 `english-study-test`、bucket `english-study-bucket-test`，禁止把本地测试 `.env` 指向生产资源。生产部署见 `docker-compose.prod.yml` 和 `docs/PORTAINER_DEPLOY.md`。
+复制 `backend/.env.example` 和 `apps/web/.env.example`。测试资源必须是 `-test` 库/bucket。Seed：`python -m app.cli seed`；词典：`seed-dictionary`。每日场景：`daily-scenarios` CLI 或 Scheduler → `CreateMissingDailySlots`。
 
-关键后端配置：`DATABASE_URL`、`STORAGE_BACKEND`/`S3_*`、`AI_LLM_*`、`AI_STT_*`、`AI_TTS_*`、`USE_EDGE_TTS`、`USE_MIGRATIONS`、`SKIP_STARTUP_SEED`、`ENABLE_SCHEDULER`。未配置 LLM 时场景生成使用 Mock；未配置 STT 时口语评测退回期望文本；Edge TTS 默认开启。
+## 认证
 
-词库释义在 PostgreSQL `dictionary_entries`；需要时运行 `python -m app.cli seed-dictionary`，再运行 `python -m app.cli seed`。多实例部署建议关闭内置 scheduler，由 cron/k8s 调用 `daily-scenarios`。
+邮箱 OTP / 微信 OAuth 走 Identity Application；JWT + `get_current_user`。前端 auth 状态仅由 `features/auth` 拥有。
 
-## 认证现状
+## 后续债（本轮明确不做）
 
-学习进度历史上以 `device_id` 区分，当前 MVP 不是安全认证；JWT、邮箱 OTP、微信 OAuth 的 `/api/auth/*` 骨架已存在并逐步接入。涉及用户数据的 API 默认通过 `get_current_user` 依赖；改认证时需同时检查前端 auth context、token 存储和测试 helper。
-
-## 测试注意事项
-
-测试配置由 `backend/tests` 读取，并会校验 `-test` 数据库/bucket。PostgreSQL 测试按用例清理业务表，seed 表通常只灌一次；MinIO 测试 bucket 会清空。修改模型/API/seed 时优先补对应 `backend/tests/test_*.py`，并注意 SQLite 与 PostgreSQL 行为差异。
+- 实体表物理 FK → 逻辑引用
+- Transactional Outbox / MQ
+- OpenAPI codegen
+- Conversation / Catalog 全量 Domain 抽取
+- 小程序 Taro
 
 ## 维护约定
 
-优先复用 `api-client`、`app-core` 和现有 service/schema 模式，不在各端重复实现 API。涉及媒体时同时确认本地存储与 S3 响应路径；涉及时间/每日场景时使用 `app_timezone` 和 `app.utils.time`。启动问题先看 `.run/backend.log`、`.run/frontend.log` 及 `/docs` OpenAPI。
+优先扩 Application/Domain，不在各端重复 API；媒体同时确认本地与 S3；时间用 `app.utils.time`。架构回归见 `backend/tests/test_architecture_gates.py`。

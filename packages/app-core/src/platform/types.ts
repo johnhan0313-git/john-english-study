@@ -36,6 +36,11 @@ export interface PlatformAudio {
   play(url: string): Promise<void>;
   setRate(rate: number): void;
   pause(): void;
+  /** Browser DOM element for lipsync/analysis; null on non-DOM runtimes. */
+  getElement?(): HTMLAudioElement | null;
+  setOnEnded?(cb: (() => void) | null): void;
+  setOnError?(cb: (() => void) | null): void;
+  setOnPlay?(cb: ((el: HTMLAudioElement) => void) | null): void;
 }
 
 export interface PlatformNavigation {

@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
+from app.composition.shared_composition import AppContainer, get_container
 from app.database import get_db
 from app.models.exercise import Exercise
 from app.models.scenario import Scenario
@@ -16,8 +17,7 @@ from app.schemas.exercise import (
     ExerciseSubmitRequest,
     ExerciseSubmitResponse,
 )
-from app.services.exercise.generator import submit_exercise
-from app.services.vocabulary.progress_service import record_scenario_attempt
+from app.application.exercise.exercise_command import SubmitBatchInput, SubmitExerciseInput
 from app.utils.json_helpers import parse_json_field
 
 router = APIRouter(prefix="/exercises", tags=["exercises"])
@@ -55,17 +55,14 @@ def submit_single(
     exercise_id: int,
     body: ExerciseSubmitRequest,
     user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    container: AppContainer = Depends(get_container),
 ):
-    exercise = (
-        db.query(Exercise)
-        .join(Scenario, Scenario.id == Exercise.scenario_id)
-        .filter(Exercise.id == exercise_id, Scenario.user_id == user.id)
-        .first()
-    )
-    if not exercise:
-        raise HTTPException(status_code=404, detail="Exercise not found")
-    result = submit_exercise(db, exercise, body.answer, user.id)
+    try:
+        result = container.exercise.submit.execute(
+            SubmitExerciseInput(user_id=user.id, exercise_id=exercise_id, answer=body.answer)
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
     return ExerciseSubmitResponse(**result)
 
 
@@ -74,31 +71,22 @@ def submit_batch(
     scenario_id: int,
     body: BatchSubmitRequest,
     user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    container: AppContainer = Depends(get_container),
 ):
-    owned = db.query(Scenario.id).filter(Scenario.id == scenario_id, Scenario.user_id == user.id).first()
-    if not owned:
-        raise HTTPException(status_code=404, detail="Scenario not found")
-    exercises = (
-        db.query(Exercise)
-        .filter(Exercise.scenario_id == scenario_id)
-        .order_by(Exercise.sort_order)
-        .all()
-    )
-    results = []
-    correct = 0
-    for ex in exercises:
-        answer = body.answers.get(ex.id, "")
-        result = submit_exercise(db, ex, answer, user.id)
-        if result["correct"]:
-            correct += 1
-        results.append(ExerciseSubmitResponse(**result))
-
-    total = len(exercises)
-    record_scenario_attempt(db, scenario_id, user.id, total, correct)
+    try:
+        result = container.exercise.submit_batch.execute(
+            SubmitBatchInput(
+                user_id=user.id,
+                scenario_id=scenario_id,
+                answers=body.answers,
+                timezone=container.settings.app_timezone,
+            )
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
     return BatchSubmitResponse(
-        score=round(correct / total * 100, 1) if total else 0,
-        total=total,
-        correct=correct,
-        results=results,
+        score=result["score"],
+        total=result["total"],
+        correct=result["correct"],
+        results=[ExerciseSubmitResponse(**r) for r in result["results"]],
     )

@@ -1,24 +1,29 @@
-export { AppProviders } from "./components/app-providers";
-export { AppShell } from "./components/app-shell";
-export { PlatformLink } from "./components/platform-link";
+export { AppProviders, AppShell, PlatformLink, Spinner } from "./app-chrome";
 export * from "./platform";
-export { AuthProvider, useAuth } from "./contexts/auth-context";
-
-export { default as HomePage } from "./pages/home";
-export { default as LoginPage } from "./pages/login";
-export { default as RegisterPage } from "./pages/register";
-export { default as ProfilePage } from "./pages/profile";
-export { default as WordsPage } from "./pages/words";
-export { default as ActivityPage } from "./pages/activity";
-export { default as ProgressPage } from "./pages/progress";
-export { default as GeneratePage } from "./pages/generate";
-export { default as ReferenceIndexPage } from "./pages/reference-index";
-export { default as ReferencePhoneticsPage } from "./pages/reference-phonetics";
-export { default as ReferenceGrammarPage } from "./pages/reference-grammar";
-export { default as ScenarioDetailPage } from "./pages/scenario-detail";
-export { default as ScenarioPracticePage } from "./pages/scenario-practice";
-export { default as ChatNewPage } from "./pages/chat-new";
-export { default as ChatSessionPage } from "./pages/chat-session";
-export { default as ChatImmersivePage } from "./pages/chat-immersive";
-export { default as ChatCallPage } from "./pages/chat-call";
-export { default as AuthCallbackPage } from "./pages/auth-callback";
+export {
+  AuthProvider,
+  useAuth,
+  RequireAuth,
+  LoginPage,
+  RegisterPage,
+  AuthCallbackPage,
+} from "./features/auth";
+export { HomePage } from "./features/home";
+export { ProfilePage } from "./features/profile";
+export { WordsPage } from "./features/words";
+export { ActivityPage } from "./features/activity";
+export { ProgressPage } from "./features/progress";
+export { GeneratePage, ScenarioDetailPage } from "./features/scenarios";
+export {
+  ReferenceIndexPage,
+  ReferencePhoneticsPage,
+  ReferenceGrammarPage,
+  ReferenceLayout,
+} from "./features/reference";
+export { ScenarioPracticePage } from "./features/exercises";
+export {
+  ChatNewPage,
+  ChatSessionPage,
+  ChatImmersivePage,
+  ChatCallPage,
+} from "./features/conversation";

@@ -1,3 +1,5 @@
 "use client";
-import Page from "@sceneenglish/app-core/pages/scenario-practice";
-export default Page;
+
+import { ScenarioPracticePage } from "@sceneenglish/app-core";
+
+export default ScenarioPracticePage;

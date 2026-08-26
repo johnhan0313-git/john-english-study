@@ -91,6 +91,7 @@ def submit_exercise(
     answer: str | list[str],
     user_id: int,
 ) -> dict:
+    """Legacy helper — prefer Exercise Application. Does not commit."""
     correct, correct_answer = check_exercise_answer(exercise, answer)
     payload = parse_json_field(exercise.payload, {})
 
@@ -103,7 +104,6 @@ def submit_exercise(
         progress = record_answer(db, user_id, word_id, correct)
         familiarity_updates.append({"word_id": word_id, "familiarity": progress.familiarity})
 
-    db.commit()
     return {
         "correct": correct,
         "correct_answer": correct_answer,

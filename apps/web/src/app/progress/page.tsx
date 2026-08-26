@@ -1,3 +1,5 @@
 "use client";
-import Page from "@sceneenglish/app-core/pages/progress";
-export default Page;
+
+import { ProgressPage } from "@sceneenglish/app-core";
+
+export default ProgressPage;

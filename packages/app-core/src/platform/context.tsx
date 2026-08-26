@@ -9,7 +9,7 @@ import {
   persistAccessToken,
   setAccessTokenCache,
   ACCESS_TOKEN_KEY,
-} from "../auth/token";
+} from "../features/auth/token";
 import type { PlatformServices } from "./types";
 
 const PlatformContext = createContext<PlatformServices | null>(null);

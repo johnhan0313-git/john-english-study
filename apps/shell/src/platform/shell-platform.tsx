@@ -9,7 +9,7 @@ import {
 } from "react-router-dom";
 import { useMemo, type ReactNode } from "react";
 
-import { AppProviders } from "@sceneenglish/app-core/index";
+import { AppProviders } from "@sceneenglish/app-core";
 import { createBasePlatform } from "@sceneenglish/app-core/platform/browser";
 import type { PlatformLinkProps, PlatformNavigation } from "@sceneenglish/app-core/platform/types";
 
