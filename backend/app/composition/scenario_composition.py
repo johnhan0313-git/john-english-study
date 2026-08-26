@@ -69,5 +69,7 @@ def build_scenario_application(settings: Settings | None = None) -> ScenarioAppl
         get_daily=GetDailyScenariosQuery(_uow_factory, SqlAlchemyScenarioRepository),
         get_scenario=GetScenarioQuery(_uow_factory, SqlAlchemyScenarioRepository),
         list_scenarios=ListScenariosQuery(_uow_factory, SqlAlchemyScenarioRepository),
-        materialize_audio=MaterializeAndStoreScenarioAudioCommand(cfg),
+        materialize_audio=MaterializeAndStoreScenarioAudioCommand(
+            _uow_factory, SqlAlchemyScenarioRepository, cfg
+        ),
     )

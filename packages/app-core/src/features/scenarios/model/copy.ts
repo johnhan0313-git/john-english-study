@@ -6,6 +6,12 @@ export const scenarioDetailCopy = {
   stopRecord: "停止并评测",
   play: "播放",
   pause: "暂停",
+  tabHints: {
+    read: "点击正文高亮词或上方标签查看释义",
+    listen: "建议先完整听一遍，再切回阅读对照原文",
+    speak: "跟读句子中包含场景核心词汇",
+    write: "写作时尽量自然运用标亮的目标词",
+  },
 } as const;
 
 export type ScenarioDetailTab = "read" | "listen" | "speak" | "write" | "chat";

@@ -1,13 +1,19 @@
 from __future__ import annotations
 
 import re
+from typing import Any, Protocol
 
-from app.models.reference import PhoneticSymbol
 from app.utils.json_helpers import parse_json_field
 
 PHONETIC_TTS_VOICE = "en-GB-SoniaNeural"
 SYMBOL_AUDIO_VERSION = "v3"
 PHONETIC_WORD_RATE = "-8%"
+
+
+class PhoneticAudioLike(Protocol):
+    symbol: str
+    name_en: str
+    examples: Any
 
 # Edge TTS 不支持 IPA 音素合成；仅在无例词时作为最后兜底（质量有限）
 SYMBOL_SOUND_CUE: dict[str, str] = {
@@ -62,11 +68,11 @@ SYMBOL_SOUND_CUE: dict[str, str] = {
 }
 
 
-def get_phonetic_examples(phonetic: PhoneticSymbol) -> list[dict]:
+def get_phonetic_examples(phonetic: PhoneticAudioLike) -> list[dict]:
     return parse_json_field(phonetic.examples, [])
 
 
-def get_primary_example_word(phonetic: PhoneticSymbol) -> str | None:
+def get_primary_example_word(phonetic: PhoneticAudioLike) -> str | None:
     examples = get_phonetic_examples(phonetic)
     if not examples:
         return None
@@ -74,7 +80,7 @@ def get_primary_example_word(phonetic: PhoneticSymbol) -> str | None:
     return str(word).strip() if word else None
 
 
-def build_phonetic_symbol_speech_text(phonetic: PhoneticSymbol) -> str:
+def build_phonetic_symbol_speech_text(phonetic: PhoneticAudioLike) -> str:
     """Prefer a real BrE example word over spell-it-out cues for TTS accuracy."""
     primary = get_primary_example_word(phonetic)
     if primary:
@@ -87,7 +93,7 @@ def build_phonetic_symbol_speech_text(phonetic: PhoneticSymbol) -> str:
     return phonetic.name_en.replace("/", " ").strip() or phonetic.symbol
 
 
-def build_phonetic_speech_text(phonetic: PhoneticSymbol, word: str | None = None) -> str:
+def build_phonetic_speech_text(phonetic: PhoneticAudioLike, word: str | None = None) -> str:
     examples = get_phonetic_examples(phonetic)
     if word:
         return word
@@ -116,7 +122,7 @@ def phonetic_audio_key(
 
 
 def resolve_phonetic_audio(
-    phonetic: PhoneticSymbol,
+    phonetic: PhoneticAudioLike,
     *,
     word: str | None,
     preview: bool,

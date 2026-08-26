@@ -6,7 +6,7 @@ import { useParams } from "../../../platform/context";
 import { useEffect, useRef, useState } from "react";
 import { Loader2, Phone, Send, Sparkles, Square } from "lucide-react";
 import { api, ConversationMessage } from "@sceneenglish/api-client";
-import { getConversationChineseHint } from "../model";
+import { getConversationChineseHint, conversationCopy } from "../model";
 import { cn } from "../../../app-chrome/utils";
 import { Alert, Badge, Button, Card, Spinner } from "../../../app-chrome/ui";
 
@@ -48,7 +48,7 @@ export default function ChatSessionPage() {
       queryClient.setQueryData(["conversation", id], updated);
     } catch (e) {
       setShowChineseHint(!checked);
-      setError(e instanceof Error ? e.message : "更新设置失败");
+      setError(e instanceof Error ? e.message : conversationCopy.updateSettingsFailed);
     } finally {
       setHintSaving(false);
     }
@@ -102,13 +102,13 @@ export default function ChatSessionPage() {
       await refetch();
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "生成总结失败，请重试");
+      setError(e instanceof Error ? e.message : conversationCopy.generateSummaryFailed);
     } finally {
       setEnding(false);
     }
   };
 
-  if (isLoading || !data) return <Spinner label="加载对话..." />;
+  if (isLoading || !data) return <Spinner label={conversationCopy.loadingSession} />;
 
   const usedSet = new Set(data.words_used.map((w) => w.toLowerCase()));
 

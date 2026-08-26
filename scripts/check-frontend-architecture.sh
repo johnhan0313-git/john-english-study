@@ -52,6 +52,28 @@ if rg -n 'from ["'\'']\.\./features/auth/(ui|auth-context|token)' \
   fail=1
 fi
 
+# Auth public API: features must not deep-import auth/ui or auth-context
+if rg -n 'from ["'\''][^"'\'']*auth/(ui|auth-context)' \
+  "$ROOT/packages/app-core/src/features" \
+  --glob '*.{ts,tsx}' >/dev/null 2>&1; then
+  echo "FAIL: features must import auth via features/auth public API (not auth/ui or auth-context)"
+  rg -n 'from ["'\''][^"'\'']*auth/(ui|auth-context)' \
+    "$ROOT/packages/app-core/src/features" \
+    --glob '*.{ts,tsx}' || true
+  fail=1
+fi
+
+# Activity public API: app-chrome must use features/activity, not features/activity/model
+if rg -n 'from ["'\''][^"'\'']*features/activity/model' \
+  "$ROOT/packages/app-core/src/app-chrome" \
+  --glob '*.{ts,tsx}' >/dev/null 2>&1; then
+  echo "FAIL: app-chrome must import activity via features/activity public API"
+  rg -n 'from ["'\''][^"'\'']*features/activity/model' \
+    "$ROOT/packages/app-core/src/app-chrome" \
+    --glob '*.{ts,tsx}' || true
+  fail=1
+fi
+
 # api-client must not deep-export learning presentation helpers
 if rg -n 'learning/' "$ROOT/packages/api-client/src/index.ts" >/dev/null 2>&1; then
   echo "FAIL: api-client must not export learning/* helpers"

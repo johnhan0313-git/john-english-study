@@ -1,53 +1,58 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from typing import Any
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
-from app.models.conversation import ConversationSession
-from app.models.progress import ScenarioAttempt
-from app.models.scenario import Scenario
+from app.infrastructure.persistence.conversation.conversation_read_mapper import (
+    conversation_session_to_brief,
+)
 from app.infrastructure.persistence.scenario.scenario_read_mapper import (
     scenario_to_brief,
     scenarios_to_briefs,
 )
-from app.infrastructure.persistence.conversation.conversation_read_mapper import (
-    conversation_session_to_brief,
-)
+from app.models.conversation import ConversationSession
+from app.models.progress import ScenarioAttempt
+from app.models.scenario import Scenario
 from app.utils.time import local_today
 
 
-class ActivityService:
-    def __init__(self, db: Session, timezone: str = "Asia/Shanghai"):
-        self.db = db
-        self.timezone = timezone
+class SqlAlchemyActivityReadRepository:
+    def __init__(self, session: Session, *, timezone: str = "Asia/Shanghai"):
+        self._session = session
+        self._timezone = timezone
 
-    def get_overview(self, user_id: int) -> dict:
-        today = local_today(self.timezone)
+    def get_overview(self, user_id: int) -> dict[str, Any]:
+        today = local_today(self._timezone)
         week_start = today - timedelta(days=today.weekday())
 
-        scenario_total = self.db.query(func.count(Scenario.id)).filter(Scenario.user_id == user_id).scalar() or 0
+        scenario_total = (
+            self._session.query(func.count(Scenario.id)).filter(Scenario.user_id == user_id).scalar() or 0
+        )
         scenario_this_week = (
-            self.db.query(func.count(Scenario.id))
+            self._session.query(func.count(Scenario.id))
             .filter(Scenario.user_id == user_id, func.date(Scenario.created_at) >= week_start.isoformat())
             .scalar()
             or 0
         )
 
         conversation_total = (
-            self.db.query(func.count(ConversationSession.id)).filter(ConversationSession.user_id == user_id).scalar()
+            self._session.query(func.count(ConversationSession.id))
+            .filter(ConversationSession.user_id == user_id)
+            .scalar()
             or 0
         )
         conversation_active = (
-            self.db.query(func.count(ConversationSession.id))
+            self._session.query(func.count(ConversationSession.id))
             .filter(ConversationSession.user_id == user_id, ConversationSession.status == "active")
             .scalar()
             or 0
         )
 
         theme_rows = (
-            self.db.query(Scenario.theme, func.count(Scenario.id))
+            self._session.query(Scenario.theme, func.count(Scenario.id))
             .filter(Scenario.user_id == user_id)
             .group_by(Scenario.theme)
             .all()
@@ -55,7 +60,7 @@ class ActivityService:
         theme_counts = {theme: count for theme, count in theme_rows}
 
         active_sessions = (
-            self.db.query(ConversationSession)
+            self._session.query(ConversationSession)
             .options(joinedload(ConversationSession.messages))
             .filter(ConversationSession.user_id == user_id, ConversationSession.status == "active")
             .order_by(ConversationSession.created_at.desc())
@@ -64,14 +69,14 @@ class ActivityService:
         )
 
         recent_scenarios = (
-            self.db.query(Scenario)
+            self._session.query(Scenario)
             .options(joinedload(Scenario.words), joinedload(Scenario.exercises))
             .filter(Scenario.user_id == user_id)
             .order_by(Scenario.created_at.desc())
             .limit(20)
             .all()
         )
-        recent_briefs = scenarios_to_briefs(self.db, user_id, recent_scenarios)
+        recent_briefs = scenarios_to_briefs(self._session, user_id, recent_scenarios)
         incomplete = [b for b in recent_briefs if not b["is_completed"]][:3]
 
         return {
@@ -82,15 +87,13 @@ class ActivityService:
             "theme_counts": theme_counts,
             "heatmap": self._build_heatmap(user_id, weeks=12),
             "continue": {
-                "active_conversations": [
-                    conversation_session_to_brief(s) for s in active_sessions
-                ],
+                "active_conversations": [conversation_session_to_brief(s) for s in active_sessions],
                 "incomplete_scenarios": incomplete,
             },
         }
 
     def _build_heatmap(self, user_id: int, weeks: int = 12) -> list[dict]:
-        today = local_today(self.timezone)
+        today = local_today(self._timezone)
         start = today - timedelta(days=weeks * 7 - 1)
         start_iso = start.isoformat()
         counts: dict[str, int] = {}
@@ -100,7 +103,7 @@ class ActivityService:
             counts[key] = counts.get(key, 0) + 1
 
         scenario_dates = (
-            self.db.query(func.date(Scenario.created_at))
+            self._session.query(func.date(Scenario.created_at))
             .filter(Scenario.user_id == user_id, func.date(Scenario.created_at) >= start_iso)
             .all()
         )
@@ -108,16 +111,22 @@ class ActivityService:
             bump(d)
 
         conv_dates = (
-            self.db.query(func.date(ConversationSession.created_at))
-            .filter(ConversationSession.user_id == user_id, func.date(ConversationSession.created_at) >= start_iso)
+            self._session.query(func.date(ConversationSession.created_at))
+            .filter(
+                ConversationSession.user_id == user_id,
+                func.date(ConversationSession.created_at) >= start_iso,
+            )
             .all()
         )
         for (d,) in conv_dates:
             bump(d)
 
         attempt_dates = (
-            self.db.query(func.date(ScenarioAttempt.completed_at))
-            .filter(ScenarioAttempt.user_id == user_id, func.date(ScenarioAttempt.completed_at) >= start_iso)
+            self._session.query(func.date(ScenarioAttempt.completed_at))
+            .filter(
+                ScenarioAttempt.user_id == user_id,
+                func.date(ScenarioAttempt.completed_at) >= start_iso,
+            )
             .all()
         )
         for (d,) in attempt_dates:
@@ -125,16 +134,18 @@ class ActivityService:
 
         return [{"date": k, "count": v} for k, v in sorted(counts.items())]
 
-    def get_timeline(self, user_id: int, skip: int = 0, limit: int = 30) -> tuple[list[dict], int]:
+    def get_timeline(
+        self, user_id: int, *, skip: int = 0, limit: int = 30
+    ) -> tuple[list[dict[str, Any]], int]:
         events: list[dict] = []
 
         scenarios = (
-            self.db.query(Scenario)
+            self._session.query(Scenario)
             .options(joinedload(Scenario.words), joinedload(Scenario.exercises))
             .filter(Scenario.user_id == user_id)
             .all()
         )
-        briefs = scenarios_to_briefs(self.db, user_id, scenarios)
+        briefs = scenarios_to_briefs(self._session, user_id, scenarios)
         scenario_brief_map = {b["id"]: b for b in briefs}
 
         for scenario in scenarios:
@@ -147,7 +158,7 @@ class ActivityService:
             )
 
         attempts = (
-            self.db.query(ScenarioAttempt)
+            self._session.query(ScenarioAttempt)
             .options(joinedload(ScenarioAttempt.scenario).joinedload(Scenario.words))
             .options(joinedload(ScenarioAttempt.scenario).joinedload(Scenario.exercises))
             .filter(ScenarioAttempt.user_id == user_id)
@@ -156,7 +167,9 @@ class ActivityService:
         for attempt in attempts:
             if not attempt.scenario:
                 continue
-            score = attempt.correct_questions / attempt.total_questions if attempt.total_questions else 0.0
+            score = (
+                attempt.correct_questions / attempt.total_questions if attempt.total_questions else 0.0
+            )
             brief = scenario_to_brief(
                 attempt.scenario,
                 user_id=user_id,
@@ -174,7 +187,7 @@ class ActivityService:
             )
 
         sessions = (
-            self.db.query(ConversationSession)
+            self._session.query(ConversationSession)
             .options(joinedload(ConversationSession.messages))
             .filter(ConversationSession.user_id == user_id)
             .all()

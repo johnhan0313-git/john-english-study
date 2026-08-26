@@ -6,7 +6,7 @@ import { useParams } from "../../../platform/context";
 import { useEffect } from "react";
 import { Mic, MicOff, PhoneOff, Sparkles } from "lucide-react";
 import { api } from "@sceneenglish/api-client";
-import { getConversationChineseHint } from "../model";
+import { getConversationChineseHint, conversationCopy } from "../model";
 import { resolveConversationVisuals } from "../model";
 import { cn } from "../../../app-chrome/utils";
 import { Alert, Button, Spinner } from "../../../app-chrome/ui";
@@ -35,7 +35,7 @@ export default function ChatImmersivePage() {
     playOpeningIfNeeded(data?.messages, data?.status ?? "active");
   }, [data?.messages, data?.status, playOpeningIfNeeded, started]);
 
-  if (isLoading || !data) return <Spinner label="加载沉浸场景..." />;
+  if (isLoading || !data) return <Spinner label={conversationCopy.loadingImmersive} />;
 
   const visuals = resolveConversationVisuals(data);
 
@@ -119,7 +119,7 @@ export default function ChatImmersivePage() {
 
         <div className="w-full max-w-lg space-y-4">
           <div className="min-h-[5rem] rounded-2xl border border-white/20 bg-black/40 px-4 py-3 text-left reading-text text-white whitespace-pre-wrap backdrop-blur-sm">
-            {voice.subtitle || "等待对方发言..."}
+            {voice.subtitle || conversationCopy.waitingForPartner}
           </div>
 
           {voice.error && <Alert variant="warning">{voice.error}</Alert>}

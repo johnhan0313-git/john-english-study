@@ -16,6 +16,7 @@ from app.application.progress.progress_query import (
 )
 from app.config import Settings, get_settings
 from app.database import SessionLocal
+from app.infrastructure.persistence.exercise.exercise_repository_impl import SqlAlchemyExerciseRepository
 from app.infrastructure.persistence.progress.progress_repository_impl import SqlAlchemyProgressRepository
 from app.infrastructure.unit_of_work import SqlAlchemyUnitOfWork
 
@@ -49,8 +50,8 @@ def build_progress_application(settings: Settings | None = None) -> ProgressAppl
     return ProgressApplication(
         record_answer=record_answer,
         record_scenario_attempt=record_attempt,
-        overview=GetProgressOverviewQuery(_uow_factory),
-        review_words=GetReviewWordsQuery(_uow_factory),
+        overview=GetProgressOverviewQuery(_uow_factory, SqlAlchemyProgressRepository),
+        review_words=GetReviewWordsQuery(_uow_factory, SqlAlchemyProgressRepository),
         evaluate_writing=EvaluateWritingCommand(cfg),
         generate_writing_sample=GenerateWritingSampleCommand(cfg),
         evaluate_speaking=EvaluateSpeakingCommand(),
@@ -58,10 +59,17 @@ def build_progress_application(settings: Settings | None = None) -> ProgressAppl
 
 
 def build_exercise_application(progress: ProgressApplication) -> ExerciseApplication:
-    submit = SubmitExerciseCommand(_uow_factory, progress.record_answer)
-    batch = SubmitBatchCommand(_uow_factory, submit, progress.record_scenario_attempt)
+    submit = SubmitExerciseCommand(
+        _uow_factory, SqlAlchemyExerciseRepository, progress.record_answer
+    )
+    batch = SubmitBatchCommand(
+        _uow_factory,
+        SqlAlchemyExerciseRepository,
+        submit,
+        progress.record_scenario_attempt,
+    )
     return ExerciseApplication(
         submit=submit,
         submit_batch=batch,
-        list_for_scenario=ListExercisesQuery(_uow_factory),
+        list_for_scenario=ListExercisesQuery(_uow_factory, SqlAlchemyExerciseRepository),
     )

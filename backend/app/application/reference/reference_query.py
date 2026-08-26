@@ -4,18 +4,10 @@ from dataclasses import dataclass
 from typing import Any
 
 from app.config import Settings, get_settings
+from app.domains.reference.reference_repository import ReferenceReadRepository
 from app.infrastructure.unit_of_work import UnitOfWorkFactory
-from app.models.reference import GrammarPoint, PhoneticSymbol
 from app.services.ai.openai_provider import AIProviderError
 from app.services.ai.tts_service import generate_speech_bytes
-from app.services.reference.import_reference import (
-    GRAMMAR_CATEGORY_ZH,
-    PHONETIC_CATEGORY_ZH,
-    grammar_to_brief,
-    grammar_to_detail,
-    phonetic_to_brief,
-    phonetic_to_detail,
-)
 from app.services.reference.phonetic_audio import (
     PHONETIC_TTS_VOICE,
     PHONETIC_WORD_RATE,
@@ -25,7 +17,6 @@ from app.services.reference.phonetic_audio import (
     resolve_phonetic_audio,
 )
 from app.services.storage.factory import get_storage
-from app.utils.json_helpers import parse_json_field
 
 
 @dataclass(frozen=True)
@@ -60,56 +51,36 @@ class GetGrammarInput:
 
 
 class ListPhoneticsQuery:
-    def __init__(self, uow_factory: UnitOfWorkFactory):
+    def __init__(self, uow_factory: UnitOfWorkFactory, repository_factory: Any):
         self._uow_factory = uow_factory
+        self._repository_factory = repository_factory
 
     def execute(self, inp: ListPhoneticsInput) -> dict[str, Any]:
         with self._uow_factory() as uow:
-            query = uow.session.query(PhoneticSymbol)
-            if inp.category:
-                query = query.filter(PhoneticSymbol.category == inp.category)
-            if inp.search:
-                like = f"%{inp.search}%"
-                query = query.filter(
-                    (PhoneticSymbol.symbol.ilike(like))
-                    | (PhoneticSymbol.name_zh.ilike(like))
-                    | (PhoneticSymbol.name_en.ilike(like))
-                )
-            items = query.order_by(PhoneticSymbol.sort_order).all()
-            briefs = [phonetic_to_brief(p) for p in items]
-
-            groups: list[dict[str, Any]] = []
-            by_cat: dict[str, list[dict]] = {}
-            for b in briefs:
-                by_cat.setdefault(b["category"], []).append(b)
-            for cat, cat_items in by_cat.items():
-                groups.append(
-                    {
-                        "category": cat,
-                        "category_zh": PHONETIC_CATEGORY_ZH.get(cat, cat),
-                        "items": cat_items,
-                        "count": len(cat_items),
-                    }
-                )
-
-            return {"items": briefs, "groups": groups, "total": len(briefs)}
+            repo: ReferenceReadRepository = self._repository_factory(uow.session)
+            return repo.list_phonetics(category=inp.category, search=inp.search)
 
 
 class GetPhoneticQuery:
-    def __init__(self, uow_factory: UnitOfWorkFactory):
+    def __init__(self, uow_factory: UnitOfWorkFactory, repository_factory: Any):
         self._uow_factory = uow_factory
+        self._repository_factory = repository_factory
 
     def execute(self, inp: GetPhoneticInput) -> dict[str, Any]:
         with self._uow_factory() as uow:
-            p = uow.session.query(PhoneticSymbol).filter(PhoneticSymbol.id == inp.phonetic_id).first()
-            if not p:
-                raise ValueError("Phonetic symbol not found")
-            return phonetic_to_detail(p)
+            repo: ReferenceReadRepository = self._repository_factory(uow.session)
+            return repo.get_phonetic(inp.phonetic_id)
 
 
 class MaterializePhoneticAudioCommand:
-    def __init__(self, uow_factory: UnitOfWorkFactory, settings: Settings | None = None):
+    def __init__(
+        self,
+        uow_factory: UnitOfWorkFactory,
+        repository_factory: Any,
+        settings: Settings | None = None,
+    ):
         self._uow_factory = uow_factory
+        self._repository_factory = repository_factory
         self._settings = settings
 
     async def execute(self, inp: MaterializePhoneticAudioInput) -> str:
@@ -118,19 +89,15 @@ class MaterializePhoneticAudioCommand:
 
         settings = self._settings or get_settings()
         with self._uow_factory() as uow:
-            phonetic = (
-                uow.session.query(PhoneticSymbol)
-                .filter(PhoneticSymbol.id == inp.phonetic_id)
-                .first()
-            )
+            repo: ReferenceReadRepository = self._repository_factory(uow.session)
+            phonetic = repo.get_phonetic_audio_source(inp.phonetic_id)
             if not phonetic:
                 raise LookupError("Phonetic symbol not found")
 
             if inp.kind == "symbol":
                 audio_kind, resolved_word = "symbol", None
             elif inp.kind == "examples":
-                examples = parse_json_field(phonetic.examples, [])
-                if not examples:
+                if not phonetic.examples:
                     raise ValueError("No example words for this phonetic symbol")
                 audio_kind, resolved_word = "examples", None
             else:
@@ -165,50 +132,24 @@ class MaterializePhoneticAudioCommand:
 
 
 class ListGrammarQuery:
-    def __init__(self, uow_factory: UnitOfWorkFactory):
+    def __init__(self, uow_factory: UnitOfWorkFactory, repository_factory: Any):
         self._uow_factory = uow_factory
+        self._repository_factory = repository_factory
 
     def execute(self, inp: ListGrammarInput) -> dict[str, Any]:
         with self._uow_factory() as uow:
-            query = uow.session.query(GrammarPoint)
-            if inp.category:
-                query = query.filter(GrammarPoint.category == inp.category)
-            if inp.level == "cet4":
-                query = query.filter(GrammarPoint.level.in_(["cet4", "both"]))
-            elif inp.level == "cet6":
-                query = query.filter(GrammarPoint.level.in_(["cet6", "both"]))
-            if inp.search:
-                like = f"%{inp.search}%"
-                query = query.filter(
-                    (GrammarPoint.title.ilike(like)) | (GrammarPoint.summary.ilike(like))
-                )
-            items = query.order_by(GrammarPoint.sort_order).all()
-            briefs = [grammar_to_brief(g) for g in items]
-
-            groups: list[dict[str, Any]] = []
-            by_cat: dict[str, list[dict]] = {}
-            for b in briefs:
-                by_cat.setdefault(b["category"], []).append(b)
-            for cat, cat_items in by_cat.items():
-                groups.append(
-                    {
-                        "category": cat,
-                        "category_zh": GRAMMAR_CATEGORY_ZH.get(cat, cat),
-                        "items": cat_items,
-                        "count": len(cat_items),
-                    }
-                )
-
-            return {"items": briefs, "groups": groups, "total": len(briefs)}
+            repo: ReferenceReadRepository = self._repository_factory(uow.session)
+            return repo.list_grammar(
+                category=inp.category, level=inp.level, search=inp.search
+            )
 
 
 class GetGrammarQuery:
-    def __init__(self, uow_factory: UnitOfWorkFactory):
+    def __init__(self, uow_factory: UnitOfWorkFactory, repository_factory: Any):
         self._uow_factory = uow_factory
+        self._repository_factory = repository_factory
 
     def execute(self, inp: GetGrammarInput) -> dict[str, Any]:
         with self._uow_factory() as uow:
-            g = uow.session.query(GrammarPoint).filter(GrammarPoint.slug == inp.slug).first()
-            if not g:
-                raise ValueError("Grammar point not found")
-            return grammar_to_detail(g)
+            repo: ReferenceReadRepository = self._repository_factory(uow.session)
+            return repo.get_grammar(inp.slug)

@@ -2,14 +2,18 @@ from __future__ import annotations
 
 from typing import Any
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from app.domains.scenario.scenario_domain import (
     DialogueLine,
     ScenarioAggregate,
     ScenarioContent,
+    ScenarioListEnrichment,
     ScenarioWordRef,
 )
+from app.models.conversation import ConversationSession
+from app.models.progress import ScenarioAttempt
 from app.models.scenario import Scenario, ScenarioWord
 from app.models.word import WordGroup
 from app.utils.json_helpers import dump_json_field, parse_json_field
@@ -179,6 +183,65 @@ class SqlAlchemyScenarioRepository:
         if scenario.content.dialogue_zh is not None:
             content["dialogue_zh"] = scenario.content.dialogue_zh
         row.content = dump_json_field(content)
+
+    def update_audio_path(self, scenario_id: int, user_id: int, audio_path: str) -> bool:
+        row = (
+            self._session.query(Scenario)
+            .filter(Scenario.id == scenario_id, Scenario.user_id == user_id)
+            .first()
+        )
+        if not row:
+            return False
+        row.audio_path = audio_path
+        self._session.flush()
+        return True
+
+    def list_enrichment(
+        self, user_id: int, scenario_ids: list[int]
+    ) -> dict[int, ScenarioListEnrichment]:
+        if not scenario_ids:
+            return {}
+        attempt_rows = (
+            self._session.query(
+                ScenarioAttempt.scenario_id,
+                func.max(
+                    ScenarioAttempt.correct_questions
+                    * 1.0
+                    / func.nullif(ScenarioAttempt.total_questions, 0)
+                ).label("best_score"),
+                func.count(ScenarioAttempt.id).label("attempt_count"),
+            )
+            .filter(
+                ScenarioAttempt.user_id == user_id,
+                ScenarioAttempt.scenario_id.in_(scenario_ids),
+            )
+            .group_by(ScenarioAttempt.scenario_id)
+            .all()
+        )
+        attempt_map = {row.scenario_id: row for row in attempt_rows}
+        conv_counts = (
+            self._session.query(ConversationSession.scenario_id, func.count(ConversationSession.id))
+            .filter(
+                ConversationSession.user_id == user_id,
+                ConversationSession.scenario_id.in_(scenario_ids),
+            )
+            .group_by(ConversationSession.scenario_id)
+            .all()
+        )
+        conv_map = dict(conv_counts)
+        result: dict[int, ScenarioListEnrichment] = {}
+        for scenario_id in scenario_ids:
+            attempt = attempt_map.get(scenario_id)
+            best_score = (
+                float(attempt.best_score) if attempt and attempt.best_score is not None else None
+            )
+            attempt_count = int(attempt.attempt_count) if attempt else 0
+            result[scenario_id] = ScenarioListEnrichment(
+                best_score=best_score,
+                attempt_count=attempt_count,
+                conversation_count=int(conv_map.get(scenario_id, 0)),
+            )
+        return result
 
     def list_theme_slugs(self) -> list[str]:
         return [g.slug for g in self._session.query(WordGroup).all()]

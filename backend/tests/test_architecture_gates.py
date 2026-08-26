@@ -34,11 +34,26 @@ MIGRATED_API_MODULES = {
     "words.py",
 }
 
-MIGRATED_DOMAINS = ("scenario", "progress", "conversation")
+MIGRATED_DOMAINS = (
+    "scenario",
+    "progress",
+    "conversation",
+    "activity",
+    "vocabulary",
+    "reference",
+    "exercise",
+    "identity",
+)
 
-# Services that have been replaced by Application (must not contain .commit().
-MIGRATED_SERVICE_NO_COMMIT = (
-    BACKEND_APP / "services" / "activity" / "service.py",
+PERSISTENCE_ROOTS = (
+    BACKEND_APP / "infrastructure" / "persistence" / "scenario",
+    BACKEND_APP / "infrastructure" / "persistence" / "progress",
+    BACKEND_APP / "infrastructure" / "persistence" / "conversation",
+    BACKEND_APP / "infrastructure" / "persistence" / "activity",
+    BACKEND_APP / "infrastructure" / "persistence" / "vocabulary",
+    BACKEND_APP / "infrastructure" / "persistence" / "reference",
+    BACKEND_APP / "infrastructure" / "persistence" / "exercise",
+    BACKEND_APP / "infrastructure" / "persistence" / "identity",
 )
 
 
@@ -87,6 +102,10 @@ def test_conversation_service_removed():
     assert not (BACKEND_APP / "services" / "conversation" / "service.py").exists()
 
 
+def test_activity_service_removed():
+    assert not (BACKEND_APP / "services" / "activity" / "service.py").exists()
+
+
 def test_auth_merge_module_removed():
     assert not (BACKEND_APP / "auth" / "merge.py").exists()
 
@@ -112,24 +131,11 @@ def test_api_conversations_uses_container():
 
 
 def test_repository_impl_does_not_commit():
-    roots = [
-        BACKEND_APP / "infrastructure" / "persistence" / "scenario",
-        BACKEND_APP / "infrastructure" / "persistence" / "progress",
-        BACKEND_APP / "infrastructure" / "persistence" / "conversation",
-    ]
-    for root in roots:
+    for root in PERSISTENCE_ROOTS:
         for path in _python_files(root):
             text = path.read_text(encoding="utf-8")
             assert ".commit(" not in text, f"{path} must not commit"
             assert ".rollback(" not in text, f"{path} must not rollback"
-
-
-def test_migrated_services_do_not_commit():
-    for path in MIGRATED_SERVICE_NO_COMMIT:
-        if not path.exists():
-            continue
-        text = path.read_text(encoding="utf-8")
-        assert ".commit(" not in text, f"{path} must not commit (Application owns UoW)"
 
 
 def test_migrated_api_modules_do_not_use_get_db():
@@ -140,6 +146,15 @@ def test_migrated_api_modules_do_not_use_get_db():
         text = path.read_text(encoding="utf-8")
         assert "Depends(get_db)" not in text, f"{path} still uses Depends(get_db)"
         assert "get_container" in text or name == "auth.py"
+
+
+def test_application_does_not_import_models_or_session_local():
+    app_dir = BACKEND_APP / "application"
+    for path in _python_files(app_dir):
+        text = path.read_text(encoding="utf-8")
+        assert "from app.models" not in text, f"{path} imports app.models"
+        assert "import app.models" not in text, f"{path} imports app.models"
+        assert "SessionLocal" not in text, f"{path} uses SessionLocal"
 
 
 def test_get_or_create_user_removed_from_auth_users():

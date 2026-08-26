@@ -11,6 +11,7 @@ from app.application.profile.profile_command import (
 )
 from app.config import Settings, get_settings
 from app.database import SessionLocal
+from app.infrastructure.persistence.identity.user_repository_impl import SqlAlchemyUserRepository
 from app.infrastructure.unit_of_work import SqlAlchemyUnitOfWork
 
 
@@ -30,9 +31,11 @@ class ProfileApplication:
 def build_profile_application(settings: Settings | None = None) -> ProfileApplication:
     cfg = settings or get_settings()
     return ProfileApplication(
-        get_profile=GetProfileQuery(_uow_factory),
-        update_profile=UpdateProfileCommand(_uow_factory),
-        send_email_change_code=SendEmailChangeCodeCommand(_uow_factory, cfg),
-        change_email=ChangeEmailCommand(_uow_factory),
-        upload_avatar=UploadAvatarCommand(_uow_factory, cfg),
+        get_profile=GetProfileQuery(_uow_factory, SqlAlchemyUserRepository),
+        update_profile=UpdateProfileCommand(_uow_factory, SqlAlchemyUserRepository),
+        send_email_change_code=SendEmailChangeCodeCommand(
+            _uow_factory, SqlAlchemyUserRepository, cfg
+        ),
+        change_email=ChangeEmailCommand(_uow_factory, SqlAlchemyUserRepository),
+        upload_avatar=UploadAvatarCommand(_uow_factory, SqlAlchemyUserRepository, cfg),
     )

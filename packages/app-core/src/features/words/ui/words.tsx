@@ -5,7 +5,7 @@ import { useState } from "react";
 import { PlatformLink as Link } from "../../../app-chrome/platform-link";
 import { Search, Sparkles } from "lucide-react";
 import { api } from "@sceneenglish/api-client";
-import { useAuth } from "../../auth/auth-context";
+import { useAuth } from "../../auth";
 import { useAudioPlayer } from "../../../app-chrome/use-audio-player";
 import {
   pageSizeForView,

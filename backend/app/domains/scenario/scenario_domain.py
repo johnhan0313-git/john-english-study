@@ -80,6 +80,13 @@ class ScenarioAggregate:
         )
 
 
+@dataclass(frozen=True)
+class ScenarioListEnrichment:
+    best_score: float | None
+    attempt_count: int
+    conversation_count: int
+
+
 DAILY_SLOT_KINDS: tuple[tuple[str, str, str], ...] = (
     ("review", "cet4", "review"),
     ("new", "cet4", "new"),

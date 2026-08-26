@@ -7,7 +7,7 @@ import { useCallback, useMemo, useState } from "react";
 import { Clock, Layers, MessageCircle, Plus, Sparkles } from "lucide-react";
 import { api } from "@sceneenglish/api-client";
 import type { ConversationBrief, ScenarioBrief } from "@sceneenglish/api-client/types";
-import { RequireAuth } from "../../auth/ui/require-auth";
+import { RequireAuth } from "../../auth";
 import {
   ActivityTimeline,
   ContinueLearningSection,
@@ -39,6 +39,7 @@ import {
 import {
   ACTIVITY_LIST_PAGE_SIZE,
   ACTIVITY_QUERY_KEYS,
+  activityCopy,
   conversationsNextPageParam,
   normalizePage,
   scenariosNextPageParam,
@@ -84,23 +85,28 @@ function ScenariosTabContent({
 
   const themeOptions = useMemo(() => buildScenarioThemeOptions(wordGroups), [wordGroups]);
 
-  if (isLoading) return <Spinner label="加载场景..." />;
+  if (isLoading) return <Spinner label={activityCopy.loadingScenarios} />;
 
   if (isError) {
-    return <EmptyState title="场景加载失败" description="请确认后端已启动并已登录" />;
+    return (
+      <EmptyState
+        title={activityCopy.scenariosLoadFailedTitle}
+        description={activityCopy.scenariosLoadFailedDescription}
+      />
+    );
   }
 
   if (!items.length) {
     return (
       <div className="space-y-6">
         <EmptyState
-          title="暂无场景"
-          description="去首页获取今日场景，或生成一个自定义场景"
+          title={activityCopy.scenariosEmptyTitle}
+          description={activityCopy.scenariosEmptyDescription}
           action={
             <Link href="/generate">
               <Button>
                 <Sparkles className="mr-2 h-4 w-4" />
-                生成场景
+                {activityCopy.scenariosEmptyAction}
               </Button>
             </Link>
           }
@@ -133,7 +139,10 @@ function ScenariosTabContent({
         />
       </FilterPanel>
       {filtered.length === 0 ? (
-        <EmptyState title="无匹配场景" description="试试调整筛选条件" />
+        <EmptyState
+          title={activityCopy.scenariosNoMatchTitle}
+          description={activityCopy.scenariosNoMatchDescription}
+        />
       ) : (
         <div className="space-y-8">
           {groups.map((group) => (
@@ -150,7 +159,7 @@ function ScenariosTabContent({
       {hasNextPage && (
         <div className="flex justify-center pt-2">
           <Button variant="outline" onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
-            {isFetchingNextPage ? "加载中..." : "加载更多"}
+            {isFetchingNextPage ? activityCopy.loadingMore : activityCopy.loadMore}
           </Button>
         </div>
       )}
@@ -186,21 +195,26 @@ function ConversationsTabContent({
   const statusOptions = CONVERSATION_STATUS_OPTIONS;
   const levelOptions = LEARNING_LEVEL_OPTIONS;
 
-  if (isLoading) return <Spinner label="加载对话..." />;
+  if (isLoading) return <Spinner label={activityCopy.loadingConversations} />;
 
   if (isError) {
-    return <EmptyState title="对话加载失败" description="请确认后端已启动并已登录" />;
+    return (
+      <EmptyState
+        title={activityCopy.conversationsLoadFailedTitle}
+        description={activityCopy.conversationsLoadFailedDescription}
+      />
+    );
   }
 
   if (!items.length) {
     return (
       <div className="space-y-6">
         <EmptyState
-          title="还没有对话记录"
-          description="创建一个新对话，开始 1v1 场景角色扮演练习"
+          title={activityCopy.conversationsEmptyTitle}
+          description={activityCopy.conversationsEmptyDescription}
           action={
             <Link href="/chat/new">
-              <Button>开始新对话</Button>
+              <Button>{activityCopy.conversationsEmptyAction}</Button>
             </Link>
           }
         />
@@ -228,7 +242,7 @@ function ConversationsTabContent({
 
       {filteredActive.length > 0 && (
         <section className="space-y-3">
-          <h3 className="text-sm font-bold text-brand-700">进行中</h3>
+          <h3 className="text-sm font-bold text-brand-700">{activityCopy.conversationsActiveSection}</h3>
           <div className="grid gap-3 md:grid-cols-2">
             {filteredActive.map((c) => (
               <ConversationCard key={c.id} conversation={c} />
@@ -251,12 +265,17 @@ function ConversationsTabContent({
         </div>
       )}
 
-      {filtered.length === 0 && <EmptyState title="无匹配对话" description="试试调整筛选条件" />}
+      {filtered.length === 0 && (
+        <EmptyState
+          title={activityCopy.conversationsNoMatchTitle}
+          description={activityCopy.conversationsNoMatchDescription}
+        />
+      )}
 
       {hasNextPage && (
         <div className="flex justify-center pt-2">
           <Button variant="outline" onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
-            {isFetchingNextPage ? "加载中..." : "加载更多"}
+            {isFetchingNextPage ? activityCopy.loadingMore : activityCopy.loadMore}
           </Button>
         </div>
       )}
@@ -275,10 +294,15 @@ function TimelineTabContent() {
 
   const items = useMemo(() => data?.pages.flatMap((p) => normalizePage(p).items) ?? [], [data]);
 
-  if (isLoading) return <Spinner label="加载动态..." />;
+  if (isLoading) return <Spinner label={activityCopy.loadingTimeline} />;
 
   if (isError) {
-    return <EmptyState title="动态加载失败" description="请确认后端已更新并已登录" />;
+    return (
+      <EmptyState
+        title={activityCopy.timelineLoadFailedTitle}
+        description={activityCopy.timelineLoadFailedDescription}
+      />
+    );
   }
 
   return (
@@ -287,7 +311,7 @@ function TimelineTabContent() {
       {hasNextPage && (
         <div className="flex justify-center pt-2">
           <Button variant="outline" onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
-            {isFetchingNextPage ? "加载中..." : "加载更多"}
+            {isFetchingNextPage ? activityCopy.loadingMore : activityCopy.loadMore}
           </Button>
         </div>
       )}
@@ -356,7 +380,7 @@ function ActivityHubContent() {
       />
 
       {overviewLoading ? (
-        <Spinner label="加载统计..." />
+        <Spinner label={activityCopy.loadingStats} />
       ) : (
         <LearningStatsBar overview={overview} />
       )}

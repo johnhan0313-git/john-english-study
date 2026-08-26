@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from app.domains.scenario.scenario_domain import ScenarioAggregate
+from app.domains.scenario.scenario_domain import ScenarioAggregate, ScenarioListEnrichment
 
 
 class ScenarioRepository(Protocol):
@@ -19,5 +19,11 @@ class ScenarioRepository(Protocol):
     def add(self, scenario: ScenarioAggregate) -> ScenarioAggregate: ...
 
     def save_content(self, scenario: ScenarioAggregate) -> None: ...
+
+    def update_audio_path(self, scenario_id: int, user_id: int, audio_path: str) -> bool: ...
+
+    def list_enrichment(
+        self, user_id: int, scenario_ids: list[int]
+    ) -> dict[int, ScenarioListEnrichment]: ...
 
     def list_theme_slugs(self) -> list[str]: ...

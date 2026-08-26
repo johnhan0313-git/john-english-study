@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from app.application.activity.activity_query import ActivityApplication, build_activity_application
+from app.application.activity.activity_query import ActivityApplication
 from app.application.identity.identity_command import (
     LoginOrRegisterByEmailCommand,
     LoginOrRegisterByWechatCommand,
     MergeDeviceCommand,
 )
+from app.composition.activity_composition import build_activity_application
 from app.composition.conversation_composition import (
     ConversationApplication,
     build_conversation_application,
@@ -27,6 +28,7 @@ from app.composition.vocabulary_composition import (
 )
 from app.config import Settings, get_settings
 from app.database import SessionLocal
+from app.infrastructure.persistence.identity.user_repository_impl import SqlAlchemyUserRepository
 from app.infrastructure.unit_of_work import SqlAlchemyUnitOfWork
 
 
@@ -60,9 +62,13 @@ def _uow_factory() -> SqlAlchemyUnitOfWork:
 
 def build_identity_application() -> IdentityApplication:
     return IdentityApplication(
-        login_or_register_email=LoginOrRegisterByEmailCommand(_uow_factory),
-        login_or_register_wechat=LoginOrRegisterByWechatCommand(_uow_factory),
-        merge_device=MergeDeviceCommand(_uow_factory),
+        login_or_register_email=LoginOrRegisterByEmailCommand(
+            _uow_factory, SqlAlchemyUserRepository
+        ),
+        login_or_register_wechat=LoginOrRegisterByWechatCommand(
+            _uow_factory, SqlAlchemyUserRepository
+        ),
+        merge_device=MergeDeviceCommand(_uow_factory, SqlAlchemyUserRepository),
     )
 
 

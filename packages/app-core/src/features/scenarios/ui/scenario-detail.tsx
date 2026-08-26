@@ -6,7 +6,7 @@ import { useParams, useNavigate, usePlatform } from "../../../platform/context";
 import { useEffect, useRef, useState } from "react";
 import { Headphones, MessageCircle, Mic, BookOpen, PenLine, Play, Pause, Languages, Sparkles } from "lucide-react";
 import { api } from "@sceneenglish/api-client";
-import { useAuth } from "../../auth/auth-context";
+import { useAuth } from "../../auth";
 import { Badge, Button, Card, Spinner, Tabs, Textarea } from "../../../app-chrome/ui";
 import { cn } from "../../../app-chrome/utils";
 import type { ScenarioDetail } from "@sceneenglish/api-client";
@@ -114,12 +114,7 @@ function VocabularyChips({
   );
 }
 
-const TAB_SIDEBAR_HINTS: Record<string, string> = {
-  read: "点击正文高亮词或上方标签查看释义",
-  listen: "建议先完整听一遍，再切回阅读对照原文",
-  speak: "跟读句子中包含场景核心词汇",
-  write: "写作时尽量自然运用标亮的目标词",
-};
+const TAB_SIDEBAR_HINTS: Record<string, string> = scenarioDetailCopy.tabHints;
 
 export default function ScenarioDetailPage() {
   const { id } = useParams<{ id: string }>();

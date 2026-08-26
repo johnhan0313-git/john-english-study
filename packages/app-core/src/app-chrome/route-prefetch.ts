@@ -8,7 +8,7 @@ import {
   conversationsNextPageParam,
   normalizePage,
   scenariosNextPageParam,
-} from "../features/activity/model";
+} from "../features/activity";
 
 export const NAV_ROUTES = [
   "/",

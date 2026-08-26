@@ -23,6 +23,7 @@ from app.auth.wechat import (
 )
 from app.composition.shared_composition import AppContainer, get_container
 from app.config import Settings, get_settings
+from app.domains.identity.identity_domain import UserRecord
 from app.models.user import User
 from app.schemas.auth import (
     EmailLoginRequest,
@@ -39,20 +40,20 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 _oauth_states: dict[str, tuple[str, str]] = {}
 
 
-def _user_response(user: User) -> UserResponse:
+def _user_response(user: User | UserRecord) -> UserResponse:
     display = user.display_name or user.username
     return UserResponse(
-        id=user.id,
+        id=user.id,  # type: ignore[arg-type]
         username=user.username,
         email=user.email,
         display_name=display,
         avatar_url=user.avatar_url,
         oauth_provider=user.oauth_provider,
-        created_at=user.created_at,
+        created_at=user.created_at,  # type: ignore[arg-type]
     )
 
 
-def _token_response(access_token: str, user: User) -> TokenResponse:
+def _token_response(access_token: str, user: User | UserRecord) -> TokenResponse:
     return TokenResponse(
         access_token=access_token,
         user=_user_response(user),

@@ -3,13 +3,15 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 from app.auth.email_codes import can_send_code, create_email_code, rollback_email_code, verify_email_code
 from app.auth.email_service import EmailDeliveryError, send_email_change_code
 from app.auth.users import normalize_email
 from app.config import Settings, get_settings
+from app.domains.identity.identity_domain import UserRecord
+from app.domains.identity.user_repository import UserRepository
 from app.infrastructure.unit_of_work import UnitOfWorkFactory
-from app.models.user import User
 from app.services.media.avatar_paths import (
     ALLOWED_AVATAR_CONTENT_TYPES,
     avatar_api_url,
@@ -67,16 +69,16 @@ class SendEmailChangeCodeResult:
     dev_code: str | None
 
 
-def _profile_from_user(user: User) -> ProfileResult:
+def _profile_from_user(user: UserRecord) -> ProfileResult:
     display = user.display_name or user.username
     return ProfileResult(
-        id=user.id,
+        id=user.id,  # type: ignore[arg-type]
         username=user.username,
         email=user.email,
         display_name=display,
         avatar_url=user.avatar_url,
         oauth_provider=user.oauth_provider,
-        created_at=user.created_at,
+        created_at=user.created_at,  # type: ignore[arg-type]
     )
 
 
@@ -84,39 +86,49 @@ def _should_expose_dev_secrets(settings: Settings) -> bool:
     return settings.testing or settings.debug or settings.auth_expose_codes
 
 
-def _require_user(session, user_id: int) -> User:
-    user = session.query(User).filter(User.id == user_id).first()
+def _require_user(repo: UserRepository, user_id: int) -> UserRecord:
+    user = repo.get_by_id(user_id)
     if not user:
         raise LookupError("User not found")
     return user
 
 
 class GetProfileQuery:
-    def __init__(self, uow_factory: UnitOfWorkFactory):
+    def __init__(self, uow_factory: UnitOfWorkFactory, repository_factory: Any):
         self._uow_factory = uow_factory
+        self._repository_factory = repository_factory
 
     def execute(self, inp: GetProfileInput) -> ProfileResult:
         with self._uow_factory() as uow:
-            user = _require_user(uow.session, inp.user_id)
+            repo: UserRepository = self._repository_factory(uow.session)
+            user = _require_user(repo, inp.user_id)
             return _profile_from_user(user)
 
 
 class UpdateProfileCommand:
-    def __init__(self, uow_factory: UnitOfWorkFactory):
+    def __init__(self, uow_factory: UnitOfWorkFactory, repository_factory: Any):
         self._uow_factory = uow_factory
+        self._repository_factory = repository_factory
 
     def execute(self, inp: UpdateProfileInput) -> ProfileResult:
         with self._uow_factory() as uow:
-            user = _require_user(uow.session, inp.user_id)
+            repo: UserRepository = self._repository_factory(uow.session)
+            user = _require_user(repo, inp.user_id)
             user.display_name = inp.display_name
+            repo.save(user)
             uow.commit()
-            uow.session.refresh(user)
             return _profile_from_user(user)
 
 
 class SendEmailChangeCodeCommand:
-    def __init__(self, uow_factory: UnitOfWorkFactory, settings: Settings | None = None):
+    def __init__(
+        self,
+        uow_factory: UnitOfWorkFactory,
+        repository_factory: Any,
+        settings: Settings | None = None,
+    ):
         self._uow_factory = uow_factory
+        self._repository_factory = repository_factory
         self._settings = settings
 
     def execute(self, inp: SendEmailChangeCodeInput) -> SendEmailChangeCodeResult:
@@ -124,17 +136,13 @@ class SendEmailChangeCodeCommand:
         new_email = normalize_email(inp.new_email)
 
         with self._uow_factory() as uow:
-            user = _require_user(uow.session, inp.user_id)
+            repo: UserRepository = self._repository_factory(uow.session)
+            user = _require_user(repo, inp.user_id)
             current = normalize_email(user.email) if user.email else None
             if current and new_email == current:
                 raise ValueError("新邮箱与当前邮箱相同")
 
-            taken = (
-                uow.session.query(User.id)
-                .filter(User.email == new_email, User.id != user.id)
-                .first()
-            )
-            if taken:
+            if repo.email_taken(new_email, exclude_user_id=user.id):
                 raise ValueError("该邮箱已被其他账号使用")
 
         if not settings.testing:
@@ -158,13 +166,15 @@ class SendEmailChangeCodeCommand:
 
 
 class ChangeEmailCommand:
-    def __init__(self, uow_factory: UnitOfWorkFactory):
+    def __init__(self, uow_factory: UnitOfWorkFactory, repository_factory: Any):
         self._uow_factory = uow_factory
+        self._repository_factory = repository_factory
 
     def execute(self, inp: ChangeEmailInput) -> ProfileResult:
         new_email = normalize_email(inp.new_email)
         with self._uow_factory() as uow:
-            user = _require_user(uow.session, inp.user_id)
+            repo: UserRepository = self._repository_factory(uow.session)
+            user = _require_user(repo, inp.user_id)
             current = normalize_email(user.email) if user.email else None
             if current and new_email == current:
                 raise ValueError("新邮箱与当前邮箱相同")
@@ -172,23 +182,24 @@ class ChangeEmailCommand:
             if not verify_email_code(new_email, inp.code):
                 raise ValueError("邮箱验证码错误或已过期")
 
-            taken = (
-                uow.session.query(User.id)
-                .filter(User.email == new_email, User.id != user.id)
-                .first()
-            )
-            if taken:
+            if repo.email_taken(new_email, exclude_user_id=user.id):
                 raise ValueError("该邮箱已被其他账号使用")
 
             user.email = new_email
+            repo.save(user)
             uow.commit()
-            uow.session.refresh(user)
             return _profile_from_user(user)
 
 
 class UploadAvatarCommand:
-    def __init__(self, uow_factory: UnitOfWorkFactory, settings: Settings | None = None):
+    def __init__(
+        self,
+        uow_factory: UnitOfWorkFactory,
+        repository_factory: Any,
+        settings: Settings | None = None,
+    ):
         self._uow_factory = uow_factory
+        self._repository_factory = repository_factory
         self._settings = settings
 
     def execute(self, inp: UploadAvatarInput) -> ProfileResult:
@@ -207,8 +218,9 @@ class UploadAvatarCommand:
         get_storage(settings).put_bytes(key, inp.data, content_type)
 
         with self._uow_factory() as uow:
-            user = _require_user(uow.session, inp.user_id)
+            repo: UserRepository = self._repository_factory(uow.session)
+            user = _require_user(repo, inp.user_id)
             user.avatar_url = avatar_api_url(inp.user_id, version=int(time.time()))
+            repo.save(user)
             uow.commit()
-            uow.session.refresh(user)
             return _profile_from_user(user)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Any, Protocol
 
 from app.domains.progress.progress_domain import WordProgressState
 
@@ -23,3 +23,7 @@ class ProgressRepository(Protocol):
     ) -> None: ...
 
     def touch_streak(self, user_id: int, tz_name: str) -> None: ...
+
+    def get_overview(self, user_id: int) -> dict[str, Any]: ...
+
+    def get_review_words(self, user_id: int, limit: int = 20) -> list[dict[str, Any]]: ...

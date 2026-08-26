@@ -6,6 +6,7 @@ import { Suspense, useState } from "react";
 import { Loader2, MessageCircle } from "lucide-react";
 import { api } from "@sceneenglish/api-client";
 import { Button, Card, PageHeader, Select, Spinner } from "../../../app-chrome/ui";
+import { conversationCopy } from "../model";
 
 function NewChatForm() {
   const navigate = useNavigate();
@@ -113,7 +114,7 @@ export default function NewChatPage() {
   return (
     <div className="space-y-6">
       <PageHeader badge="1v1 对话" title="新建对话" description="选择场景参数，与 AI 角色开始沉浸式练习" />
-      <Suspense fallback={<Spinner label="加载..." />}>
+      <Suspense fallback={<Spinner label={conversationCopy.loadingGeneric} />}>
         <NewChatForm />
       </Suspense>
     </div>

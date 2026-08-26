@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from typing import Any
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.domains.progress.progress_domain import WordProgressState
 from app.models.progress import LearningStreak, ScenarioAttempt, UserWordProgress
-from app.utils.time import local_today
+from app.models.word import Word
+from app.utils.json_helpers import parse_json_field
+from app.utils.time import local_today, utc_now
 
 
 class SqlAlchemyProgressRepository:
@@ -102,3 +106,78 @@ class SqlAlchemyProgressRepository:
             streak.current_streak = 1
         streak.longest_streak = max(streak.longest_streak, streak.current_streak)
         streak.last_active_date = today
+
+    def get_overview(self, user_id: int) -> dict[str, Any]:
+        total = self._session.query(Word).count()
+        learned = (
+            self._session.query(UserWordProgress)
+            .filter(UserWordProgress.user_id == user_id, UserWordProgress.familiarity > 0)
+            .count()
+        )
+        mastered = (
+            self._session.query(UserWordProgress)
+            .filter(UserWordProgress.user_id == user_id, UserWordProgress.familiarity >= 5)
+            .count()
+        )
+        now = utc_now()
+        due_review = (
+            self._session.query(UserWordProgress)
+            .filter(
+                UserWordProgress.user_id == user_id,
+                UserWordProgress.next_review.isnot(None),
+                UserWordProgress.next_review <= now,
+            )
+            .count()
+        )
+        scenarios_completed = (
+            self._session.query(ScenarioAttempt).filter(ScenarioAttempt.user_id == user_id).count()
+        )
+        exercises_completed = (
+            self._session.query(func.sum(ScenarioAttempt.correct_questions))
+            .filter(ScenarioAttempt.user_id == user_id)
+            .scalar()
+            or 0
+        )
+
+        streak = self._session.query(LearningStreak).filter(LearningStreak.user_id == user_id).first()
+        current_streak = streak.current_streak if streak else 0
+        longest_streak = streak.longest_streak if streak else 0
+
+        mastery_rate = round(mastered / total * 100, 1) if total else 0.0
+        return {
+            "total_words": total,
+            "learned_words": learned,
+            "mastered_words": mastered,
+            "due_review": due_review,
+            "mastery_rate": mastery_rate,
+            "scenarios_completed": scenarios_completed,
+            "current_streak": current_streak,
+            "longest_streak": longest_streak,
+            "exercises_completed": int(exercises_completed),
+        }
+
+    def get_review_words(self, user_id: int, limit: int = 20) -> list[dict[str, Any]]:
+        now = utc_now()
+        rows = (
+            self._session.query(UserWordProgress, Word)
+            .join(Word, Word.id == UserWordProgress.word_id)
+            .filter(
+                UserWordProgress.user_id == user_id,
+                UserWordProgress.next_review.isnot(None),
+                UserWordProgress.next_review <= now,
+            )
+            .order_by(UserWordProgress.next_review)
+            .limit(limit)
+            .all()
+        )
+        return [
+            {
+                "id": word.id,
+                "lemma": word.lemma,
+                "level": word.level,
+                "familiarity": progress.familiarity,
+                "definitions": parse_json_field(word.definitions, []),
+                "next_review": progress.next_review.isoformat() if progress.next_review else None,
+            }
+            for progress, word in rows
+        ]

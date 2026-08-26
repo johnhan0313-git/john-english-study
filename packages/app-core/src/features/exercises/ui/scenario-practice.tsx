@@ -6,7 +6,7 @@ import { useParams } from "../../../platform/context";
 import { useState } from "react";
 import { CheckCircle, XCircle } from "lucide-react";
 import { api, Exercise } from "@sceneenglish/api-client";
-import { RequireAuth } from "../../auth/ui/require-auth";
+import { RequireAuth } from "../../auth";
 import { Badge, Button, Card, Input, ProgressBar, Spinner } from "../../../app-chrome/ui";
 import { cn } from "../../../app-chrome/utils";
 import {

@@ -9,7 +9,7 @@ import { cn } from "../../../app-chrome/utils";
 import { Alert, Card, Spinner } from "../../../app-chrome/ui";
 import { formatCallTime, useVoiceTurn } from "../hooks/use-voice-turn";
 import { api } from "@sceneenglish/api-client";
-import { getConversationChineseHint } from "../model";
+import { getConversationChineseHint, conversationCopy } from "../model";
 
 export default function ChatCallPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -33,7 +33,7 @@ export default function ChatCallPage() {
     playOpeningIfNeeded(data?.messages, data?.status ?? "active");
   }, [data?.messages, data?.status, playOpeningIfNeeded, started]);
 
-  if (isLoading || !data) return <Spinner label="连接通话..." />;
+  if (isLoading || !data) return <Spinner label={conversationCopy.loadingCall} />;
 
   const statusHint = voice.processing
     ? "识别与回复中..."
@@ -58,7 +58,7 @@ export default function ChatCallPage() {
           </div>
 
           <div className="min-h-[4.5rem] rounded-xl bg-slate-50 px-4 py-3 text-left reading-text text-slate-700 whitespace-pre-wrap">
-            {voice.subtitle || "等待对方发言..."}
+            {voice.subtitle || conversationCopy.waitingForPartner}
           </div>
 
           {voice.error && <Alert variant="warning">{voice.error}</Alert>}

@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Camera, ChevronRight } from "lucide-react";
 
 import { Button, Input } from "../../../app-chrome/ui";
-import { useAuth } from "../../auth/auth-context";
+import { useAuth } from "../../auth";
 import { parseApiError } from "@sceneenglish/api-client";
 import { cn } from "../../../app-chrome/utils";
 import { profileApi, resolveAvatarUrl } from "@sceneenglish/api-client";
