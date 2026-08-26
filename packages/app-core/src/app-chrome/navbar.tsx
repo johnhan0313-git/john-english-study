@@ -10,7 +10,7 @@ import { AppsLauncher } from "@johnhan0313-git/shared/nav";
 import { AppLogo } from "@johnhan0313-git/shared/brand";
 import "@johnhan0313-git/shared/nav.css";
 import { cn } from "./utils";
-import { AuthNavActions } from "../features/auth/ui/user-menu";
+import { AuthNavActions } from "../features/auth";
 import { prefetchAllRoutes, prefetchNavTarget } from "./route-prefetch";
 
 const nav = [

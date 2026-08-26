@@ -8,7 +8,7 @@ import {
   conversationsNextPageParam,
   normalizePage,
   scenariosNextPageParam,
-} from "@sceneenglish/api-client";
+} from "../features/activity/model";
 
 export const NAV_ROUTES = [
   "/",

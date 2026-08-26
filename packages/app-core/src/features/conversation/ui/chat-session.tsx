@@ -6,7 +6,7 @@ import { useParams } from "../../../platform/context";
 import { useEffect, useRef, useState } from "react";
 import { Loader2, Phone, Send, Sparkles, Square } from "lucide-react";
 import { api, ConversationMessage } from "@sceneenglish/api-client";
-import { getConversationChineseHint } from "@sceneenglish/api-client";
+import { getConversationChineseHint } from "../model";
 import { cn } from "../../../app-chrome/utils";
 import { Alert, Badge, Button, Card, Spinner } from "../../../app-chrome/ui";
 

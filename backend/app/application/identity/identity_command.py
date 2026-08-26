@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+import secrets
 from dataclasses import dataclass
 
 from sqlalchemy.orm import Session
@@ -7,10 +9,11 @@ from sqlalchemy.orm import Session
 from app.auth.jwt import create_access_token
 from app.auth.users import normalize_email
 from app.infrastructure.unit_of_work import UnitOfWorkFactory
+from app.models.conversation import ConversationSession
+from app.models.progress import LearningStreak, ScenarioAttempt, UserWordProgress
+from app.models.scenario import Scenario
 from app.models.user import User
 from app.utils.time import utc_now
-import re
-import secrets
 
 
 def _username_from_email(email: str) -> str:
@@ -116,3 +119,105 @@ class LoginOrRegisterByWechatCommand:
                 user=user,
                 created=created,
             )
+
+
+@dataclass(frozen=True)
+class MergeDeviceInput:
+    user_id: int
+    device_id: str
+
+
+def _merge_word_progress(session: Session, user_id: int, device_id: str) -> int:
+    merged = 0
+    legacy_rows = (
+        session.query(UserWordProgress)
+        .filter(UserWordProgress.device_id == device_id, UserWordProgress.user_id.is_(None))
+        .all()
+    )
+    for row in legacy_rows:
+        existing = (
+            session.query(UserWordProgress)
+            .filter(UserWordProgress.user_id == user_id, UserWordProgress.word_id == row.word_id)
+            .first()
+        )
+        if existing:
+            if row.familiarity > existing.familiarity:
+                existing.familiarity = row.familiarity
+                existing.correct_count = max(existing.correct_count, row.correct_count)
+                existing.wrong_count = max(existing.wrong_count, row.wrong_count)
+                if row.next_review:
+                    existing.next_review = row.next_review
+                if row.last_reviewed:
+                    existing.last_reviewed = row.last_reviewed
+            session.delete(row)
+        else:
+            row.user_id = user_id
+            row.device_id = None
+            merged += 1
+    session.flush()
+    return merged
+
+
+def _reassign_rows(session: Session, model, user_id: int, device_id: str) -> int:
+    rows = (
+        session.query(model)
+        .filter(model.device_id == device_id, model.user_id.is_(None))
+        .all()
+    )
+    for row in rows:
+        row.user_id = user_id
+        row.device_id = None
+    session.flush()
+    return len(rows)
+
+
+def _merge_streak(session: Session, user_id: int, device_id: str) -> int:
+    legacy = session.query(LearningStreak).filter(LearningStreak.device_id == device_id).first()
+    if not legacy:
+        return 0
+    existing = session.query(LearningStreak).filter(LearningStreak.user_id == user_id).first()
+    if existing:
+        existing.current_streak = max(existing.current_streak, legacy.current_streak)
+        existing.longest_streak = max(existing.longest_streak, legacy.longest_streak)
+        if legacy.last_active_date and (
+            not existing.last_active_date or legacy.last_active_date > existing.last_active_date
+        ):
+            existing.last_active_date = legacy.last_active_date
+        session.delete(legacy)
+    else:
+        legacy.user_id = user_id
+        legacy.device_id = None
+    return 1
+
+
+class MergeDeviceCommand:
+    def __init__(self, uow_factory: UnitOfWorkFactory):
+        self._uow_factory = uow_factory
+
+    def execute(self, inp: MergeDeviceInput) -> dict[str, int]:
+        if not inp.device_id or inp.device_id == "default":
+            return {
+                "word_progress": 0,
+                "scenarios": 0,
+                "attempts": 0,
+                "conversations": 0,
+                "streak": 0,
+            }
+
+        with self._uow_factory() as uow:
+            user = uow.session.query(User).filter(User.id == inp.user_id).first()
+            if not user:
+                raise LookupError("User not found")
+
+            result = {
+                "word_progress": _merge_word_progress(uow.session, user.id, inp.device_id),
+                "scenarios": _reassign_rows(uow.session, Scenario, user.id, inp.device_id),
+                "attempts": _reassign_rows(uow.session, ScenarioAttempt, user.id, inp.device_id),
+                "conversations": _reassign_rows(
+                    uow.session, ConversationSession, user.id, inp.device_id
+                ),
+                "streak": _merge_streak(uow.session, user.id, inp.device_id),
+            }
+            user.legacy_device_id = inp.device_id
+            uow.commit()
+            return result

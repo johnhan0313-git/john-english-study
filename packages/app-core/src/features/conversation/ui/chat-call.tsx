@@ -9,7 +9,7 @@ import { cn } from "../../../app-chrome/utils";
 import { Alert, Card, Spinner } from "../../../app-chrome/ui";
 import { formatCallTime, useVoiceTurn } from "../hooks/use-voice-turn";
 import { api } from "@sceneenglish/api-client";
-import { getConversationChineseHint } from "@sceneenglish/api-client";
+import { getConversationChineseHint } from "../model";
 
 export default function ChatCallPage() {
   const { sessionId } = useParams<{ sessionId: string }>();

@@ -1,4 +1,4 @@
-import type { ConversationBrief, ScenarioBrief } from "../api/types";
+import type { ConversationBrief, ScenarioBrief } from "@sceneenglish/api-client/types";
 
 export type ScenarioKind = "daily" | "narrative" | "dialogue";
 

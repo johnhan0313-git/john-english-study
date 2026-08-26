@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 
+from app.application.exercise.exercise_command import SubmitBatchInput, SubmitExerciseInput
+from app.application.progress.progress_query import ListExercisesInput
 from app.auth.dependencies import get_current_user
 from app.composition.shared_composition import AppContainer, get_container
-from app.database import get_db
-from app.models.exercise import Exercise
-from app.models.scenario import Scenario
 from app.models.user import User
 from app.schemas.exercise import (
     BatchSubmitRequest,
@@ -17,8 +15,6 @@ from app.schemas.exercise import (
     ExerciseSubmitRequest,
     ExerciseSubmitResponse,
 )
-from app.application.exercise.exercise_command import SubmitBatchInput, SubmitExerciseInput
-from app.utils.json_helpers import parse_json_field
 
 router = APIRouter(prefix="/exercises", tags=["exercises"])
 
@@ -27,26 +23,23 @@ router = APIRouter(prefix="/exercises", tags=["exercises"])
 def list_exercises(
     scenario_id: int,
     user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    container: AppContainer = Depends(get_container),
 ):
-    owned = db.query(Scenario.id).filter(Scenario.id == scenario_id, Scenario.user_id == user.id).first()
-    if not owned:
-        raise HTTPException(status_code=404, detail="Scenario not found")
-    exercises = (
-        db.query(Exercise)
-        .filter(Exercise.scenario_id == scenario_id)
-        .order_by(Exercise.sort_order)
-        .all()
-    )
+    try:
+        items = container.exercise.list_for_scenario.execute(
+            ListExercisesInput(user_id=user.id, scenario_id=scenario_id)
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
     return [
         ExerciseResponse(
-            id=ex.id,
-            scenario_id=ex.scenario_id,
-            type=ex.type,
-            payload=ExercisePayload(**parse_json_field(ex.payload, {})),
-            sort_order=ex.sort_order,
+            id=item["id"],
+            scenario_id=item["scenario_id"],
+            type=item["type"],
+            payload=ExercisePayload(**item["payload"]),
+            sort_order=item["sort_order"],
         )
-        for ex in exercises
+        for item in items
     ]
 
 

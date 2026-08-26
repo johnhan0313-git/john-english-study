@@ -8,6 +8,7 @@ import { ApiError, parseApiError } from "@sceneenglish/api-client";
 import { fetchAuthenticatedAudioBlobUrl } from "../../../app-chrome/audio";
 import { usePlatform } from "../../../platform/context";
 import { useLipsyncAudio } from "./use-lipsync-audio";
+import { voiceCopy, type VoiceTurnPhase, voicePhaseFlags } from "../model";
 
 interface UseVoiceTurnOptions {
   sessionId: number;
@@ -29,13 +30,13 @@ export function useVoiceTurn({
   const blobUrlRef = useRef<string | null>(null);
   const openingPlayedRef = useRef(false);
 
-  const [recording, setRecording] = useState(false);
-  const [processing, setProcessing] = useState(false);
-  const [playing, setPlaying] = useState(false);
+  const [phase, setPhase] = useState<VoiceTurnPhase>({ kind: "idle" });
   const [subtitle, setSubtitle] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [started, setStarted] = useState(initialStarted);
   const [elapsed, setElapsed] = useState(0);
+
+  const flags = voicePhaseFlags(phase);
+  const { recording, processing, playing, error } = flags;
 
   const { connect, stopAnalysis, mouthOpen, viseme } = useLipsyncAudio();
 
@@ -50,39 +51,36 @@ export function useVoiceTurn({
     async (url: string) => {
       stopAnalysis();
       revokeBlobUrl();
-      setPlaying(true);
-      setError(null);
+      setPhase({ kind: "playing" });
 
       try {
         const playUrl = await fetchAuthenticatedAudioBlobUrl(url);
         blobUrlRef.current = playUrl;
 
         platformAudio.setOnEnded?.(() => {
-          setPlaying(false);
+          setPhase({ kind: "idle" });
           stopAnalysis();
           revokeBlobUrl();
         });
         platformAudio.setOnError?.(() => {
-          setPlaying(false);
+          setPhase({ kind: "error", message: voiceCopy.playFailed });
           stopAnalysis();
           revokeBlobUrl();
-          setError("语音播放失败");
         });
         platformAudio.setOnPlay?.((el) => connect(el));
 
         await platformAudio.play(playUrl);
       } catch (e) {
-        setPlaying(false);
         stopAnalysis();
         revokeBlobUrl();
         if (e instanceof ApiError) {
           if (e.status === 503) {
-            setError("语音合成未配置或暂时不可用");
+            setPhase({ kind: "error", message: voiceCopy.ttsUnavailable });
           } else {
-            setError(e.message || "语音加载失败");
+            setPhase({ kind: "error", message: e.message || "语音加载失败" });
           }
         } else {
-          setError("无法播放语音，请允许浏览器自动播放");
+          setPhase({ kind: "error", message: "无法播放语音，请允许浏览器自动播放" });
         }
       }
     },
@@ -97,7 +95,7 @@ export function useVoiceTurn({
       if (!autoPlayOpening || !messages.length || openingPlayedRef.current) return;
       const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
       if (!lastAssistant) {
-        setError("未找到 AI 开场消息");
+        setPhase({ kind: "error", message: "未找到 AI 开场消息" });
         return;
       }
       openingPlayedRef.current = true;
@@ -123,9 +121,9 @@ export function useVoiceTurn({
   const unlockAndStart = useCallback(
     (messages?: { id: number; role: string; content: string }[], status?: string) => {
       setStarted(true);
-      setError(null);
+      setPhase({ kind: "idle" });
       if (!messages?.length) {
-        setError("暂无对话消息，请返回重新开始");
+        setPhase({ kind: "error", message: "暂无对话消息，请返回重新开始" });
         return;
       }
       playOpening(messages, status ?? "active");
@@ -135,19 +133,17 @@ export function useVoiceTurn({
 
   const startRecording = useCallback(async () => {
     if (!enabled || playing || processing) return;
-    setError(null);
     try {
       await recorder.start();
-      setRecording(true);
+      setPhase({ kind: "recording" });
     } catch {
-      setError("无法开始录音，请允许麦克风权限");
+      setPhase({ kind: "error", message: "无法开始录音，请允许麦克风权限" });
     }
   }, [enabled, playing, processing, recorder]);
 
   const stopRecording = useCallback(async () => {
     if (!recording) return;
-    setRecording(false);
-    setProcessing(true);
+    setPhase({ kind: "processing" });
     try {
       const blob = await recorder.stop();
       const result = await api.sendVoiceTurn(sessionId, blob, showChineseHint);
@@ -156,9 +152,7 @@ export function useVoiceTurn({
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
       playAudio(result.audio_url);
     } catch (e) {
-      setError(parseApiError(e, "语音发送失败"));
-    } finally {
-      setProcessing(false);
+      setPhase({ kind: "error", message: parseApiError(e, "语音发送失败") });
     }
   }, [playAudio, queryClient, recorder, recording, sessionId, showChineseHint]);
 
@@ -179,6 +173,7 @@ export function useVoiceTurn({
 
   return {
     audioRef: { current: platformAudio.getElement?.() ?? null },
+    phase,
     recording,
     processing,
     playing,

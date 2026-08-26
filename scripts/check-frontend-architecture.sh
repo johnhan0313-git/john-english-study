@@ -26,6 +26,46 @@ if rg -n 'new MediaRecorder' "$ROOT/packages/app-core/src/features" --glob '*.{t
   fail=1
 fi
 
+# Audio ownership: only platform adapters may construct Audio / <audio>
+if rg -n 'new Audio\(|<audio' \
+  "$ROOT/packages/app-core/src/features" \
+  "$ROOT/packages/app-core/src/app-chrome" \
+  --glob '*.{ts,tsx}' >/dev/null 2>&1; then
+  echo "FAIL: features/app-chrome must not use new Audio or <audio>; use PlatformServices.audio"
+  rg -n 'new Audio\(|<audio' \
+    "$ROOT/packages/app-core/src/features" \
+    "$ROOT/packages/app-core/src/app-chrome" \
+    --glob '*.{ts,tsx}' || true
+  fail=1
+fi
+
+# Auth public API: chrome/platform should import from features/auth index, not deep ui paths
+if rg -n 'from ["'\'']\.\./features/auth/(ui|auth-context|token)' \
+  "$ROOT/packages/app-core/src/app-chrome" \
+  "$ROOT/packages/app-core/src/platform" \
+  --glob '*.{ts,tsx}' >/dev/null 2>&1; then
+  echo "FAIL: app-chrome/platform must import auth via features/auth public API"
+  rg -n 'from ["'\'']\.\./features/auth/(ui|auth-context|token)' \
+    "$ROOT/packages/app-core/src/app-chrome" \
+    "$ROOT/packages/app-core/src/platform" \
+    --glob '*.{ts,tsx}' || true
+  fail=1
+fi
+
+# api-client must not deep-export learning presentation helpers
+if rg -n 'learning/' "$ROOT/packages/api-client/src/index.ts" >/dev/null 2>&1; then
+  echo "FAIL: api-client must not export learning/* helpers"
+  fail=1
+fi
+
+# Feature public indexes should not re-export internal learning/hooks trees
+if rg -n 'export \* from ["'\'']\./ui/learning|export .* from ["'\'']\./hooks/' \
+  "$ROOT/packages/app-core/src/features/activity/index.ts" \
+  "$ROOT/packages/app-core/src/features/conversation/index.ts" >/dev/null 2>&1; then
+  echo "FAIL: activity/conversation public API must not re-export learning internals or hooks"
+  fail=1
+fi
+
 if [[ "$fail" -ne 0 ]]; then
   exit 1
 fi

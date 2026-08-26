@@ -9,6 +9,7 @@ import { useAuth } from "../../auth/auth-context";
 import { parseApiError } from "@sceneenglish/api-client";
 import { cn } from "../../../app-chrome/utils";
 import { profileApi, resolveAvatarUrl } from "@sceneenglish/api-client";
+import { profileCopy } from "../model";
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString("zh-CN", {
@@ -81,9 +82,9 @@ export default function ProfilePage() {
     try {
       await profileApi.updateDisplayName(displayName.trim());
       await refreshUser();
-      showSuccess("昵称已保存");
+      showSuccess(profileCopy.nameSaved);
     } catch (err) {
-      showError(parseApiError(err, "保存昵称失败"));
+      showError(parseApiError(err, profileCopy.saveFailed));
     } finally {
       setSavingName(false);
     }
@@ -96,9 +97,9 @@ export default function ProfilePage() {
     try {
       await profileApi.uploadAvatar(file);
       await refreshUser();
-      showSuccess("头像已更新");
+      showSuccess(profileCopy.avatarUpdated);
     } catch (err) {
-      showError(parseApiError(err, "上传头像失败"));
+      showError(parseApiError(err, profileCopy.avatarUploadFailed));
     } finally {
       setUploadingAvatar(false);
       e.target.value = "";
@@ -107,7 +108,7 @@ export default function ProfilePage() {
 
   const onSendEmailCode = async () => {
     if (!newEmail.trim()) {
-      showError("请输入新邮箱");
+      showError(profileCopy.emailRequired);
       return;
     }
     setSendingCode(true);
@@ -115,9 +116,9 @@ export default function ProfilePage() {
       const result = await profileApi.sendEmailChangeCode(newEmail.trim());
       setCooldown(result.cooldown_seconds || 60);
       if (result.dev_code) setEmailCode(result.dev_code);
-      showSuccess("验证码已发送");
+      showSuccess(profileCopy.codeSent);
     } catch (err) {
-      showError(parseApiError(err, "发送验证码失败"));
+      showError(parseApiError(err, profileCopy.sendCodeFailed));
     } finally {
       setSendingCode(false);
     }
@@ -125,7 +126,7 @@ export default function ProfilePage() {
 
   const onChangeEmail = async () => {
     if (!newEmail.trim() || !emailCode.trim()) {
-      showError("请填写新邮箱和验证码");
+      showError(profileCopy.emailAndCodeRequired);
       return;
     }
     setChangingEmail(true);
@@ -135,9 +136,9 @@ export default function ProfilePage() {
       setNewEmail("");
       setEmailCode("");
       setEditingEmail(false);
-      showSuccess("邮箱已更新");
+      showSuccess(profileCopy.emailUpdated);
     } catch (err) {
-      showError(parseApiError(err, "修改邮箱失败"));
+      showError(parseApiError(err, profileCopy.emailChangeFailed));
     } finally {
       setChangingEmail(false);
     }
@@ -157,7 +158,7 @@ export default function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-md">
-      <h1 className="mb-5 text-lg font-semibold text-slate-900">个人中心</h1>
+      <h1 className="mb-5 text-lg font-semibold text-slate-900">{profileCopy.pageTitle}</h1>
 
       {feedback && (
         <p
@@ -188,7 +189,7 @@ export default function ProfilePage() {
             disabled={uploadingAvatar}
             onClick={() => fileRef.current?.click()}
             className="group relative h-20 w-20 overflow-hidden rounded-full ring-2 ring-slate-100 transition hover:ring-brand-200 disabled:opacity-60"
-            aria-label="更换头像"
+            aria-label={profileCopy.avatarHint}
           >
             <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
             <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition group-hover:opacity-100">
@@ -219,7 +220,7 @@ export default function ProfilePage() {
               />
               {nameDirty && (
                 <Button type="button" size="sm" disabled={savingName} onClick={onSaveName}>
-                  {savingName ? "..." : "保存"}
+                  {savingName ? profileCopy.saving : profileCopy.save}
                 </Button>
               )}
             </div>
@@ -236,7 +237,7 @@ export default function ProfilePage() {
                 onClick={() => (editingEmail ? cancelEmailEdit() : setEditingEmail(true))}
                 className="shrink-0 text-sm text-brand-600 hover:text-brand-700"
               >
-                {editingEmail ? "取消" : "修改"}
+                {editingEmail ? profileCopy.cancel : profileCopy.emailChange}
               </button>
             </div>
 
@@ -244,7 +245,7 @@ export default function ProfilePage() {
               <div className="space-y-3 border-t border-surface-border/40 bg-slate-50/60 px-5 py-4">
                 <div>
                   <label htmlFor="new-email" className="mb-1.5 block text-xs font-medium text-slate-500">
-                    新邮箱
+                    {profileCopy.newEmail}
                   </label>
                   <Input
                     id="new-email"
@@ -257,14 +258,14 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <label htmlFor="email-code" className="mb-1.5 block text-xs font-medium text-slate-500">
-                    验证码
+                    {profileCopy.verificationCode}
                   </label>
                   <div className="flex gap-2">
                     <Input
                       id="email-code"
                       value={emailCode}
                       onChange={(e) => setEmailCode(e.target.value)}
-                      placeholder="6 位数字"
+                      placeholder={profileCopy.codePlaceholder}
                       autoComplete="one-time-code"
                       inputMode="numeric"
                       className="flex-1"
@@ -277,13 +278,13 @@ export default function ProfilePage() {
                       disabled={sendingCode || cooldown > 0}
                       onClick={onSendEmailCode}
                     >
-                      {cooldown > 0 ? `${cooldown}s` : "获取验证码"}
+                      {cooldown > 0 ? `${cooldown}s` : profileCopy.sendCode}
                     </Button>
                   </div>
                 </div>
                 <div className="flex justify-end pt-1">
                   <Button type="button" size="sm" disabled={changingEmail} onClick={onChangeEmail}>
-                    {changingEmail ? "保存中..." : "确认更换"}
+                    {changingEmail ? profileCopy.saving : profileCopy.confirmEmailChange}
                   </Button>
                 </div>
               </div>

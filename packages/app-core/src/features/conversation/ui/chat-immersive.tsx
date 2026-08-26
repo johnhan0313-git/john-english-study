@@ -6,7 +6,7 @@ import { useParams } from "../../../platform/context";
 import { useEffect } from "react";
 import { Mic, MicOff, PhoneOff, Sparkles } from "lucide-react";
 import { api } from "@sceneenglish/api-client";
-import { getConversationChineseHint } from "@sceneenglish/api-client";
+import { getConversationChineseHint } from "../model";
 import { resolveConversationVisuals } from "../model";
 import { cn } from "../../../app-chrome/utils";
 import { Alert, Button, Spinner } from "../../../app-chrome/ui";

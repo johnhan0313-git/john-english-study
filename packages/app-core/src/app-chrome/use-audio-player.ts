@@ -1,42 +1,40 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { usePlatform } from "../platform/context";
 
+/** Shared keyed audio player backed by PlatformServices.audio (no raw Audio in chrome). */
 export function useAudioPlayer() {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const { audio } = usePlatform();
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [loadingKey, setLoadingKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const audio = new Audio();
-    audio.onended = () => setActiveKey(null);
-    audioRef.current = audio;
+    audio.setOnEnded?.(() => setActiveKey(null));
+    audio.setOnError?.(() => {
+      setActiveKey(null);
+      setError("播放失败，请检查网络或稍后重试");
+    });
     return () => {
       audio.pause();
-      audioRef.current = null;
+      audio.setOnEnded?.(null);
+      audio.setOnError?.(null);
     };
-  }, []);
+  }, [audio]);
 
   const toggle = useCallback(
     async (url: string, key: string) => {
-      const audio = audioRef.current;
-      if (!audio) return;
-
-      if (activeKey === key && !audio.paused) {
+      if (activeKey === key) {
         audio.pause();
-        audio.currentTime = 0;
         setActiveKey(null);
         return;
       }
 
       setError(null);
       setLoadingKey(key);
-      audio.pause();
-      audio.src = url;
-
       try {
-        await audio.play();
+        await audio.play(url);
         setActiveKey(key);
       } catch {
         setError("播放失败，请检查网络或稍后重试");
@@ -45,7 +43,7 @@ export function useAudioPlayer() {
         setLoadingKey(null);
       }
     },
-    [activeKey],
+    [activeKey, audio],
   );
 
   const isPlaying = useCallback(

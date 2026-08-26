@@ -12,7 +12,9 @@ from app.infrastructure.persistence.scenario.scenario_read_mapper import (
     scenario_to_brief,
     scenarios_to_briefs,
 )
-from app.services.conversation.service import ConversationService
+from app.infrastructure.persistence.conversation.conversation_read_mapper import (
+    conversation_session_to_brief,
+)
 from app.utils.time import local_today
 
 
@@ -20,7 +22,6 @@ class ActivityService:
     def __init__(self, db: Session, timezone: str = "Asia/Shanghai"):
         self.db = db
         self.timezone = timezone
-        self.conversation_service = ConversationService(db)
 
     def get_overview(self, user_id: int) -> dict:
         today = local_today(self.timezone)
@@ -82,7 +83,7 @@ class ActivityService:
             "heatmap": self._build_heatmap(user_id, weeks=12),
             "continue": {
                 "active_conversations": [
-                    self.conversation_service.session_to_brief(s) for s in active_sessions
+                    conversation_session_to_brief(s) for s in active_sessions
                 ],
                 "incomplete_scenarios": incomplete,
             },
@@ -179,7 +180,7 @@ class ActivityService:
             .all()
         )
         for session in sessions:
-            brief = self.conversation_service.session_to_brief(session)
+            brief = conversation_session_to_brief(session)
             events.append(
                 {
                     "type": "conversation_started",

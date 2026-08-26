@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import type { ActivityTimelineItem } from "@sceneenglish/api-client/types";
 import { Badge, Card } from "../../../../app-chrome/ui";
-import { formatRelativeTime } from "@sceneenglish/api-client";
+import { formatRelativeTime } from "../../model";
 
 interface ActivityTimelineProps {
   items: ActivityTimelineItem[];

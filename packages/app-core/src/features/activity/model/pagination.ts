@@ -1,4 +1,4 @@
-import type { ConversationListResponse, ScenarioBrief } from "../api/types";
+import type { ConversationListResponse, ScenarioBrief } from "@sceneenglish/api-client/types";
 
 export const ACTIVITY_LIST_PAGE_SIZE = 20;
 

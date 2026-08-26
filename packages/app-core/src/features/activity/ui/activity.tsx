@@ -21,7 +21,7 @@ import {
   LearningStatsBar,
   ScenarioGridCard,
 } from "./learning";
-import { groupByDate } from "@sceneenglish/api-client";
+import { groupByDate } from "../model";
 import {
   buildScenarioThemeOptions,
   CONVERSATION_STATUS_OPTIONS,
@@ -35,7 +35,7 @@ import {
   filterScenarios,
   scenarioFiltersToSearch,
   type ScenarioKind,
-} from "@sceneenglish/api-client";
+} from "../model";
 import {
   ACTIVITY_LIST_PAGE_SIZE,
   ACTIVITY_QUERY_KEYS,
@@ -43,7 +43,7 @@ import {
   normalizePage,
   scenariosNextPageParam,
   timelineNextPageParam,
-} from "@sceneenglish/api-client";
+} from "../model";
 import { Button, EmptyState, PageHeader, Spinner, Tabs } from "../../../app-chrome/ui";
 import { cn } from "../../../app-chrome/utils";
 

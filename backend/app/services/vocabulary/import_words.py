@@ -631,7 +631,7 @@ def repair_placeholder_definitions(db: Session) -> int:
     return updated
 
 
-def _ensure_word_tag(db: Session, word_id: int, tag: str) -> None:
+def apply_word_tag(db: Session, word_id: int, tag: str) -> None:
     exists = (
         db.query(WordTag)
         .filter(WordTag.word_id == word_id, WordTag.tag == tag)
@@ -672,10 +672,10 @@ def sync_word_groups(db: Session) -> dict[str, int]:
             word_id = lemma_to_id.get(lemma)
             if not word_id or word_id in existing_member_ids:
                 if word_id:
-                    _ensure_word_tag(db, word_id, group_def["slug"])
+                    apply_word_tag(db, word_id, group_def["slug"])
                 continue
             db.add(WordGroupMember(group_id=group.id, word_id=word_id))
-            _ensure_word_tag(db, word_id, group_def["slug"])
+            apply_word_tag(db, word_id, group_def["slug"])
             members_added += 1
 
     db.commit()

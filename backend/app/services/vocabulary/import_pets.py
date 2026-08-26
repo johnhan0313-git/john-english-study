@@ -33,7 +33,7 @@ def _existing_tag_word_ids(db: Session, tag: str, word_ids: list[int] | None = N
     return {row[0] for row in query.all()}
 
 
-def _batch_ensure_tags(db: Session, word_ids: list[int], tag: str) -> int:
+def _batch_apply_word_tags(db: Session, word_ids: list[int], tag: str) -> int:
     existing = _existing_tag_word_ids(db, tag, word_ids)
     added = 0
     for word_id in word_ids:
@@ -44,7 +44,7 @@ def _batch_ensure_tags(db: Session, word_ids: list[int], tag: str) -> int:
     return added
 
 
-def _ensure_tag(db: Session, word_id: int, tag: str) -> bool:
+def apply_word_tag(db: Session, word_id: int, tag: str) -> bool:
     if word_id in _existing_tag_word_ids(db, tag, [word_id]):
         return False
     db.add(WordTag(word_id=word_id, tag=tag))
@@ -64,7 +64,7 @@ def _upsert_pets_word(db: Session, level: str, entry: dict | str) -> tuple[str, 
 
     word = db.query(Word).filter(Word.lemma == lemma).first()
     if word:
-        tagged = _ensure_tag(db, word.id, level)
+        tagged = apply_word_tag(db, word.id, level)
         if definitions and not normalize_definitions(word.lemma, parse_json_field(word.definitions, [])):
             word.definitions = dump_json_field(definitions)
         return ("tagged" if tagged else "skipped", word.id)
@@ -79,7 +79,7 @@ def _upsert_pets_word(db: Session, level: str, entry: dict | str) -> tuple[str, 
     )
     db.add(word)
     db.flush()
-    _ensure_tag(db, word.id, level)
+    apply_word_tag(db, word.id, level)
     return ("added", word.id)
 
 
@@ -111,7 +111,7 @@ def import_pets_words(db: Session) -> dict[str, int | bool]:
             row[0]
             for row in db.query(Word.id).filter(Word.level.in_(cet_levels)).all()
         ]
-        stats["tagged"] += _batch_ensure_tags(db, word_ids, pets_level)
+        stats["tagged"] += _batch_apply_word_tags(db, word_ids, pets_level)
 
     db.commit()
     per_level = {level: count_words_for_exam_level(db, level) for level in PETS_LEVELS}

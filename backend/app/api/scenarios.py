@@ -12,10 +12,6 @@ from app.application.scenario.scenario_input import (
 )
 from app.auth.dependencies import get_current_user
 from app.composition.shared_composition import AppContainer, get_container
-from app.config import get_settings
-from app.database import SessionLocal
-from app.infrastructure.persistence.scenario.scenario_repository_impl import SqlAlchemyScenarioRepository
-from app.infrastructure.unit_of_work import SqlAlchemyUnitOfWork
 from app.models.user import User
 from app.schemas.scenario import (
     DailyScenariosResponse,
@@ -25,7 +21,6 @@ from app.schemas.scenario import (
     ScenarioListResponse,
     ScenarioTranslationResponse,
 )
-from app.application.media.media_command import materialize_scenario_audio
 from app.services.storage.responses import storage_stream_response
 from app.utils.time import local_today
 
@@ -138,7 +133,6 @@ async def get_scenario_audio(
     user: User = Depends(get_current_user),
     app=Depends(_scenario_app),
 ):
-    settings = get_settings()
     detail = app.get_scenario.execute(GetScenarioInput(scenario_id=scenario_id, user_id=user.id))
     if not detail:
         raise HTTPException(status_code=404, detail="Scenario not found")
@@ -149,31 +143,14 @@ async def get_scenario_audio(
     if dialogue_lines:
         text += " " + " ".join(f"{d['speaker']}: {d['text']}" for d in dialogue_lines)
 
-    with SqlAlchemyUnitOfWork(_session=SessionLocal()) as uow:
-        repo = SqlAlchemyScenarioRepository(uow.session)
-        scenario = repo.get_by_id(scenario_id, user.id)
-        if not scenario:
-            raise HTTPException(status_code=404, detail="Scenario not found")
-        stored_path = scenario.audio_path
-
-    audio_key = await materialize_scenario_audio(
-        scenario_id,
-        text,
-        settings,
-        stored_path=stored_path,
-    )
-
-    if stored_path != audio_key:
-        with SqlAlchemyUnitOfWork(_session=SessionLocal()) as uow:
-            repo = SqlAlchemyScenarioRepository(uow.session)
-            scenario = repo.get_by_id(scenario_id, user.id)
-            if scenario:
-                from app.models.scenario import Scenario
-
-                row = uow.session.query(Scenario).filter(Scenario.id == scenario_id).first()
-                if row:
-                    row.audio_path = audio_key
-                    uow.commit()
+    try:
+        audio_key = await app.materialize_audio.execute(
+            scenario_id=scenario_id,
+            user_id=user.id,
+            text=text,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
     return storage_stream_response(
         audio_key,

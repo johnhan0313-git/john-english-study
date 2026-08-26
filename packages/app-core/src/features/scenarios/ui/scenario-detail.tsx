@@ -10,6 +10,7 @@ import { useAuth } from "../../auth/auth-context";
 import { Badge, Button, Card, Spinner, Tabs, Textarea } from "../../../app-chrome/ui";
 import { cn } from "../../../app-chrome/utils";
 import type { ScenarioDetail } from "@sceneenglish/api-client";
+import { scenarioDetailCopy } from "../model";
 
 type WordUsage = ScenarioDetail["content"]["word_usage"][number];
 
@@ -381,12 +382,12 @@ export default function ScenarioDetailPage() {
           {tab === "listen" && (
             <Card>
               <div className="flex items-center gap-2 text-sm text-slate-500 mb-4">
-                <Headphones className="h-4 w-4" /> 听力模式 · 先听再理解
+                <Headphones className="h-4 w-4" /> {scenarioDetailCopy.listenMode}
               </div>
               <div className="flex items-center gap-4">
                 <Button onClick={() => void toggleAudio()}>
                   {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                  <span className="ml-2">{playing ? "暂停" : "播放"}</span>
+                  <span className="ml-2">{playing ? scenarioDetailCopy.pause : scenarioDetailCopy.play}</span>
                 </Button>
                 {[0.75, 1, 1.25].map((rate) => (
                   <Button
@@ -402,7 +403,7 @@ export default function ScenarioDetailPage() {
                   </Button>
                 ))}
               </div>
-              <p className="mt-6 text-sm text-slate-500">听完音频后，进入练习页完成听力理解题</p>
+              <p className="mt-6 text-sm text-slate-500">{scenarioDetailCopy.listenHint}</p>
             </Card>
           )}
 

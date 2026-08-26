@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from app.application.scenario.scenario_audio_command import MaterializeAndStoreScenarioAudioCommand
 from app.application.scenario.scenario_command import (
     CreateMissingDailySlotsCommand,
     GenerateScenarioCommand,
@@ -31,6 +32,7 @@ class ScenarioApplication:
     get_daily: GetDailyScenariosQuery
     get_scenario: GetScenarioQuery
     list_scenarios: ListScenariosQuery
+    materialize_audio: MaterializeAndStoreScenarioAudioCommand
 
 
 def _uow_factory() -> SqlAlchemyUnitOfWork:
@@ -67,4 +69,5 @@ def build_scenario_application(settings: Settings | None = None) -> ScenarioAppl
         get_daily=GetDailyScenariosQuery(_uow_factory, SqlAlchemyScenarioRepository),
         get_scenario=GetScenarioQuery(_uow_factory, SqlAlchemyScenarioRepository),
         list_scenarios=ListScenariosQuery(_uow_factory, SqlAlchemyScenarioRepository),
+        materialize_audio=MaterializeAndStoreScenarioAudioCommand(cfg),
     )

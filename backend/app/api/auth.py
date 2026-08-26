@@ -4,16 +4,15 @@ import secrets
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import RedirectResponse
-from sqlalchemy.orm import Session
 
 from app.application.identity.identity_command import (
     LoginOrRegisterByEmailInput,
     LoginOrRegisterByWechatInput,
+    MergeDeviceInput,
 )
 from app.auth.dependencies import get_current_user
 from app.auth.email_codes import can_send_code, create_email_code, rollback_email_code, verify_email_code
 from app.auth.email_service import EmailDeliveryError, send_login_code
-from app.auth.merge import merge_device_to_user
 from app.auth.users import normalize_email
 from app.auth.wechat import (
     WeChatNotConfiguredError,
@@ -24,7 +23,6 @@ from app.auth.wechat import (
 )
 from app.composition.shared_composition import AppContainer, get_container
 from app.config import Settings, get_settings
-from app.database import get_db
 from app.models.user import User
 from app.schemas.auth import (
     EmailLoginRequest,
@@ -169,7 +167,9 @@ def me(user: User = Depends(get_current_user)):
 def merge_device(
     body: MergeDeviceRequest,
     user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    container: AppContainer = Depends(get_container),
 ):
-    result = merge_device_to_user(db, user, body.device_id)
+    result = container.identity.merge_device.execute(
+        MergeDeviceInput(user_id=user.id, device_id=body.device_id)
+    )
     return MergeDeviceResponse(**result)

@@ -1,7 +1,7 @@
 import { Layers, MessageCircle, Sparkles, Zap } from "lucide-react";
 import type { ActivityOverview } from "@sceneenglish/api-client/types";
 import { StatCard } from "../../../../app-chrome/ui";
-import { isThisWeek } from "@sceneenglish/api-client";
+import { isThisWeek } from "../../model";
 import type { ConversationBrief, ScenarioBrief } from "@sceneenglish/api-client/types";
 
 interface LearningStatsBarProps {

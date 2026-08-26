@@ -9,12 +9,15 @@ import { api, Exercise } from "@sceneenglish/api-client";
 import { RequireAuth } from "../../auth/ui/require-auth";
 import { Badge, Button, Card, Input, ProgressBar, Spinner } from "../../../app-chrome/ui";
 import { cn } from "../../../app-chrome/utils";
+import {
+  canSubmitAnswer,
+  nextIndexAfterContinue,
+  practiceCopy,
+  scoreFromResults,
+  type PracticeState,
+} from "../model";
 
-type ExerciseResult = {
-  correct: boolean;
-  correct_answer: string | string[];
-  explanation?: string;
-};
+type ExerciseResult = PracticeState["results"][number];
 
 function formatAnswer(exercise: Exercise, answer: string | string[]) {
   if (exercise.type === "single_choice" && typeof answer === "string") {
@@ -48,16 +51,18 @@ function ExerciseFeedback({
       )}
       <div className="min-w-0 text-sm">
         <p className={cn("font-semibold", result.correct ? "text-emerald-800" : "text-red-800")}>
-          {result.correct ? "回答正确" : "回答错误"}
+          {result.correct ? practiceCopy.correct : practiceCopy.incorrect}
         </p>
         {!result.correct && (
           <p className="mt-1 text-slate-700">
-            你的答案：{formatAnswer(exercise, userAnswer)}
+            {practiceCopy.yourAnswer}
+            {formatAnswer(exercise, userAnswer)}
           </p>
         )}
         {!result.correct && (
           <p className="mt-0.5 text-slate-700">
-            正确答案：{formatAnswer(exercise, result.correct_answer)}
+            {practiceCopy.correctAnswer}
+            {formatAnswer(exercise, result.correct_answer)}
           </p>
         )}
         {result.explanation && <p className="mt-2 text-slate-600">{result.explanation}</p>}
@@ -222,31 +227,27 @@ function PracticeContent() {
     if (!exercises) return;
     const ex = exercises[currentIdx];
     const answer = answers[ex.id]?.trim() || "";
-    if (!answer || results[ex.id]) return;
+    if (!canSubmitAnswer({ currentIdx, answers, results, finished }, ex.id, answer)) return;
     await submitOne.mutateAsync({ exerciseId: ex.id, answer });
   };
 
   const handleContinue = async () => {
     if (!exercises) return;
-    const isLast = currentIdx >= exercises.length - 1;
+    const next = nextIndexAfterContinue(currentIdx, exercises.length);
 
-    if (isLast) {
-      const correct = Object.values(results).filter((r) => r.correct).length;
-      setBatchScore({
-        score: Math.round((correct / exercises.length) * 100),
-        correct,
-        total: exercises.length,
-      });
+    if (next === "finish") {
+      const batch = scoreFromResults(results, exercises.length);
+      setBatchScore(batch);
       setFinished(true);
-      await api.completeScenario(Number(id), exercises.length, correct);
+      await api.completeScenario(Number(id), exercises.length, batch.correct);
       return;
     }
 
-    setCurrentIdx((i) => i + 1);
+    setCurrentIdx(next);
   };
 
   if (isLoading) return <Spinner />;
-  if (!exercises?.length) return <Card>暂无练习题</Card>;
+  if (!exercises?.length) return <Card>{practiceCopy.empty}</Card>;
 
   if (finished && batchScore) {
     return (
@@ -269,11 +270,13 @@ function PracticeContent() {
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
         <div className="flex items-center justify-between text-sm text-slate-500">
-          <span>第 {currentIdx + 1} / {exercises.length} 题</span>
-          <Badge>{current.type === "single_choice" ? "单选题" : "填空题"}</Badge>
+          <span>{practiceCopy.questionIndex(currentIdx, exercises.length)}</span>
+          <Badge>{current.type === "single_choice" ? practiceCopy.singleChoice : practiceCopy.fillBlank}</Badge>
         </div>
         <ProgressBar value={progress} className="mt-2" />
-        <p className="mt-1 text-xs text-slate-400">已提交 {submittedCount} / {exercises.length} 题</p>
+        <p className="mt-1 text-xs text-slate-400">
+          {practiceCopy.progressSubmitted(submittedCount, exercises.length)}
+        </p>
       </div>
 
       <Card>

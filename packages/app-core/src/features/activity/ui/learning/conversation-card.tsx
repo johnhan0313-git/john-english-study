@@ -2,7 +2,7 @@ import { PlatformLink as Link } from "../../../../app-chrome/platform-link";
 import { MessageCircle } from "lucide-react";
 import type { ConversationBrief } from "@sceneenglish/api-client/types";
 import { Badge, Button, Card, ProgressBar } from "../../../../app-chrome/ui";
-import { formatRelativeTime } from "@sceneenglish/api-client";
+import { formatRelativeTime } from "../../model";
 import { cn } from "../../../../app-chrome/utils";
 
 interface ConversationCardProps {
